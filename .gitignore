@@ -1,0 +1,38 @@
+# ---- Dependencies ----
+**/node_modules/
+**/vendor/
+
+# ---- Build output ----
+**/.next/
+**/out/
+**/dist/
+
+# ---- Secrets & environment ----
+**/.env
+**/.env.*
+!**/.env.example
+backend/.env
+frontend/.env.local
+
+# ---- Laravel ----
+backend/storage/*.key
+backend/storage/framework/cache/*
+backend/storage/framework/sessions/*
+backend/storage/framework/views/*
+backend/storage/logs/*
+backend/public/storage
+backend/bootstrap/cache/*.php
+
+# ---- Logs ----
+*.log
+npm-debug.log*
+
+# ---- OS / editor / agent ----
+.DS_Store
+Thumbs.db
+.claude/
+.idea/
+.vscode/
+
+# ---- Misc ----
+tools/composer.phar

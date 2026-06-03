@@ -1,0 +1,89 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import Link from "next/link";
+import {
+  LayoutDashboard, ArrowDownToLine, ArrowUpFromLine, Repeat, Send,
+  Network, Crown, Megaphone, LogOut, Menu, X, Wallet,
+} from "lucide-react";
+import Logo from "@/components/Logo";
+import RankBadge from "@/components/RankBadge";
+import { useAuth } from "@/lib/auth";
+
+const NAV = [
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/deposit", label: "Deposit", icon: ArrowDownToLine },
+  { href: "/withdraw", label: "Withdraw", icon: ArrowUpFromLine },
+  { href: "/transfer", label: "Transfer", icon: Send },
+  { href: "/reinvest", label: "Reinvest", icon: Repeat },
+  { href: "/network", label: "Team Network", icon: Network },
+  { href: "/ranking", label: "Ranking", icon: Crown },
+  { href: "/announcements", label: "Announcements", icon: Megaphone },
+];
+
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const { user, loading, hydrated, bootstrap, logout } = useAuth();
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => { bootstrap(); }, [bootstrap]);
+  useEffect(() => {
+    if (hydrated && !loading && !user) router.replace("/login");
+  }, [hydrated, loading, user, router]);
+
+  if (!hydrated || (!user && loading)) {
+    return <div className="min-h-screen grid place-items-center text-muted">Loading…</div>;
+  }
+  if (!user) return null;
+
+  return (
+    <div className="min-h-screen flex">
+      {/* Sidebar */}
+      <aside className={`fixed lg:static z-50 w-64 h-screen lg:h-auto lg:min-h-screen bg-[var(--surface)] border-r border-[var(--line)] flex flex-col transition-transform ${open ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}`}>
+        <div className="h-16 flex items-center px-5 border-b border-[var(--line)]">
+          <Logo size="sm" />
+        </div>
+        <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
+          {NAV.map((item) => {
+            const active = pathname === item.href;
+            const Icon = item.icon;
+            return (
+              <Link key={item.href} href={item.href} onClick={() => setOpen(false)}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition ${active ? "gold-gradient text-black font-semibold" : "text-muted hover:bg-white/5 hover:text-gold-light"}`}>
+                <Icon size={18} /> {item.label}
+              </Link>
+            );
+          })}
+          {user.is_admin && (
+            <Link href="/admin" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-gold-light hover:bg-white/5">
+              <Wallet size={18} /> Admin Panel
+            </Link>
+          )}
+        </nav>
+        <button onClick={() => logout().then(() => router.replace("/login"))}
+          className="m-3 flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-red-400 hover:bg-red-500/10">
+          <LogOut size={18} /> Logout
+        </button>
+      </aside>
+
+      {open && <div className="fixed inset-0 bg-black/60 z-40 lg:hidden" onClick={() => setOpen(false)} />}
+
+      {/* Main */}
+      <div className="flex-1 min-w-0">
+        <header className="h-16 border-b border-[var(--line)] flex items-center justify-between px-5 sticky top-0 bg-[rgba(4,16,42,0.85)] backdrop-blur-md z-30">
+          <button className="lg:hidden btn-ghost p-2" onClick={() => setOpen(true)}><Menu size={18} /></button>
+          <div className="flex items-center gap-3 ml-auto">
+            <RankBadge rank={user.rank} />
+            <div className="text-right hidden sm:block">
+              <p className="text-sm font-medium">{user.username}</p>
+              <p className="text-xs text-muted">{user.email}</p>
+            </div>
+          </div>
+        </header>
+        <div className="p-5 max-w-7xl mx-auto">{children}</div>
+      </div>
+    </div>
+  );
+}
