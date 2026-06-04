@@ -73,10 +73,6 @@ export default function ProfilePage() {
         <form onSubmit={saveProfile} className="mt-5 space-y-4">
           <div className="grid sm:grid-cols-2 gap-4">
             <div>
-              <label className="text-sm text-muted">Username</label>
-              <input className="input-field mt-1 opacity-60" value={user?.username || ""} disabled />
-            </div>
-            <div>
               <label className="text-sm text-muted">Nick Name <span className="text-gold-light text-xs">(editable)</span></label>
               <input className="input-field mt-1" value={form.nickname} onChange={(e) => setForm({ ...form, nickname: e.target.value })} maxLength={30} />
             </div>
@@ -84,12 +80,8 @@ export default function ProfilePage() {
               <label className="text-sm text-muted">Email <span className="text-xs">(admin only)</span></label>
               <input className="input-field mt-1 opacity-60" value={user?.email || ""} disabled />
             </div>
-            <div>
-              <label className="text-sm text-muted">Phone <span className="text-xs">(admin only)</span></label>
-              <input className="input-field mt-1 opacity-60" value={user?.phone || "—"} disabled />
-            </div>
           </div>
-          <p className="text-xs text-muted">To change your email or phone, contact admin/support.</p>
+          <p className="text-xs text-muted">To change your email, contact admin/support.</p>
 
           <div className="border-t border-[var(--line)] pt-4">
             <p className="text-sm font-medium flex items-center gap-2 mb-3"><Users size={16} className="text-gold-light" /> Beneficiary (Pewaris)</p>
