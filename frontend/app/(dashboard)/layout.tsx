@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   LayoutDashboard, ArrowDownToLine, ArrowUpFromLine, Repeat, Send,
-  Network, Crown, Megaphone, LogOut, Menu, X, Wallet, UserCog,
+  Network, Crown, Megaphone, LogOut, Menu, X, Wallet, UserCog, FileBarChart,
 } from "lucide-react";
 import Logo from "@/components/Logo";
 import RankBadge from "@/components/RankBadge";
@@ -18,6 +18,7 @@ const NAV = [
   { href: "/transfer", label: "Transfer", icon: Send },
   { href: "/reinvest", label: "Reinvest", icon: Repeat },
   { href: "/network", label: "Team Network", icon: Network },
+  { href: "/reports", label: "Reports", icon: FileBarChart },
   { href: "/ranking", label: "Ranking", icon: Crown },
   { href: "/announcements", label: "Announcements", icon: Megaphone },
   { href: "/profile", label: "Profile & Security", icon: UserCog },

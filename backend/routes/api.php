@@ -61,6 +61,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/logs/sponsor', [LogController::class, 'sponsor']);
     Route::get('/logs/matching', [LogController::class, 'matching']);
 
+    // Daily report (ROI / sponsor / matching per day + group sales by level)
+    Route::get('/reports/daily', [\App\Http\Controllers\Api\ReportController::class, 'daily']);
+
     Route::get('/announcements', [MiscController::class, 'announcements']);
 
     // Actions blocked during maintenance + when frozen

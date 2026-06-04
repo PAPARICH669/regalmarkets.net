@@ -65,4 +65,44 @@ class NetworkService
             'rank_counts'     => $rankCounts,
         ];
     }
+
+    /**
+     * Group sales broken down by level (1 = direct downline, 2 = their downline, …).
+     * Sales = sum of total_fund (approved deposits) of members at that level.
+     *
+     * @return array{levels: array<int, array{level:int, members:int, sales:float, invested:float}>, total_sales: float, total_members: int}
+     */
+    public function salesByLevel(User $root, int $maxDepth = 15): array
+    {
+        $levels = [];
+        $queue  = [[$root->id, 0]];
+        $totalSales = 0.0;
+        $totalMembers = 0;
+
+        while ($queue) {
+            [$id, $level] = array_shift($queue);
+            if ($level >= $maxDepth) {
+                continue;
+            }
+            $children = User::where('sponsor_id', $id)->get(['id', 'total_fund', 'total_invested']);
+            foreach ($children as $child) {
+                $lvl = $level + 1;
+                $levels[$lvl] ??= ['level' => $lvl, 'members' => 0, 'sales' => 0.0, 'invested' => 0.0];
+                $levels[$lvl]['members']  += 1;
+                $levels[$lvl]['sales']    += (float) $child->total_fund;
+                $levels[$lvl]['invested'] += (float) $child->total_invested;
+                $totalSales   += (float) $child->total_fund;
+                $totalMembers += 1;
+                $queue[] = [$child->id, $lvl];
+            }
+        }
+
+        ksort($levels);
+
+        return [
+            'levels'        => array_values($levels),
+            'total_sales'   => $totalSales,
+            'total_members' => $totalMembers,
+        ];
+    }
 }
