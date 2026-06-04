@@ -112,9 +112,13 @@ class AuthController extends Controller
 
         // Token-based reset via Laravel's Password broker. The email link points
         // to the frontend (see AuthServiceProvider::boot ResetPassword::createUrlUsing).
-        \Illuminate\Support\Facades\Password::sendResetLink($request->only('email'));
+        // Never surface mail/transport errors to the client (avoid 500 + enumeration).
+        try {
+            \Illuminate\Support\Facades\Password::sendResetLink($request->only('email'));
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Password reset email failed: ' . $e->getMessage());
+        }
 
-        // Always generic to avoid email enumeration.
         return response()->json(['message' => 'If that email is registered, a password reset link has been sent.']);
     }
 
