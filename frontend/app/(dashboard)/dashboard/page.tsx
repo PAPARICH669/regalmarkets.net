@@ -41,7 +41,7 @@ export default function DashboardPage() {
             Welcome back, <span className="gold-text">{user?.nickname || user?.username}</span>
           </h1>
           <p className="text-muted text-sm">
-            @{user?.username} · Your investment & earnings at a glance.
+            Your investment & earnings at a glance.
           </p>
         </div>
         {user && <RankBadge rank={user.rank} />}
