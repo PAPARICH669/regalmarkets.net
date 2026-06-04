@@ -63,4 +63,52 @@ class MailService
 
         return $this->send($toEmail, $toName, 'Reset your Regal Markets password', $html);
     }
+
+    /** Wrap inner HTML in the branded card shell. */
+    protected function shell(string $heading, string $inner): string
+    {
+        return <<<HTML
+        <div style="font-family:Arial,sans-serif;background:#04102a;padding:32px;color:#eef3fc">
+          <div style="max-width:520px;margin:auto;background:#0a1c40;border:1px solid rgba(201,162,39,.3);border-radius:14px;padding:28px">
+            <h2 style="color:#e7c873;margin:0 0 4px">Regal Markets</h2>
+            <h3 style="color:#eef3fc;margin:0 0 16px">{$heading}</h3>
+            {$inner}
+            <p style="margin:22px 0 0;color:#6b7a99;font-size:12px">This is an automated message from Regal Markets. Please do not reply.</p>
+          </div>
+        </div>
+        HTML;
+    }
+
+    /** KYC approved notification. */
+    public function sendKycVerified(string $toEmail, ?string $toName): bool
+    {
+        $name  = $toName ?: 'there';
+        $inner = <<<HTML
+        <p style="margin:0 0 14px;color:#9fb1d4">Hi {$name},</p>
+        <p style="margin:0 0 14px">✅ Great news — your <b style="color:#e7c873">KYC verification</b> has been <b>approved</b>.</p>
+        <p style="margin:0 0 14px;color:#9fb1d4">Your account is now fully verified. You can deposit, fund, and withdraw without restrictions.</p>
+        HTML;
+
+        return $this->send($toEmail, $toName, 'Your KYC is verified — Regal Markets', $this->shell('KYC Verified', $inner));
+    }
+
+    /** Withdrawal approved/paid notification. */
+    public function sendWithdrawalApproved(string $toEmail, ?string $toName, string $amount, string $net, string $address, ?string $txid = null): bool
+    {
+        $name   = $toName ?: 'there';
+        $txRow  = $txid ? "<tr><td style=\"padding:4px 0;color:#9fb1d4\">TxID</td><td style=\"padding:4px 0;text-align:right;word-break:break-all\">{$txid}</td></tr>" : '';
+        $inner  = <<<HTML
+        <p style="margin:0 0 14px;color:#9fb1d4">Hi {$name},</p>
+        <p style="margin:0 0 14px">🏧 Your withdrawal has been <b style="color:#e7c873">approved and processed</b>.</p>
+        <table style="width:100%;border-collapse:collapse;margin:0 0 8px;font-size:14px">
+          <tr><td style="padding:4px 0;color:#9fb1d4">Amount</td><td style="padding:4px 0;text-align:right">{$amount} USDT</td></tr>
+          <tr><td style="padding:4px 0;color:#9fb1d4">Received (net)</td><td style="padding:4px 0;text-align:right;color:#e7c873;font-weight:bold">{$net} USDT</td></tr>
+          <tr><td style="padding:4px 0;color:#9fb1d4">To address</td><td style="padding:4px 0;text-align:right;word-break:break-all">{$address}</td></tr>
+          {$txRow}
+        </table>
+        <p style="margin:0 0 14px;color:#9fb1d4">Funds were sent to your BEP20 (BSC) USDT address. Allow a few minutes for on-chain confirmation.</p>
+        HTML;
+
+        return $this->send($toEmail, $toName, 'Withdrawal approved — Regal Markets', $this->shell('Withdrawal Successful', $inner));
+    }
 }

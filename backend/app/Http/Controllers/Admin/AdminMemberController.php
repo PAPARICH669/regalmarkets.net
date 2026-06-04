@@ -133,6 +133,14 @@ class AdminMemberController extends Controller
             'kyc_note'        => null,
         ]);
         $this->audit->log($request, 'member.kyc_verify', $user);
+
+        // Notify the member by email (failure must not block the approval).
+        try {
+            app(\App\Services\MailService::class)->sendKycVerified($user->email, $user->name ?: $user->username);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('KYC verified email failed: ' . $e->getMessage());
+        }
+
         return response()->json(['message' => 'KYC verified.']);
     }
 

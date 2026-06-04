@@ -24,8 +24,27 @@ class AdminWithdrawalController extends Controller
     public function approve(Request $request, Withdrawal $withdrawal)
     {
         $data = $request->validate(['txid' => ['nullable', 'string', 'max:191']]);
+        $wasPending = $withdrawal->status === 'pending';
         $withdrawal = $this->withdrawals->approve($withdrawal, $request->user(), $data['txid'] ?? null);
         $this->audit->log($request, 'withdrawal.approve', $withdrawal, ['amount' => $withdrawal->amount]);
+
+        // Notify the member by email on a real approval (failure must not block it).
+        if ($wasPending && $withdrawal->status === 'approved') {
+            try {
+                $u = $withdrawal->user;
+                app(\App\Services\MailService::class)->sendWithdrawalApproved(
+                    $u->email,
+                    $u->name ?: $u->username,
+                    number_format((float) $withdrawal->amount, 2),
+                    number_format((float) $withdrawal->net_amount, 2),
+                    $withdrawal->wallet_address,
+                    $withdrawal->txid
+                );
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning('Withdrawal approved email failed: ' . $e->getMessage());
+            }
+        }
+
         return response()->json(['message' => 'Withdrawal approved.', 'withdrawal' => $withdrawal]);
     }
 
