@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import {
-  Wallet, TrendingUp, Gift, Layers, PiggyBank, Coins, Users, Copy, Check,
+  Wallet, TrendingUp, Gift, Layers, Landmark, Coins, Users, Copy, Check,
 } from "lucide-react";
 import StatCard from "@/components/StatCard";
 import RankBadge from "@/components/RankBadge";
@@ -51,7 +51,7 @@ export default function DashboardPage() {
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard label="A-WALLET (Capital)" value={usdt(d.wallets.A)} icon={<Wallet size={18} />} accent />
         <StatCard label="E-WALLET (Earnings)" value={usdt(d.wallets.E)} icon={<Coins size={18} />} accent />
-        <StatCard label="Total Investment" value={usdt(d.totals.total_invested)} icon={<PiggyBank size={18} />} />
+        <StatCard label="Total Investment" value={usdt(d.totals.total_invested)} icon={<Landmark size={18} />} />
         <StatCard label="Daily Commission" value={usdt(d.totals.daily_roi)} icon={<TrendingUp size={18} />} />
       </div>
 
