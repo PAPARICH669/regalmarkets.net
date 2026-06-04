@@ -35,7 +35,8 @@ return [
 
     // Withdrawal
     'withdrawal' => [
-        'fee_percent'      => 5.0,   // configurable by admin
+        'fee_flat'         => 2.0,   // flat fee in USDT per withdrawal (configurable by admin)
+        'max_per_day'      => 1,     // max number of withdrawals allowed per day
         'processing_hours' => 72,    // informational SLA shown to users
     ],
 

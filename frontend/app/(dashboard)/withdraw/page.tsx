@@ -9,7 +9,7 @@ import StatusPill from "@/components/StatusPill";
 import KycBanner from "@/components/KycBanner";
 
 interface Withdrawal { id: number; amount: string; fee: string; net_amount: string; wallet_address: string; txid: string | null; status: string; created_at: string; }
-interface Cfg { min: number; max_daily: number; fee_percent: number; processing_hours: number; }
+interface Cfg { min: number; max_amount: number; fee_flat: number; max_per_day: number; processing_hours: number; }
 
 export default function WithdrawPage() {
   const { user, refresh } = useAuth();
@@ -24,7 +24,7 @@ export default function WithdrawPage() {
   useEffect(() => { load(); api.get("/withdrawals/config").then((r) => setCfg(r.data)); }, []);
   useEffect(() => { if (user?.wallet_address) setAddress(user.wallet_address); }, [user?.wallet_address]);
 
-  const fee = cfg && amount ? (Number(amount) * cfg.fee_percent) / 100 : 0;
+  const fee = cfg ? cfg.fee_flat : 0;
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -44,8 +44,9 @@ export default function WithdrawPage() {
         <div className="glass p-6">
           <h3 className="font-semibold">Request Withdrawal</h3>
           <p className="text-sm text-muted mt-1">
-            From E-WALLET. Min {cfg ? usdt(cfg.min) : "…"}, max {cfg ? usdt(cfg.max_daily) : "…"}/day.
-            Fee {cfg?.fee_percent ?? "…"}%. Processed within {cfg?.processing_hours ?? 72} working hours.
+            From E-WALLET. Min {cfg ? usdt(cfg.min) : "…"}, max {cfg ? usdt(cfg.max_amount) : "…"} per withdrawal.
+            <b className="text-foreground"> {cfg?.max_per_day ?? 1} withdrawal/day.</b> Flat fee {cfg ? usdt(cfg.fee_flat) : "…"}.
+            Processed within {cfg?.processing_hours ?? 72} working hours.
           </p>
           <div className="mt-4 flex items-center justify-between bg-black/30 rounded-lg p-3">
             <span className="text-sm text-muted flex items-center gap-2"><Coins size={16} className="text-gold-light" /> E-WALLET balance</span>
@@ -68,8 +69,8 @@ export default function WithdrawPage() {
             </div>
             {amount && cfg && (
               <div className="text-sm bg-black/30 rounded-lg p-3 space-y-1">
-                <div className="flex justify-between"><span className="text-muted">Fee ({cfg.fee_percent}%)</span><span>{usdt(fee)}</span></div>
-                <div className="flex justify-between font-semibold"><span>You receive</span><span className="gold-text">{usdt(Number(amount) - fee)}</span></div>
+                <div className="flex justify-between"><span className="text-muted">Flat fee</span><span>{usdt(fee)}</span></div>
+                <div className="flex justify-between font-semibold"><span>You receive</span><span className="gold-text">{usdt(Math.max(Number(amount) - fee, 0))}</span></div>
               </div>
             )}
             <button disabled={loading} className="btn-gold w-full py-2.5">{loading ? "Requesting…" : "Request Withdrawal"}</button>

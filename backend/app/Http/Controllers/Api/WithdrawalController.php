@@ -44,8 +44,9 @@ class WithdrawalController extends Controller
     {
         return response()->json([
             'min'         => (float) $this->settings->get('min_withdrawal'),
-            'max_daily'   => (float) $this->settings->get('max_withdrawal_daily'),
-            'fee_percent' => (float) $this->settings->get('withdrawal_fee_percent'),
+            'max_amount'  => (float) $this->settings->get('max_withdrawal_daily'),
+            'fee_flat'    => (float) $this->settings->get('withdrawal_fee'),
+            'max_per_day' => (int) $this->settings->get('withdrawal_max_per_day'),
             'processing_hours' => config('regal.withdrawal.processing_hours', 72),
         ]);
     }

@@ -23,7 +23,8 @@ export default function AdminSettings() {
         max_withdrawal_daily: Number(s?.max_withdrawal_daily),
         min_transfer: Number(s?.min_transfer),
         min_reinvest: Number(s?.min_reinvest),
-        withdrawal_fee_percent: Number(s?.withdrawal_fee_percent),
+        withdrawal_fee: Number(s?.withdrawal_fee),
+        withdrawal_max_per_day: Number(s?.withdrawal_max_per_day),
         maintenance_start: String(s?.maintenance_start ?? "00:00"),
         maintenance_end: String(s?.maintenance_end ?? "07:00"),
       };
@@ -37,10 +38,11 @@ export default function AdminSettings() {
   const fields: [string, string, string][] = [
     ["roi_daily_percent", "Daily Commission %", "number"],
     ["roi_return_multiple", "Return Multiple (x)", "number"],
-    ["withdrawal_fee_percent", "Withdrawal Fee %", "number"],
+    ["withdrawal_fee", "Withdrawal Fee (USDT flat)", "number"],
+    ["withdrawal_max_per_day", "Withdrawals per day", "number"],
     ["min_deposit", "Min Deposit", "number"],
     ["min_withdrawal", "Min Withdrawal", "number"],
-    ["max_withdrawal_daily", "Max Withdrawal / day", "number"],
+    ["max_withdrawal_daily", "Max per Withdrawal", "number"],
     ["min_transfer", "Min Transfer", "number"],
     ["min_reinvest", "Min Reinvest", "number"],
     ["maintenance_start", "Maintenance Start (HH:MM)", "text"],

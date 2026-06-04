@@ -19,29 +19,36 @@ class WithdrawalService
 
     public function request(User $user, $amount, string $walletAddress): Withdrawal
     {
-        $min     = (float) $this->settings->get('min_withdrawal');
-        $maxDay  = (float) $this->settings->get('max_withdrawal_daily');
-        $feePct  = (float) $this->settings->get('withdrawal_fee_percent');
-        $amount  = (float) $amount;
+        $min       = (float) $this->settings->get('min_withdrawal');
+        $maxAmount = (float) $this->settings->get('max_withdrawal_daily'); // max per withdrawal
+        $feeFlat   = (float) $this->settings->get('withdrawal_fee');       // flat fee in USDT
+        $maxPerDay = (int) $this->settings->get('withdrawal_max_per_day'); // withdrawals allowed / day
+        $amount    = (float) $amount;
 
         if ($amount < $min) {
             throw ValidationException::withMessages(['amount' => "Minimum withdrawal is {$min} USDT."]);
         }
+        if ($amount > $maxAmount) {
+            throw ValidationException::withMessages(['amount' => "Maximum withdrawal is {$maxAmount} USDT."]);
+        }
+        if ($amount <= $feeFlat) {
+            throw ValidationException::withMessages(['amount' => "Amount must be greater than the {$feeFlat} USDT fee."]);
+        }
 
-        // Daily cap: sum of today's non-rejected withdrawals + this request
-        $todayTotal = Withdrawal::where('user_id', $user->id)
+        // Only N withdrawals per day (count of today's non-rejected requests).
+        $todayCount = Withdrawal::where('user_id', $user->id)
             ->where('status', '!=', 'rejected')
             ->whereDate('created_at', Carbon::today())
-            ->sum('amount');
+            ->count();
 
-        if (($todayTotal + $amount) > $maxDay) {
+        if ($todayCount >= $maxPerDay) {
             throw ValidationException::withMessages([
-                'amount' => "Daily withdrawal limit is {$maxDay} USDT. Already requested today: {$todayTotal} USDT.",
+                'amount' => "You can only withdraw {$maxPerDay} time(s) per day. Try again tomorrow.",
             ]);
         }
 
         $amountStr = number_format($amount, 8, '.', '');
-        $fee       = bcdiv(bcmul($amountStr, (string) $feePct, 10), '100', 8);
+        $fee       = number_format($feeFlat, 8, '.', '');
         $net       = bcsub($amountStr, $fee, 8);
 
         return DB::transaction(function () use ($user, $amountStr, $fee, $net, $walletAddress) {
