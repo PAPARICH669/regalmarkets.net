@@ -19,10 +19,11 @@ class Kernel extends ConsoleKernel
 
         // Maintenance window open/close
         $schedule->command('maintenance:sync')->dailyAt('00:00')->timezone($tz);
-        $schedule->command('maintenance:sync')->dailyAt('07:00')->timezone($tz);
 
-        // After maintenance ends: pay daily commission, then recompute ranks
+        // At 07:01: pay daily commission FIRST, then close the maintenance window
+        // (login re-opens) so members log in to already-updated balances.
         $schedule->command('roi:run')->dailyAt('07:01')->timezone($tz)->withoutOverlapping();
+        $schedule->command('maintenance:sync')->dailyAt('07:01')->timezone($tz);
         $schedule->command('rank:update')->dailyAt('07:10')->timezone($tz)->withoutOverlapping();
     }
 

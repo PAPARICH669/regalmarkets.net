@@ -76,7 +76,7 @@ return [
     // Daily maintenance window (Asia/Kuala_Lumpur). Login/withdraw/transfer disabled.
     'maintenance' => [
         'start' => '00:00',
-        'end'   => '07:00', // active again at 07:00 (window is 00:00–06:59)
+        'end'   => '07:01', // login re-opens at 07:01 (after daily commission runs)
     ],
 
     // Admin USDT (BEP20) wallet address members deposit into.
