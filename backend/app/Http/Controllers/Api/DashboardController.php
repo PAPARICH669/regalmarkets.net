@@ -35,17 +35,19 @@ class DashboardController extends Controller
         $roiEarned     = (float) RoiLog::where('user_id', $user->id)->sum('amount');
 
         // Last 14 days earnings series (for chart)
-        $series = collect(range(13, 0))->map(function ($daysAgo) use ($user) {
+        $invested = (float) $user->total_invested;
+        $series = collect(range(13, 0))->map(function ($daysAgo) use ($user, $invested) {
             $date = Carbon::today()->subDays($daysAgo);
             $roi  = (float) RoiLog::where('user_id', $user->id)->whereDate('roi_date', $date)->sum('amount');
             $match = (float) MatchingBonusLog::where('to_user_id', $user->id)->whereDate('created_at', $date)->sum('amount');
             $spon = (float) SponsorBonusLog::where('to_user_id', $user->id)->whereDate('created_at', $date)->sum('amount');
             return [
-                'date'     => $date->toDateString(),
-                'roi'      => $roi,
-                'matching' => $match,
-                'sponsor'  => $spon,
-                'total'    => $roi + $match + $spon,
+                'date'        => $date->toDateString(),
+                'roi'         => $roi,
+                'roi_percent' => $invested > 0 ? round($roi / $invested * 100, 3) : 0,
+                'matching'    => $match,
+                'sponsor'     => $spon,
+                'total'       => $roi + $match + $spon,
             ];
         });
 
