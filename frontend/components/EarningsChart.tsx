@@ -25,7 +25,7 @@ type SeriesKey = "total" | "roi" | "matching" | "sponsor";
 
 const LABELS: Record<SeriesKey, string> = {
   total: "Total",
-  roi: "ROI",
+  roi: "Commission",
   matching: "Matching",
   sponsor: "Sponsor",
 };
@@ -48,7 +48,7 @@ function ChartTooltip({ active, payload, dataKey = "total" }: TooltipProps) {
       </div>
       {dataKey === "roi" && p.roi_percent !== undefined && (
         <div style={{ fontSize: 12, color: "#9fb1d4", marginTop: 2 }}>
-          ROI rate: <span style={{ color: "#e7c873" }}>{p.roi_percent}%</span>
+          Commission rate: <span style={{ color: "#e7c873" }}>{p.roi_percent}%</span>
         </div>
       )}
     </div>

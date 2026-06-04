@@ -29,7 +29,7 @@ export default function AdminRoiPage() {
   const estimate = s ? (Number(percent || 0) / 100) * s.active_principal : 0;
 
   async function run() {
-    if (!window.confirm(`Run ROI at ${percent}% for today? This pays ${usdt(estimate)} across ${s?.active_packages} packages and cannot be undone.`)) return;
+    if (!window.confirm(`Run Commission at ${percent}% for today? This pays ${usdt(estimate)} across ${s?.active_packages} packages and cannot be undone.`)) return;
     setMsg(""); setError(""); setRunning(true);
     try {
       const { data } = await api.post("/admin/roi/run", { percent: Number(percent), save_default: saveDefault });
@@ -41,14 +41,14 @@ export default function AdminRoiPage() {
   return (
     <div className="space-y-6 max-w-3xl">
       <div>
-        <h1 className="text-2xl font-bold">Daily ROI Payout</h1>
-        <p className="text-muted text-sm">Set the daily profit % manually and run the payout. Profit = % × each member&apos;s investment; remaining ROI shrinks until 200%.</p>
+        <h1 className="text-2xl font-bold">Daily Commission Payout</h1>
+        <p className="text-muted text-sm">Set the daily profit % manually and run the payout. Profit = % × each member&apos;s investment; remaining Commission shrinks until 200%.</p>
       </div>
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard label="Active Packages" value={s?.active_packages ?? 0} icon={<Layers size={18} />} />
         <StatCard label="Active Principal" value={usdt(s?.active_principal ?? 0)} icon={<TrendingUp size={18} />} accent />
-        <StatCard label="ROI Liability" value={usdt(s?.roi_liability ?? 0)} icon={<AlertTriangle size={18} />} />
+        <StatCard label="Commission Liability" value={usdt(s?.roi_liability ?? 0)} icon={<AlertTriangle size={18} />} />
         <StatCard label="Paid Today" value={usdt(s?.today_paid ?? 0)} icon={<TrendingUp size={18} />} sub={`${s?.today_paid_count ?? 0} payouts`} />
       </div>
 
@@ -75,9 +75,9 @@ export default function AdminRoiPage() {
         </label>
 
         <button onClick={run} disabled={running} className="btn-gold px-6 py-2.5 flex items-center gap-2">
-          <Play size={16} /> {running ? "Running…" : "Run ROI for Today"}
+          <Play size={16} /> {running ? "Running…" : "Run Commission for Today"}
         </button>
-        <p className="text-xs text-muted">ROI is idempotent per package per day — running again today won&apos;t double-pay packages already paid.</p>
+        <p className="text-xs text-muted">Commission is idempotent per package per day — running again today won&apos;t double-pay packages already paid.</p>
       </div>
     </div>
   );

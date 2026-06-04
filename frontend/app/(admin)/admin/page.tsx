@@ -27,7 +27,7 @@ export default function AdminOverview() {
         <StatCard label="Total Members" value={s.members} icon={<Users size={18} />} accent sub={`${s.frozen_members} frozen`} />
         <StatCard label="Total Deposits" value={usdt(s.total_deposits)} icon={<ArrowDownToLine size={18} />} sub={`${s.pending_deposits} pending`} />
         <StatCard label="Total Withdrawals" value={usdt(s.total_withdrawals)} icon={<ArrowUpFromLine size={18} />} sub={`${s.pending_withdrawals} pending`} />
-        <StatCard label="ROI Liability" value={usdt(s.roi_liability)} icon={<AlertTriangle size={18} />} accent sub={`${s.active_packages} active packages`} />
+        <StatCard label="Commission Liability" value={usdt(s.roi_liability)} icon={<AlertTriangle size={18} />} accent sub={`${s.active_packages} active packages`} />
       </div>
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard label="Sponsor Bonus Paid" value={usdt(s.total_sponsor_bonus)} icon={<Gift size={18} />} />

@@ -24,7 +24,7 @@ interface RoiLog { id: number; amount: string; roi_date: string; package?: { id:
 
 const TABS: { key: Tab; label: string }[] = [
   { key: "summary", label: "Daily Summary" },
-  { key: "roi", label: "Daily ROI" },
+  { key: "roi", label: "Daily Commission" },
   { key: "sponsor", label: "Sponsor Bonus" },
   { key: "matching", label: "Matching Bonus" },
   { key: "group", label: "Group Sales" },
@@ -93,7 +93,7 @@ export default function ReportsPage() {
       {tab === "summary" && (
         <div className="space-y-6">
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <StatCard label={`ROI (${days}d)`} value={usdt(r?.totals.roi ?? 0)} icon={<TrendingUp size={18} />} accent />
+            <StatCard label={`Commission (${days}d)`} value={usdt(r?.totals.roi ?? 0)} icon={<TrendingUp size={18} />} accent />
             <StatCard label={`Sponsor (${days}d)`} value={usdt(r?.totals.sponsor ?? 0)} icon={<Gift size={18} />} />
             <StatCard label={`Matching (${days}d)`} value={usdt(r?.totals.matching ?? 0)} icon={<Layers size={18} />} />
             <StatCard label={`Total (${days}d)`} value={usdt(r?.totals.earnings ?? 0)} icon={<Coins size={18} />} accent />
@@ -103,7 +103,7 @@ export default function ReportsPage() {
             <div className="overflow-x-auto max-h-[460px] overflow-y-auto">
               <table className="w-full text-sm">
                 <thead className="text-gold-light text-left sticky top-0 bg-[var(--surface)]">
-                  <tr><th className="py-2">Date</th><th>Daily ROI</th><th>ROI %</th><th>Sponsor</th><th>Matching</th><th>Total</th></tr>
+                  <tr><th className="py-2">Date</th><th>Daily Commission</th><th>Commission %</th><th>Sponsor</th><th>Matching</th><th>Total</th></tr>
                 </thead>
                 <tbody>
                   {(r?.daily ?? []).map((row) => (
@@ -122,10 +122,10 @@ export default function ReportsPage() {
         </div>
       )}
 
-      {/* ---- Daily ROI detail ---- */}
+      {/* ---- Daily Commission detail ---- */}
       {tab === "roi" && (
         <div className="glass p-5">
-          <h3 className="font-semibold mb-4">Daily ROI</h3>
+          <h3 className="font-semibold mb-4">Daily Commission</h3>
           <ReportTable head={["Date", "Package", "Amount"]} loading={loading} empty={roi.length === 0}>
             {roi.map((x) => (
               <tr key={x.id} className="border-t border-[var(--line)]">
@@ -161,7 +161,7 @@ export default function ReportsPage() {
       {tab === "matching" && (
         <div className="glass p-5">
           <h3 className="font-semibold mb-1">Matching Bonus</h3>
-          <p className="text-sm text-muted mb-4">Differential override on each downline&apos;s daily ROI.</p>
+          <p className="text-sm text-muted mb-4">Differential override on each downline&apos;s daily Commission.</p>
           <ReportTable head={["From Member", "Member Rank", "% × Passive Profit", "Amount", "Date"]} loading={loading} empty={matching.length === 0}>
             {matching.map((x) => (
               <tr key={x.id} className="border-t border-[var(--line)]">

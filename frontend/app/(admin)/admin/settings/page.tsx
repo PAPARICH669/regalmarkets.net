@@ -35,7 +35,7 @@ export default function AdminSettings() {
   if (!s) return <div className="text-muted py-10">Loading…</div>;
 
   const fields: [string, string, string][] = [
-    ["roi_daily_percent", "Daily ROI %", "number"],
+    ["roi_daily_percent", "Daily Commission %", "number"],
     ["roi_return_multiple", "Return Multiple (x)", "number"],
     ["withdrawal_fee_percent", "Withdrawal Fee %", "number"],
     ["min_deposit", "Min Deposit", "number"],

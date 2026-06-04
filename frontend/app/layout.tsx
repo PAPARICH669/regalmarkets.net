@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Regal Markets — Premium USDT Investment & Networking",
   description:
-    "Regal Markets: 200% ROI investment packages, unilevel sponsor bonus, unlimited matching bonus and a 5-tier rank reward system. Built for serious crypto investors.",
+    "Regal Markets: 200% Commission investment packages, unilevel sponsor bonus, unlimited matching bonus and a 5-tier rank reward system. Built for serious crypto investors.",
   icons: { icon: "/logo.png", shortcut: "/logo.png", apple: "/logo.png" },
 };
 

@@ -15,7 +15,7 @@ const NAV = [
   { href: "/admin/deposits", label: "Deposits", icon: ArrowDownToLine },
   { href: "/admin/withdrawals", label: "Withdrawals", icon: ArrowUpFromLine },
   { href: "/admin/members", label: "Members", icon: Users },
-  { href: "/admin/roi", label: "Daily ROI", icon: TrendingUp },
+  { href: "/admin/roi", label: "Daily Commission", icon: TrendingUp },
   { href: "/admin/logs", label: "Bonus Logs", icon: Layers },
   { href: "/admin/settings", label: "Settings", icon: Settings },
   { href: "/admin/announcements", label: "Announcements", icon: Megaphone },

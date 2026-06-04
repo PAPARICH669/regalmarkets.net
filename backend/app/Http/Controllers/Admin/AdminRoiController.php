@@ -60,7 +60,7 @@ class AdminRoiController extends Controller
         ]);
 
         return response()->json([
-            'message' => "ROI run at {$data['percent']}% for {$date->toDateString()}.",
+            'message' => "Commission run at {$data['percent']}% for {$date->toDateString()}.",
             'stats'   => $stats,
         ]);
     }
