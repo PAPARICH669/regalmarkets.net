@@ -5,7 +5,6 @@ import {
   Wallet, TrendingUp, Gift, Layers, PiggyBank, Coins, Users, Copy, Check,
 } from "lucide-react";
 import StatCard from "@/components/StatCard";
-import EarningsChart from "@/components/EarningsChart";
 import RankBadge from "@/components/RankBadge";
 import api from "@/lib/api";
 import { useAuth } from "@/lib/auth";
@@ -63,32 +62,25 @@ export default function DashboardPage() {
         <StatCard label="Matching Bonus" value={usdt(d.totals.matching_bonus)} icon={<Layers size={18} />} />
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-6">
-          <EarningsChart data={d.earnings_series} dataKey="roi" title="Daily ROI — last 14 days" kind="bar" color="#e7c873" />
-          <EarningsChart data={d.earnings_series} dataKey="total" title="Total Earnings — last 14 days" />
+      {/* Referral */}
+      <div className="glass p-5">
+        <h3 className="font-semibold flex items-center gap-2"><Users size={18} className="text-gold-light" /> Your Referral Link</h3>
+        <p className="text-sm text-muted mt-1">Share to grow your team.</p>
+        <div className="mt-4 flex items-center gap-2 bg-black/30 rounded-lg p-3 text-xs break-all">
+          <span className="flex-1">{d.referral_link}</span>
+          <button onClick={() => { navigator.clipboard.writeText(d.referral_link); setCopied(true); setTimeout(() => setCopied(false), 1500); }}
+            className="btn-ghost p-2 shrink-0">{copied ? <Check size={15} /> : <Copy size={15} />}</button>
         </div>
-
-        {/* Referral */}
-        <div className="glass p-5 flex flex-col">
-          <h3 className="font-semibold flex items-center gap-2"><Users size={18} className="text-gold-light" /> Your Referral Link</h3>
-          <p className="text-sm text-muted mt-1">Share to grow your team.</p>
-          <div className="mt-4 flex items-center gap-2 bg-black/30 rounded-lg p-3 text-xs break-all">
-            <span className="flex-1">{d.referral_link}</span>
-            <button onClick={() => { navigator.clipboard.writeText(d.referral_link); setCopied(true); setTimeout(() => setCopied(false), 1500); }}
-              className="btn-ghost p-2 shrink-0">{copied ? <Check size={15} /> : <Copy size={15} />}</button>
+        <div className="mt-5 grid sm:grid-cols-3 gap-3 text-center">
+          <div className="bg-white/5 rounded-lg p-3">
+            <p className="text-xl font-bold gold-text">{d.team.direct_referrals}</p>
+            <p className="text-xs text-muted">Direct Referrals</p>
           </div>
-          <div className="mt-5 grid grid-cols-2 gap-3 text-center">
-            <div className="bg-white/5 rounded-lg p-3">
-              <p className="text-xl font-bold gold-text">{d.team.direct_referrals}</p>
-              <p className="text-xs text-muted">Direct Referrals</p>
-            </div>
-            <div className="bg-white/5 rounded-lg p-3">
-              <p className="text-xl font-bold gold-text">{d.team.total_team}</p>
-              <p className="text-xs text-muted">Total Team</p>
-            </div>
+          <div className="bg-white/5 rounded-lg p-3">
+            <p className="text-xl font-bold gold-text">{d.team.total_team}</p>
+            <p className="text-xs text-muted">Total Team</p>
           </div>
-          <div className="mt-3 bg-white/5 rounded-lg p-3 text-center">
+          <div className="bg-white/5 rounded-lg p-3">
             <p className="text-lg font-bold">{usdt(d.team.team_sales)}</p>
             <p className="text-xs text-muted">Team Sales Volume</p>
           </div>
