@@ -17,7 +17,7 @@ interface Report {
   total_group_sales: number;
   total_group_members: number;
 }
-interface FromUser { id: number; username: string; name?: string }
+interface FromUser { id: number; username: string; name?: string; rank?: { name: string } }
 interface SponsorLog { id: number; from_user?: FromUser; level: number; percent: string; amount: string; created_at: string; }
 interface MatchLog { id: number; from_user?: FromUser; upline_rank: string; applied_percent: string; amount: string; created_at: string; }
 interface RoiLog { id: number; amount: string; roi_date: string; package?: { id: number; principal: string } }
@@ -160,11 +160,11 @@ export default function ReportsPage() {
         <div className="glass p-5">
           <h3 className="font-semibold mb-1">Matching Bonus</h3>
           <p className="text-sm text-muted mb-4">Differential override on each downline&apos;s daily ROI.</p>
-          <ReportTable head={["From Member", "Their Rank", "%", "Amount", "Date"]} loading={loading} empty={matching.length === 0}>
+          <ReportTable head={["From Member", "Member Rank", "%", "Amount", "Date"]} loading={loading} empty={matching.length === 0}>
             {matching.map((x) => (
               <tr key={x.id} className="border-t border-[var(--line)]">
                 <td className="py-2"><FromCell u={x.from_user} /></td>
-                <td className="text-xs text-muted">{x.upline_rank}</td>
+                <td className="text-xs text-muted">{x.from_user?.rank?.name ?? "—"}</td>
                 <td>{Number(x.applied_percent)}%</td>
                 <td className="gold-text font-medium">{usdt(x.amount)}</td>
                 <td className="text-muted text-xs">{shortDate(x.created_at)}</td>

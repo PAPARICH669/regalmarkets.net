@@ -25,6 +25,7 @@ class LogController extends Controller
     public function matching(Request $request)
     {
         return MatchingBonusLog::where('to_user_id', $request->user()->id)
-            ->with('fromUser:id,username,name')->latest()->paginate(25);
+            ->with(['fromUser:id,username,name,rank_id', 'fromUser.rank:id,name'])
+            ->latest()->paginate(25);
     }
 }
