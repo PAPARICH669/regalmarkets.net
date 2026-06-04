@@ -40,7 +40,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   if (!user) return null;
 
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-screen flex relative">
+      {/* Background logo watermark */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src="/logo.png"
+        alt=""
+        aria-hidden="true"
+        className="pointer-events-none select-none fixed inset-0 m-auto w-[min(70vw,640px)] max-w-none opacity-[0.04] z-0"
+      />
+
       {/* Sidebar */}
       <aside className={`fixed lg:static z-50 w-64 h-screen lg:h-auto lg:min-h-screen bg-[var(--surface)] border-r border-[var(--line)] flex flex-col transition-transform ${open ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}`}>
         <div className="h-16 flex items-center px-5 border-b border-[var(--line)]">
@@ -72,7 +81,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {open && <div className="fixed inset-0 bg-black/60 z-40 lg:hidden" onClick={() => setOpen(false)} />}
 
       {/* Main */}
-      <div className="flex-1 min-w-0">
+      <div className="flex-1 min-w-0 relative z-10">
         <header className="h-16 border-b border-[var(--line)] flex items-center justify-between px-5 sticky top-0 bg-[rgba(4,16,42,0.85)] backdrop-blur-md z-30">
           <button className="lg:hidden btn-ghost p-2" onClick={() => setOpen(true)}><Menu size={18} /></button>
         </header>
