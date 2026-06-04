@@ -5,8 +5,7 @@ import { Crown, Mail, CalendarDays } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { shortDate } from "@/lib/format";
 
-// Rank name -> logo file in /public/ranks. Save the artwork with these names:
-//   user.png, fan.png, senior.png, team-leader.png, group-leader.png
+// Rank name -> logo file in /public/ranks (user/fan/senior/team-leader/group-leader .jpg).
 function rankSlug(rank?: string) {
   return (rank || "USER").toLowerCase().replace(/\s+/g, "-");
 }
@@ -16,7 +15,7 @@ export default function RankCard() {
   const [imgOk, setImgOk] = useState(true);
   if (!user) return null;
 
-  const logo = `/ranks/${rankSlug(user.rank)}.png`;
+  const logo = `/ranks/${rankSlug(user.rank)}.jpg`;
 
   return (
     <div className="glass p-6 flex items-center gap-5">
@@ -28,7 +27,7 @@ export default function RankCard() {
             src={logo}
             alt={`${user.rank} rank`}
             onError={() => setImgOk(false)}
-            className="w-20 h-20 sm:w-24 sm:h-24 object-contain drop-shadow-[0_2px_10px_rgba(201,162,39,0.35)]"
+            className="w-20 h-20 sm:w-24 sm:h-24 object-cover rounded-xl border border-gold-light/20 drop-shadow-[0_2px_10px_rgba(201,162,39,0.35)]"
           />
         ) : (
           <span className="inline-grid place-items-center w-20 h-20 rounded-full gold-gradient text-black">
