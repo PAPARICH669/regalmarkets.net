@@ -14,7 +14,7 @@ function RegisterForm() {
 
   const [form, setForm] = useState({
     username: "", email: "", phone: "", password: "", password_confirmation: "",
-    referral_code: "", wallet_address: "",
+    referral_code: "",
   });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -76,16 +76,9 @@ function RegisterForm() {
                 onChange={(e) => setForm({ ...form, password_confirmation: e.target.value })} required />
             </div>
           </div>
-          <div>
-            <label className="text-sm text-muted">Sponsor referral code {form.referral_code && <span className="text-gold-light">(applied)</span>}</label>
-            <input className="input-field mt-1" value={form.referral_code}
-              onChange={(e) => setForm({ ...form, referral_code: e.target.value })} placeholder="Optional" />
-          </div>
-          <div>
-            <label className="text-sm text-muted">USDT wallet address</label>
-            <input className="input-field mt-1" value={form.wallet_address}
-              onChange={(e) => setForm({ ...form, wallet_address: e.target.value })} placeholder="Optional (for withdrawals)" />
-          </div>
+          {form.referral_code && (
+            <p className="text-xs text-gold-light">Sponsor referral applied ✓</p>
+          )}
           <button disabled={loading} className="btn-gold w-full py-2.5">
             {loading ? "Creating…" : "Create Account"}
           </button>
