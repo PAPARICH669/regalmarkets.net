@@ -8,7 +8,7 @@ import api, { apiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import Logo from "@/components/Logo";
 
-interface Maint { active: boolean; window_start: string; window_end: string; manual?: boolean; }
+interface Maint { active: boolean; window_start: string; window_end: string; manual?: boolean; ends_at?: string | null; }
 
 // "07:01" -> "07:00" (the displayed maintenance period ends one minute before login re-opens)
 function minusOneMinute(hhmm: string): string {
@@ -17,7 +17,29 @@ function minusOneMinute(hhmm: string): string {
   return `${String(Math.floor(t / 60)).padStart(2, "0")}:${String(t % 60).padStart(2, "0")}`;
 }
 
+function pad(n: number) { return String(n).padStart(2, "0"); }
+
 function MaintenanceNotice({ m }: { m: Maint }) {
+  const [left, setLeft] = useState<number>(() =>
+    m.ends_at ? Math.max(0, Math.floor((new Date(m.ends_at).getTime() - Date.now()) / 1000)) : 0
+  );
+
+  useEffect(() => {
+    if (!m.ends_at) return;
+    const tick = () => {
+      const s = Math.max(0, Math.floor((new Date(m.ends_at as string).getTime() - Date.now()) / 1000));
+      setLeft(s);
+      if (s <= 0) window.location.reload(); // window ended → refresh so login opens
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [m.ends_at]);
+
+  const h = Math.floor(left / 3600);
+  const mins = Math.floor((left % 3600) / 60);
+  const secs = left % 60;
+
   return (
     <div className="mb-5 rounded-xl border border-gold-light/30 bg-gold-light/5 p-4 text-center">
       <div className="flex items-center justify-center gap-2 text-gold-light font-semibold">
@@ -27,7 +49,15 @@ function MaintenanceNotice({ m }: { m: Maint }) {
         Login is disabled during daily maintenance{" "}
         <b className="text-foreground">{m.window_start} – {minusOneMinute(m.window_end)}</b>.
       </p>
-      <p className="mt-1 text-sm text-muted">
+      {m.ends_at && (
+        <>
+          <p className="mt-3 text-xs text-muted uppercase tracking-wide">Login opens in</p>
+          <p className="mt-1 text-2xl font-bold gold-text tabular-nums">
+            {pad(h)}:{pad(mins)}:{pad(secs)}
+          </p>
+        </>
+      )}
+      <p className="mt-2 text-sm text-muted">
         You can log in again at <b className="text-gold-light">{m.window_end}</b>.
       </p>
     </div>
