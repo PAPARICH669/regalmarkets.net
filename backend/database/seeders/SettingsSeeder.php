@@ -19,6 +19,7 @@ class SettingsSeeder extends Seeder
         $settings->set('min_transfer', config('regal.limits.min_transfer'));
         $settings->set('min_reinvest', config('regal.limits.min_reinvest'));
         $settings->set('withdrawal_fee_percent', config('regal.withdrawal.fee_percent'));
+        $settings->set('transfer_fee_percent', config('regal.transfer.fee_percent'));
         $settings->set('sponsor_bonus_percents', config('regal.sponsor_bonus_percents'));
         $settings->set('match_percents', config('regal.match_percents'));
         $settings->set('maintenance_start', config('regal.maintenance.start'));

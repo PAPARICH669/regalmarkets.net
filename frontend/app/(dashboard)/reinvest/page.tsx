@@ -25,14 +25,14 @@ export default function ReinvestPage() {
       <h1 className="text-2xl font-bold">Reinvest</h1>
       <div className="glass p-6">
         <span className="inline-grid place-items-center w-12 h-12 rounded-xl gold-gradient text-black mb-4"><Repeat size={22} /></span>
-        <h3 className="font-semibold">Compound your earnings</h3>
+        <h3 className="font-semibold">Compound your capital</h3>
         <p className="text-sm text-muted mt-1">
-          Reinvest from your E-WALLET (min 10 USDT) to activate a fresh 200% package.
-          Funds route through your A-WALLET and lock into the new package.
+          Reinvest from your A-WALLET (min 10 USDT) to activate a fresh 200% package.
+          To use earnings, first transfer E-WALLET → A-WALLET (fee applies) on the Transfer page.
         </p>
         <div className="mt-4 bg-black/30 rounded-lg p-3 text-sm flex justify-between">
-          <span className="text-muted">E-WALLET balance</span>
-          <span className="gold-text font-semibold">{usdt(user?.wallet_e ?? 0)}</span>
+          <span className="text-muted">A-WALLET balance</span>
+          <span className="gold-text font-semibold">{usdt(user?.wallet_a ?? 0)}</span>
         </div>
 
         {msg && <div className="mt-4 text-sm text-green-400 bg-green-500/10 border border-green-500/30 rounded-lg px-4 py-3">{msg}</div>}

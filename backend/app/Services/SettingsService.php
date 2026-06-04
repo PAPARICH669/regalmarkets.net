@@ -26,6 +26,7 @@ class SettingsService
             'min_reinvest'           => ['regal.limits.min_reinvest', 'number'],
             'withdrawal_fee'         => ['regal.withdrawal.fee_flat', 'number'],
             'withdrawal_max_per_day' => ['regal.withdrawal.max_per_day', 'number'],
+            'transfer_fee_percent'   => ['regal.transfer.fee_percent', 'number'],
             'sponsor_bonus_percents' => ['regal.sponsor_bonus_percents', 'json'],
             'match_percents'         => ['regal.match_percents', 'json'],
             'maintenance_start'      => ['regal.maintenance.start', 'string'],

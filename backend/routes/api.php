@@ -76,6 +76,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/withdrawals', [WithdrawalController::class, 'store'])->middleware('kyc');
 
         Route::get('/transfers', [TransferController::class, 'index']);
+        Route::get('/transfers/config', [TransferController::class, 'config']);
         Route::post('/transfers/self', [TransferController::class, 'self']);
         Route::post('/transfers/member', [TransferController::class, 'member']);
 

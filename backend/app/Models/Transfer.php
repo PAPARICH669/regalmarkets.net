@@ -10,7 +10,9 @@ class Transfer extends Model
     protected $guarded = [];
 
     protected $casts = [
-        'amount' => 'decimal:8',
+        'amount'     => 'decimal:8',
+        'fee'        => 'decimal:8',
+        'net_amount' => 'decimal:8',
     ];
 
     public function fromUser(): BelongsTo

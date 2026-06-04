@@ -25,6 +25,7 @@ export default function AdminSettings() {
         min_reinvest: Number(s?.min_reinvest),
         withdrawal_fee: Number(s?.withdrawal_fee),
         withdrawal_max_per_day: Number(s?.withdrawal_max_per_day),
+        transfer_fee_percent: Number(s?.transfer_fee_percent),
         maintenance_start: String(s?.maintenance_start ?? "00:00"),
         maintenance_end: String(s?.maintenance_end ?? "07:00"),
       };
@@ -40,6 +41,7 @@ export default function AdminSettings() {
     ["roi_return_multiple", "Return Multiple (x)", "number"],
     ["withdrawal_fee", "Withdrawal Fee (USDT flat)", "number"],
     ["withdrawal_max_per_day", "Withdrawals per day", "number"],
+    ["transfer_fee_percent", "Transfer Fee E→A (%)", "number"],
     ["min_deposit", "Min Deposit", "number"],
     ["min_withdrawal", "Min Withdrawal", "number"],
     ["max_withdrawal_daily", "Max per Withdrawal", "number"],

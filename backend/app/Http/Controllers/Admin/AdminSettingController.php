@@ -28,6 +28,7 @@ class AdminSettingController extends Controller
             'min_reinvest'           => ['nullable', 'numeric', 'min:0'],
             'withdrawal_fee'         => ['nullable', 'numeric', 'min:0'],
             'withdrawal_max_per_day' => ['nullable', 'integer', 'min:1', 'max:50'],
+            'transfer_fee_percent'   => ['nullable', 'numeric', 'min:0', 'max:100'],
             'sponsor_bonus_percents' => ['nullable', 'array'],
             'match_percents'         => ['nullable', 'array'],
             'maintenance_start'      => ['nullable', 'string'],

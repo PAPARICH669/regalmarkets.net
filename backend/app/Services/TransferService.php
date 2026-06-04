@@ -20,9 +20,18 @@ class TransferService
     {
         $amount = $this->validateAmount($amount);
 
-        return DB::transaction(function () use ($user, $amount) {
-            $this->wallets->debit($user, 'E', $amount, 'transfer_out', null, ['flow' => 'E->A self']);
-            $this->wallets->credit($user, 'A', $amount, 'transfer_in', null, ['flow' => 'E->A self']);
+        // Charge a percentage fee on E-WALLET → A-WALLET transfers. The full
+        // amount leaves E-WALLET; only the net (amount − fee) lands in A-WALLET.
+        $feePct = (float) $this->settings->get('transfer_fee_percent');
+        $fee    = bcdiv(bcmul($amount, (string) $feePct, 10), '100', 8);
+        $net    = bcsub($amount, $fee, 8);
+        if (bccomp($net, '0', 8) <= 0) {
+            throw ValidationException::withMessages(['amount' => 'Amount is too small after the transfer fee.']);
+        }
+
+        return DB::transaction(function () use ($user, $amount, $fee, $net, $feePct) {
+            $this->wallets->debit($user, 'E', $amount, 'transfer_out', null, ['flow' => 'E->A self', 'fee' => $fee, 'fee_percent' => $feePct]);
+            $this->wallets->credit($user, 'A', $net, 'transfer_in', null, ['flow' => 'E->A self', 'fee' => $fee, 'fee_percent' => $feePct]);
 
             return Transfer::create([
                 'from_user_id' => $user->id,
@@ -30,6 +39,8 @@ class TransferService
                 'from_wallet'  => 'E',
                 'to_wallet'    => 'A',
                 'amount'       => $amount,
+                'fee'          => $fee,
+                'net_amount'   => $net,
                 'type'         => 'internal_self',
             ]);
         });
@@ -60,6 +71,8 @@ class TransferService
                 'from_wallet'  => 'A',
                 'to_wallet'    => 'A',
                 'amount'       => $amount,
+                'fee'          => 0,
+                'net_amount'   => $amount,
                 'type'         => 'member_to_member',
             ]);
         });

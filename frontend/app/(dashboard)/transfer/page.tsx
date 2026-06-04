@@ -7,17 +7,24 @@ import { useAuth } from "@/lib/auth";
 
 interface Transfer { id: number; from_user?: { username: string }; to_user?: { username: string } | null; from_wallet: string; to_wallet: string; amount: string; type: string; created_at: string; }
 
+interface Cfg { min: number; fee_percent: number; }
+
 export default function TransferPage() {
-  const refresh = useAuth((s) => s.refresh);
+  const { user, refresh } = useAuth();
   const [tab, setTab] = useState<"self" | "member">("self");
   const [selfAmount, setSelfAmount] = useState("");
   const [to, setTo] = useState(""); const [memberAmount, setMemberAmount] = useState("");
   const [msg, setMsg] = useState(""); const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [history, setHistory] = useState<Transfer[]>([]);
+  const [cfg, setCfg] = useState<Cfg | null>(null);
 
   const load = () => api.get("/transfers").then((r) => setHistory(r.data.data));
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); api.get("/transfers/config").then((r) => setCfg(r.data)); }, []);
+
+  const feePct = cfg?.fee_percent ?? 0;
+  const selfFee = selfAmount ? (Number(selfAmount) * feePct) / 100 : 0;
+  const selfNet = selfAmount ? Math.max(Number(selfAmount) - selfFee, 0) : 0;
 
   async function selfTransfer(e: React.FormEvent) {
     e.preventDefault(); setMsg(""); setError(""); setLoading(true);
@@ -45,13 +52,30 @@ export default function TransferPage() {
 
           {tab === "self" ? (
             <form onSubmit={selfTransfer} className="space-y-4">
-              <p className="text-sm text-muted">Move earnings from E-WALLET to A-WALLET (min 10 USDT). A → E is not allowed.</p>
+              <p className="text-sm text-muted">
+                Move earnings from E-WALLET to A-WALLET (min {cfg ? usdt(cfg.min) : "…"}). A → E is not allowed.
+                A <b className="text-foreground">{feePct}% fee</b> applies and only A-WALLET funds can be reinvested.
+              </p>
+              <div className="flex items-center justify-between bg-black/30 rounded-lg p-3 text-sm">
+                <span className="text-muted">E-WALLET balance</span>
+                <span className="gold-text font-semibold">{usdt(user?.wallet_e ?? 0)}</span>
+              </div>
               <input type="number" step="0.01" className="input-field" placeholder="Amount (USDT)" value={selfAmount} onChange={(e) => setSelfAmount(e.target.value)} required />
+              {selfAmount && cfg && (
+                <div className="text-sm bg-black/30 rounded-lg p-3 space-y-1">
+                  <div className="flex justify-between"><span className="text-muted">Fee ({feePct}%)</span><span>{usdt(selfFee)}</span></div>
+                  <div className="flex justify-between font-semibold"><span>A-WALLET receives</span><span className="gold-text">{usdt(selfNet)}</span></div>
+                </div>
+              )}
               <button disabled={loading} className="btn-gold w-full py-2.5">Transfer to A-WALLET</button>
             </form>
           ) : (
             <form onSubmit={memberTransfer} className="space-y-4">
-              <p className="text-sm text-muted">Send A-WALLET funds to another member (min 10 USDT).</p>
+              <p className="text-sm text-muted">Send A-WALLET funds to another member (min {cfg ? usdt(cfg.min) : "…"}). E-WALLET cannot be sent to other members.</p>
+              <div className="flex items-center justify-between bg-black/30 rounded-lg p-3 text-sm">
+                <span className="text-muted">A-WALLET balance</span>
+                <span className="gold-text font-semibold">{usdt(user?.wallet_a ?? 0)}</span>
+              </div>
               <input className="input-field" placeholder="Recipient username or email" value={to} onChange={(e) => setTo(e.target.value)} required />
               <input type="number" step="0.01" className="input-field" placeholder="Amount (USDT)" value={memberAmount} onChange={(e) => setMemberAmount(e.target.value)} required />
               <button disabled={loading} className="btn-gold w-full py-2.5">Send Transfer</button>

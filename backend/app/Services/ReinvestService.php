@@ -8,8 +8,9 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 /**
- * Reinvest from E-WALLET (earnings) into a new 200% package. Funds pass through
- * A-WALLET (E → A) before being locked into the package, per the wallet rules.
+ * Reinvest into a new 200% package using A-WALLET (capital) funds ONLY.
+ * Earnings in E-WALLET must first be moved to A-WALLET via a self transfer
+ * (E → A, subject to the transfer fee) before they can be reinvested.
  */
 class ReinvestService
 {
@@ -27,12 +28,7 @@ class ReinvestService
         }
         $amount = number_format((float) $amount, 8, '.', '');
 
-        return DB::transaction(function () use ($user, $amount) {
-            // E → A, then activate (which debits A and locks into the package)
-            $this->wallets->debit($user, 'E', $amount, 'transfer_out', null, ['flow' => 'reinvest E->A']);
-            $this->wallets->credit($user, 'A', $amount, 'transfer_in', null, ['flow' => 'reinvest E->A']);
-
-            return $this->investment->activate($user, $amount, 'reinvest');
-        });
+        // activate() debits A-WALLET and locks the capital into the new package.
+        return DB::transaction(fn () => $this->investment->activate($user, $amount, 'reinvest'));
     }
 }

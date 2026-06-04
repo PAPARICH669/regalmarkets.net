@@ -40,6 +40,13 @@ return [
         'processing_hours' => 72,    // informational SLA shown to users
     ],
 
+    // Transfer. E-WALLET → A-WALLET (self) is the only E-WALLET transfer allowed,
+    // and it is charged a percentage fee. Member-to-member uses A-WALLET only;
+    // E-WALLET can never be sent to another member.
+    'transfer' => [
+        'fee_percent' => 10.0, // % fee on E-WALLET → A-WALLET self transfers
+    ],
+
     // Unilevel sponsor bonus — paid instantly on deposit activation, into E-WALLET.
     // Index 0 => level 1.
     'sponsor_bonus_percents' => [10, 5, 3, 2, 1],
