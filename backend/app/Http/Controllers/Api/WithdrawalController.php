@@ -27,6 +27,13 @@ class WithdrawalController extends Controller
 
         $withdrawal = $this->withdrawals->request($request->user(), $data['amount'], $data['wallet_address']);
 
+        app(\App\Services\TelegramService::class)->notify('🏧 New Withdrawal Request', [
+            'User'    => '@' . $request->user()->username,
+            'Amount'  => number_format((float) $withdrawal->amount, 2) . ' USDT',
+            'Net'     => number_format((float) $withdrawal->net_amount, 2) . ' USDT',
+            'Address' => $withdrawal->wallet_address,
+        ]);
+
         return response()->json([
             'message'    => 'Withdrawal requested. Processing within 72 working hours.',
             'withdrawal' => $withdrawal,

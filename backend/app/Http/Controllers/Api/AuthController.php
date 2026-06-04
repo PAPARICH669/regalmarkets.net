@@ -53,6 +53,13 @@ class AuthController extends Controller
 
         $this->sendVerificationEmail($user, $code);
 
+        app(\App\Services\TelegramService::class)->notify('🆕 New Registration', [
+            'Username' => $user->username,
+            'Email'    => $user->email,
+            'Phone'    => $user->phone,
+            'Sponsor'  => $sponsor?->username ?? '—',
+        ]);
+
         // No token until the email is verified.
         return response()->json([
             'message'             => 'Registration successful. Enter the 6-digit code sent to your email to activate your account.',

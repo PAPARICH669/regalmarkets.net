@@ -33,6 +33,12 @@ class DepositController extends Controller
 
         $deposit = $this->deposits->request($request->user(), $data['amount'], $data['txid'] ?? null, $proofPath);
 
+        app(\App\Services\TelegramService::class)->notify('💰 New Deposit Request', [
+            'User'   => '@' . $request->user()->username,
+            'Amount' => number_format((float) $deposit->amount, 2) . ' USDT',
+            'TXID'   => $deposit->txid ?? '—',
+        ]);
+
         return response()->json([
             'message' => 'Deposit submitted and pending admin approval.',
             'deposit' => $deposit,

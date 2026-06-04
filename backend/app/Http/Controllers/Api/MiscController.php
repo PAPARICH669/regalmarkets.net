@@ -91,6 +91,12 @@ class MiscController extends Controller
             'kyc_note'          => null,
         ]);
 
+        app(\App\Services\TelegramService::class)->notify('🪪 KYC Submitted', [
+            'User'    => '@' . $user->username,
+            'ID Type' => strtoupper($data['id_type']),
+            'ID No'   => $data['id_number'],
+        ]);
+
         return response()->json(['message' => 'KYC submitted. An admin will review it shortly.']);
     }
 
