@@ -8,7 +8,6 @@ import {
   Network, Crown, Megaphone, LogOut, Menu, X, Wallet, UserCog, FileBarChart,
 } from "lucide-react";
 import Logo from "@/components/Logo";
-import RankBadge from "@/components/RankBadge";
 import { useAuth } from "@/lib/auth";
 
 const NAV = [
@@ -76,13 +75,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <div className="flex-1 min-w-0">
         <header className="h-16 border-b border-[var(--line)] flex items-center justify-between px-5 sticky top-0 bg-[rgba(4,16,42,0.85)] backdrop-blur-md z-30">
           <button className="lg:hidden btn-ghost p-2" onClick={() => setOpen(true)}><Menu size={18} /></button>
-          <div className="flex items-center gap-3 ml-auto">
-            <div className="text-right">
-              <p className="text-sm font-semibold leading-tight">{user.name}</p>
-              <p className="text-xs text-muted leading-tight">@{user.username}</p>
-            </div>
-            <RankBadge rank={user.rank} />
-          </div>
         </header>
         <div className="p-5 max-w-7xl mx-auto">{children}</div>
       </div>
