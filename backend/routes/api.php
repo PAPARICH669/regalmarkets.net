@@ -33,7 +33,9 @@ Route::get('/ranks', [MiscController::class, 'ranks']);
 
 Route::middleware('throttle:10,1')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
-    Route::post('/login', [AuthController::class, 'login'])->middleware('maintenance');
+    // Maintenance gating for login is handled inside AuthController@login so that
+    // admins can always log in (members are blocked during the window).
+    Route::post('/login', [AuthController::class, 'login']);
     Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
     Route::post('/reset-password', [AuthController::class, 'resetPassword']);
     Route::post('/verify-email', [AuthController::class, 'verifyEmail']);

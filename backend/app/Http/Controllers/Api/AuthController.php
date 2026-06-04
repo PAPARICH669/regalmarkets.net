@@ -147,6 +147,14 @@ class AuthController extends Controller
             throw ValidationException::withMessages(['login' => 'Invalid credentials.']);
         }
 
+        // Members cannot log in during the maintenance window; admins always can.
+        if (! $user->is_admin && app(\App\Services\MaintenanceService::class)->isActive()) {
+            return response()->json([
+                'message'     => 'System is under maintenance. Login re-opens at the end of the window.',
+                'maintenance' => app(\App\Services\MaintenanceService::class)->status(),
+            ], 503);
+        }
+
         if (! $user->email_verified_at) {
             // Re-send a fresh code and tell the frontend to show the verify screen.
             $code = (string) random_int(100000, 999999);
