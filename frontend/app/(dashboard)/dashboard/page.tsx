@@ -38,7 +38,7 @@ export default function DashboardPage() {
       <div className="flex items-start justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold">
-            Welcome back, <span className="gold-text">{user?.name || user?.username}</span>
+            Welcome back, <span className="gold-text">{user?.nickname || user?.username}</span>
           </h1>
           <p className="text-muted text-sm">
             @{user?.username} · Your investment & earnings at a glance.
