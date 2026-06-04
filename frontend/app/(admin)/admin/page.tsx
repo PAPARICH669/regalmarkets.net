@@ -5,6 +5,7 @@ import {
   Users, ArrowDownToLine, ArrowUpFromLine, AlertTriangle, Layers, Gift, Coins, Activity,
 } from "lucide-react";
 import StatCard from "@/components/StatCard";
+import AdminRegisterLink from "@/components/AdminRegisterLink";
 import api from "@/lib/api";
 import { usdt } from "@/lib/format";
 
@@ -23,6 +24,7 @@ export default function AdminOverview() {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">Admin Overview</h1>
+      <AdminRegisterLink />
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard label="Total Members" value={s.members} icon={<Users size={18} />} accent sub={`${s.frozen_members} frozen`} />
         <StatCard label="Total Deposits" value={usdt(s.total_deposits)} icon={<ArrowDownToLine size={18} />} sub={`${s.pending_deposits} pending`} />
