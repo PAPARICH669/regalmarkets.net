@@ -1,11 +1,38 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { Wrench } from "lucide-react";
 import api, { apiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import Logo from "@/components/Logo";
+
+interface Maint { active: boolean; window_start: string; window_end: string; manual?: boolean; }
+
+// "07:01" -> "07:00" (the displayed maintenance period ends one minute before login re-opens)
+function minusOneMinute(hhmm: string): string {
+  const [h, m] = (hhmm || "00:00").split(":").map(Number);
+  const t = (h * 60 + m + 24 * 60 - 1) % (24 * 60);
+  return `${String(Math.floor(t / 60)).padStart(2, "0")}:${String(t % 60).padStart(2, "0")}`;
+}
+
+function MaintenanceNotice({ m }: { m: Maint }) {
+  return (
+    <div className="mb-5 rounded-xl border border-gold-light/30 bg-gold-light/5 p-4 text-center">
+      <div className="flex items-center justify-center gap-2 text-gold-light font-semibold">
+        <Wrench size={18} /> System Maintenance
+      </div>
+      <p className="mt-2 text-sm text-muted">
+        Login is disabled during daily maintenance{" "}
+        <b className="text-foreground">{m.window_start} – {minusOneMinute(m.window_end)}</b>.
+      </p>
+      <p className="mt-1 text-sm text-muted">
+        You can log in again at <b className="text-gold-light">{m.window_end}</b>.
+      </p>
+    </div>
+  );
+}
 
 export default function LandingLoginPage() {
   const router = useRouter();
@@ -13,6 +40,14 @@ export default function LandingLoginPage() {
   const [form, setForm] = useState({ login: "", password: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [maint, setMaint] = useState<Maint | null>(null);
+
+  // Show the maintenance banner immediately if the system is in the window.
+  useEffect(() => {
+    api.get("/maintenance-status")
+      .then((r) => { if (r.data?.active) setMaint(r.data); })
+      .catch(() => {});
+  }, []);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -23,9 +58,15 @@ export default function LandingLoginPage() {
       setAuth(data.token, data.user);
       router.push(data.user.is_admin ? "/admin" : "/dashboard");
     } catch (err) {
-      const e = err as { response?: { data?: { needs_verification?: boolean; email?: string } } };
+      const e = err as { response?: { status?: number; data?: { needs_verification?: boolean; email?: string; maintenance?: Maint } } };
       if (e.response?.data?.needs_verification) {
         router.push(`/verify-email?email=${encodeURIComponent(e.response.data.email || form.login)}`);
+        return;
+      }
+      // Maintenance block (members only) — show the notice instead of a plain error.
+      if (e.response?.status === 503 && e.response.data?.maintenance) {
+        setMaint(e.response.data.maintenance);
+        setError("");
         return;
       }
       setError(apiError(err, "Login failed."));
@@ -41,6 +82,8 @@ export default function LandingLoginPage() {
       </div>
 
       <div className="glass p-8 animate-fade-up">
+        {maint && <MaintenanceNotice m={maint} />}
+
         {error && (
           <div className="mb-4 text-sm text-red-400 bg-red-500/10 border border-red-500/30 rounded-lg px-4 py-3">
             {error}
