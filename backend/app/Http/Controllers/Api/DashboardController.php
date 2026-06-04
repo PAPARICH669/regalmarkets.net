@@ -24,7 +24,11 @@ class DashboardController extends Controller
         $totalReturn  = (float) $packages->sum('total_return');
         $totalPaid    = (float) $packages->sum('total_paid');
         $remainingRoi = max($totalReturn - $totalPaid, 0);
-        $dailyRoi     = (float) $activePackages->sum('daily_amount');
+
+        // Daily ROI = current (admin-set, variable) daily % × active principal.
+        $dailyPercent    = (float) app(\App\Services\SettingsService::class)->get('roi_daily_percent');
+        $activePrincipal = (float) $activePackages->sum('principal');
+        $dailyRoi        = round($dailyPercent / 100 * $activePrincipal, 8);
 
         $sponsorBonus  = (float) SponsorBonusLog::where('to_user_id', $user->id)->sum('amount');
         $matchingBonus = (float) MatchingBonusLog::where('to_user_id', $user->id)->sum('amount');

@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   LayoutDashboard, ArrowDownToLine, ArrowUpFromLine, Users, Settings,
-  Megaphone, Wrench, Layers, FileText, LogOut, Menu, ShieldCheck,
+  Megaphone, Wrench, Layers, FileText, LogOut, Menu, ShieldCheck, TrendingUp,
 } from "lucide-react";
 import Logo from "@/components/Logo";
 import { useAuth } from "@/lib/auth";
@@ -15,6 +15,7 @@ const NAV = [
   { href: "/admin/deposits", label: "Deposits", icon: ArrowDownToLine },
   { href: "/admin/withdrawals", label: "Withdrawals", icon: ArrowUpFromLine },
   { href: "/admin/members", label: "Members", icon: Users },
+  { href: "/admin/roi", label: "Daily ROI", icon: TrendingUp },
   { href: "/admin/logs", label: "Bonus Logs", icon: Layers },
   { href: "/admin/settings", label: "Settings", icon: Settings },
   { href: "/admin/announcements", label: "Announcements", icon: Megaphone },

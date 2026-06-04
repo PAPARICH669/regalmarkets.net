@@ -8,27 +8,39 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Daily ROI engine. For each active package, pays min(daily_amount, remaining)
- * into E-WALLET, logs it (idempotent per package+date), advances total_paid,
- * completes the package at 200%, then fires the matching bonus rollup.
+ * Daily ROI engine.
+ *
+ * The daily profit rate is VARIABLE and set manually by the admin (the
+ * `roi_daily_percent` setting, or a per-run override). Each active package pays:
+ *
+ *     payout = min( dailyPercent% × principal , remaining )
+ *
+ * into E-WALLET, logs it (idempotent per package+date), advances total_paid, and
+ * the remaining ROI (total_return − total_paid) shrinks until the 200% cap, at
+ * which point the package completes. Each payout fires the matching rollup.
  */
 class RoiService
 {
     public function __construct(
         protected WalletService $wallets,
         protected MatchingBonusService $matching,
+        protected SettingsService $settings,
     ) {}
 
-    /** Run ROI for a given date (defaults to today). Returns summary stats. */
-    public function runForDate(?Carbon $date = null): array
+    /**
+     * Run ROI for a date (default today). $percent overrides the configured
+     * daily rate for this run only (admin manual rate). Returns summary stats.
+     */
+    public function runForDate(?Carbon $date = null, ?float $percent = null): array
     {
-        $date = ($date ?? Carbon::today())->toDateString();
+        $date    = ($date ?? Carbon::today())->toDateString();
+        $percent = $percent ?? (float) $this->settings->get('roi_daily_percent');
 
-        $stats = ['paid' => 0, 'amount' => '0', 'completed' => 0, 'skipped' => 0];
+        $stats = ['paid' => 0, 'amount' => '0', 'completed' => 0, 'skipped' => 0, 'percent' => $percent];
 
-        InvestmentPackage::active()->with('user')->chunkById(200, function ($packages) use ($date, &$stats) {
+        InvestmentPackage::active()->with('user')->chunkById(200, function ($packages) use ($date, $percent, &$stats) {
             foreach ($packages as $package) {
-                $result = $this->payPackage($package, $date);
+                $result = $this->payPackage($package, $date, $percent);
                 if ($result === null) {
                     $stats['skipped']++;
                     continue;
@@ -45,7 +57,7 @@ class RoiService
     }
 
     /** @return array{amount:string,completed:bool}|null  null when nothing paid */
-    protected function payPackage(InvestmentPackage $package, string $date): ?array
+    protected function payPackage(InvestmentPackage $package, string $date, float $percent): ?array
     {
         // Idempotency guard outside the transaction (fast path)
         $already = RoiLog::where('investment_package_id', $package->id)
@@ -54,7 +66,7 @@ class RoiService
             return null;
         }
 
-        return DB::transaction(function () use ($package, $date) {
+        return DB::transaction(function () use ($package, $date, $percent) {
             $package = InvestmentPackage::lockForUpdate()->find($package->id);
             if (! $package || $package->status !== 'active') {
                 return null;
@@ -66,9 +78,13 @@ class RoiService
                 return null;
             }
 
-            $payout = bccomp($package->daily_amount, $remaining, 8) > 0
-                ? $remaining
-                : $package->daily_amount;
+            // Daily profit = manual daily% × principal (capped at the remaining ROI).
+            $dailyAmount = bcdiv(bcmul($package->principal, (string) $percent, 10), '100', 8);
+            $payout = bccomp($dailyAmount, $remaining, 8) > 0 ? $remaining : $dailyAmount;
+
+            if (bccomp($payout, '0', 8) <= 0) {
+                return null;
+            }
 
             $roiLog = RoiLog::create([
                 'investment_package_id' => $package->id,
@@ -79,14 +95,17 @@ class RoiService
 
             $this->wallets->credit($package->user, 'E', $payout, 'roi', $roiLog, [
                 'package_id' => $package->id,
+                'percent'    => $percent,
             ]);
 
             $newPaid    = bcadd($package->total_paid, $payout, 8);
             $isComplete = bccomp($newPaid, $package->total_return, 8) >= 0;
             $package->update([
-                'total_paid'   => $newPaid,
-                'status'       => $isComplete ? 'completed' : 'active',
-                'completed_at' => $isComplete ? now() : null,
+                'total_paid'        => $newPaid,
+                'daily_roi_percent' => $percent,
+                'daily_amount'      => $dailyAmount,
+                'status'            => $isComplete ? 'completed' : 'active',
+                'completed_at'      => $isComplete ? now() : null,
             ]);
 
             // Matching bonus rollup off this ROI payout.

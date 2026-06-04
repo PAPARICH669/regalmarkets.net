@@ -102,6 +102,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/settings', [AdminSettingController::class, 'index']);
         Route::put('/settings', [AdminSettingController::class, 'update']);
 
+        Route::get('/roi/status', [\App\Http\Controllers\Admin\AdminRoiController::class, 'status']);
+        Route::post('/roi/run', [\App\Http\Controllers\Admin\AdminRoiController::class, 'run']);
+
         Route::get('/announcements', [AdminAnnouncementController::class, 'index']);
         Route::post('/announcements', [AdminAnnouncementController::class, 'store']);
         Route::put('/announcements/{announcement}', [AdminAnnouncementController::class, 'update']);
