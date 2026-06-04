@@ -28,8 +28,8 @@ export default function ForgotPasswordPage() {
       <div className="glass p-8 animate-fade-up">
         <h1 className="text-2xl font-bold">Forgot password?</h1>
         <p className="text-muted text-sm mt-1">
-          Submit your account email and our admin will verify and reset your password,
-          then contact you with a new one.
+          Enter your account email and we&apos;ll send you a secure reset link
+          (expires in 60 minutes).
         </p>
 
         {msg && <div className="mt-4 text-sm text-green-400 bg-green-500/10 border border-green-500/30 rounded-lg px-4 py-3">{msg}</div>}
@@ -38,7 +38,7 @@ export default function ForgotPasswordPage() {
         <form onSubmit={submit} className="mt-6 space-y-4">
           <input type="email" className="input-field" placeholder="you@email.com" value={email}
             onChange={(e) => setEmail(e.target.value)} required />
-          <button disabled={loading} className="btn-gold w-full py-2.5">{loading ? "Submitting…" : "Request password reset"}</button>
+          <button disabled={loading} className="btn-gold w-full py-2.5">{loading ? "Sending…" : "Send reset link"}</button>
         </form>
 
         <div className="mt-5 rounded-lg border border-[var(--line)] bg-black/20 p-3 text-xs text-muted">

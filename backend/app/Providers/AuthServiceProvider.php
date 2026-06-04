@@ -25,6 +25,10 @@ class AuthServiceProvider extends ServiceProvider
     {
         $this->registerPolicies();
 
-        //
+        // Password reset emails link to the frontend reset page, not a Laravel route.
+        \Illuminate\Auth\Notifications\ResetPassword::createUrlUsing(function ($user, string $token) {
+            $base = rtrim(config('app.frontend_url', env('FRONTEND_URL', 'http://localhost:3000')), '/');
+            return $base . '/reset-password?token=' . $token . '&email=' . urlencode($user->getEmailForPasswordReset());
+        });
     }
 }

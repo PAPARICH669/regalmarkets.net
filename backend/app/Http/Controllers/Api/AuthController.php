@@ -109,18 +109,38 @@ class AuthController extends Controller
     public function forgotPassword(Request $request)
     {
         $request->validate(['email' => ['required', 'email']]);
-        // In production: dispatch a reset link. Demo returns generic message.
-        return response()->json(['message' => 'If the email exists, a reset link has been sent.']);
+
+        // Token-based reset via Laravel's Password broker. The email link points
+        // to the frontend (see AuthServiceProvider::boot ResetPassword::createUrlUsing).
+        \Illuminate\Support\Facades\Password::sendResetLink($request->only('email'));
+
+        // Always generic to avoid email enumeration.
+        return response()->json(['message' => 'If that email is registered, a password reset link has been sent.']);
     }
 
     public function resetPassword(Request $request)
     {
-        $data = $request->validate([
-            'email'    => ['required', 'email', 'exists:users,email'],
+        $request->validate([
+            'token'    => ['required', 'string'],
+            'email'    => ['required', 'email'],
             'password' => ['required', 'string', 'min:6', 'confirmed'],
         ]);
-        User::where('email', $data['email'])->update(['password' => Hash::make($data['password'])]);
-        return response()->json(['message' => 'Password reset successful.']);
+
+        $status = \Illuminate\Support\Facades\Password::reset(
+            $request->only('email', 'password', 'password_confirmation', 'token'),
+            function (User $user, string $password) {
+                $user->forceFill(['password' => Hash::make($password)])->save();
+                $user->tokens()->delete(); // revoke API tokens after reset
+            }
+        );
+
+        if ($status !== \Illuminate\Support\Facades\Password::PASSWORD_RESET) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'email' => [__($status)],
+            ]);
+        }
+
+        return response()->json(['message' => 'Password has been reset. You can now log in.']);
     }
 
     protected function uniqueReferralCode(): string
