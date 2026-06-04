@@ -118,6 +118,7 @@ export default function ProfilePage() {
           <>
             <p className="text-sm text-muted mt-1">
               Submit your ID (IC / passport / driving license) for manual admin verification.
+              Processed within <b className="text-foreground">72 working hours</b> (Mon–Fri, weekends excluded).
               {status === "rejected" && user?.kyc_note && <span className="text-red-400"> Rejected: {user.kyc_note}</span>}
               {status === "pending" && <span className="text-yellow-400"> Pending admin review…</span>}
             </p>

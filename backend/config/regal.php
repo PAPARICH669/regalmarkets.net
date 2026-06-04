@@ -35,9 +35,11 @@ return [
 
     // Withdrawal
     'withdrawal' => [
-        'fee_flat'         => 2.0,   // flat fee in USDT per withdrawal (configurable by admin)
-        'max_per_day'      => 1,     // max number of withdrawals allowed per day
-        'processing_hours' => 72,    // informational SLA shown to users
+        'fee_flat'         => 2.0,     // flat fee in USDT per withdrawal (configurable by admin)
+        'max_per_day'      => 1,       // max number of withdrawals allowed per day
+        'processing_hours' => 72,      // SLA: processed within 72 WORKING hours (Mon–Fri)
+        'window_start'     => '09:00', // requests only allowed from 09:00 …
+        'window_end'       => '12:00', // … to 12:00 (Asia/Kuala_Lumpur)
     ],
 
     // Transfer. E-WALLET → A-WALLET (self) is the only E-WALLET transfer allowed,

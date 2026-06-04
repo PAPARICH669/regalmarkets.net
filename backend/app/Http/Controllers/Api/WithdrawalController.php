@@ -35,7 +35,7 @@ class WithdrawalController extends Controller
         ]);
 
         return response()->json([
-            'message'    => 'Withdrawal requested. Processing within 72 working hours.',
+            'message'    => 'Withdrawal requested. Processed within 72 working hours (Mon–Fri).',
             'withdrawal' => $withdrawal,
         ], 201);
     }
@@ -43,11 +43,13 @@ class WithdrawalController extends Controller
     public function config()
     {
         return response()->json([
-            'min'         => (float) $this->settings->get('min_withdrawal'),
-            'max_amount'  => (float) $this->settings->get('max_withdrawal_daily'),
-            'fee_flat'    => (float) $this->settings->get('withdrawal_fee'),
-            'max_per_day' => (int) $this->settings->get('withdrawal_max_per_day'),
+            'min'          => (float) $this->settings->get('min_withdrawal'),
+            'max_amount'   => (float) $this->settings->get('max_withdrawal_daily'),
+            'fee_flat'     => (float) $this->settings->get('withdrawal_fee'),
+            'max_per_day'  => (int) $this->settings->get('withdrawal_max_per_day'),
             'processing_hours' => config('regal.withdrawal.processing_hours', 72),
+            'window_start' => $this->settings->get('withdrawal_window_start'),
+            'window_end'   => $this->settings->get('withdrawal_window_end'),
         ]);
     }
 }

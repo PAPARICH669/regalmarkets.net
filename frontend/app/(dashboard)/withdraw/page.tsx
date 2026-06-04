@@ -9,7 +9,7 @@ import StatusPill from "@/components/StatusPill";
 import KycBanner from "@/components/KycBanner";
 
 interface Withdrawal { id: number; amount: string; fee: string; net_amount: string; wallet_address: string; txid: string | null; status: string; created_at: string; }
-interface Cfg { min: number; max_amount: number; fee_flat: number; max_per_day: number; processing_hours: number; }
+interface Cfg { min: number; max_amount: number; fee_flat: number; max_per_day: number; processing_hours: number; window_start: string; window_end: string; }
 
 export default function WithdrawPage() {
   const { user, refresh } = useAuth();
@@ -46,8 +46,13 @@ export default function WithdrawPage() {
           <p className="text-sm text-muted mt-1">
             From E-WALLET. Min {cfg ? usdt(cfg.min) : "…"}, max {cfg ? usdt(cfg.max_amount) : "…"} per withdrawal.
             <b className="text-foreground"> {cfg?.max_per_day ?? 1} withdrawal/day.</b> Flat fee {cfg ? usdt(cfg.fee_flat) : "…"}.
-            Processed within {cfg?.processing_hours ?? 72} working hours.
+            Processed within {cfg?.processing_hours ?? 72} working hours (Mon–Fri, weekends excluded).
           </p>
+          {cfg && (
+            <div className="mt-3 text-sm text-gold-light bg-gold-light/5 border border-gold-light/20 rounded-lg px-4 py-2">
+              ⏰ Withdrawal requests are accepted only between <b>{cfg.window_start}–{cfg.window_end}</b> (Malaysia time).
+            </div>
+          )}
           <div className="mt-4 flex items-center justify-between bg-black/30 rounded-lg p-3">
             <span className="text-sm text-muted flex items-center gap-2"><Coins size={16} className="text-gold-light" /> E-WALLET balance</span>
             <span className="text-lg font-bold gold-text">{usdt(user?.wallet_e ?? 0)}</span>

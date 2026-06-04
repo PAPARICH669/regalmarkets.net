@@ -25,6 +25,20 @@ class WithdrawalService
         $maxPerDay = (int) $this->settings->get('withdrawal_max_per_day'); // withdrawals allowed / day
         $amount    = (float) $amount;
 
+        // Withdrawal requests are only accepted within the daily time window
+        // (e.g. 09:00–12:00 Asia/Kuala_Lumpur).
+        $tz    = config('app.timezone', 'Asia/Kuala_Lumpur');
+        $now   = Carbon::now($tz);
+        $wStart = $this->settings->get('withdrawal_window_start');
+        $wEnd   = $this->settings->get('withdrawal_window_end');
+        $start  = Carbon::createFromFormat('H:i', $wStart, $tz)->setDateFrom($now);
+        $end    = Carbon::createFromFormat('H:i', $wEnd, $tz)->setDateFrom($now);
+        if ($now->lt($start) || $now->gte($end)) {
+            throw ValidationException::withMessages([
+                'amount' => "Withdrawals can only be requested between {$wStart} and {$wEnd} (Malaysia time).",
+            ]);
+        }
+
         if ($amount < $min) {
             throw ValidationException::withMessages(['amount' => "Minimum withdrawal is {$min} USDT."]);
         }
