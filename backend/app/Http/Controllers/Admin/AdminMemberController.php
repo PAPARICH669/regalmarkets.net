@@ -102,4 +102,54 @@ class AdminMemberController extends Controller
             'new_password' => $newPassword,
         ]);
     }
+
+    /** Admin edits a member's email / phone (members cannot change these themselves). */
+    public function editContact(Request $request, User $user)
+    {
+        $data = $request->validate([
+            'email' => ['required', 'email', \Illuminate\Validation\Rule::unique('users', 'email')->ignore($user->id)],
+            'phone' => ['nullable', 'string', 'max:30', \Illuminate\Validation\Rule::unique('users', 'phone')->ignore($user->id)],
+        ]);
+        $user->update($data);
+        $this->audit->log($request, 'member.edit_contact', $user, $data);
+        return response()->json(['message' => 'Contact details updated.', 'user' => $user]);
+    }
+
+    /** List KYC submissions (default pending). */
+    public function kycList(Request $request)
+    {
+        $status = $request->query('status', 'pending');
+        return User::where('kyc_status', $status)
+            ->select('id', 'username', 'name', 'email', 'phone', 'id_type', 'id_number', 'kyc_status', 'kyc_document_path', 'kyc_note', 'updated_at')
+            ->latest('updated_at')->paginate(20);
+    }
+
+    public function verifyKyc(Request $request, User $user)
+    {
+        $user->update([
+            'kyc_status'      => 'verified',
+            'kyc_verified_at' => now(),
+            'kyc_verified_by' => $request->user()->id,
+            'kyc_note'        => null,
+        ]);
+        $this->audit->log($request, 'member.kyc_verify', $user);
+        return response()->json(['message' => 'KYC verified.']);
+    }
+
+    public function rejectKyc(Request $request, User $user)
+    {
+        $data = $request->validate(['note' => ['nullable', 'string', 'max:255']]);
+        $user->update(['kyc_status' => 'rejected', 'kyc_note' => $data['note'] ?? 'Rejected by admin']);
+        $this->audit->log($request, 'member.kyc_reject', $user);
+        return response()->json(['message' => 'KYC rejected.']);
+    }
+
+    /** Stream a member's KYC document (admin only, private disk). */
+    public function kycDocument(User $user)
+    {
+        abort_unless($user->kyc_document_path, 404);
+        $disk = \Illuminate\Support\Facades\Storage::disk(config('regal.proof_disk', 'local'));
+        abort_unless($disk->exists($user->kyc_document_path), 404);
+        return $disk->response($user->kyc_document_path);
+    }
 }

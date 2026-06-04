@@ -13,7 +13,7 @@ function RegisterForm() {
   const setAuth = useAuth((s) => s.setAuth);
 
   const [form, setForm] = useState({
-    username: "", email: "", password: "", password_confirmation: "",
+    username: "", email: "", phone: "", password: "", password_confirmation: "",
     referral_code: "", wallet_address: "",
   });
   const [error, setError] = useState("");
@@ -29,9 +29,9 @@ function RegisterForm() {
     setError("");
     setLoading(true);
     try {
-      const { data } = await api.post("/register", form);
-      setAuth(data.token, data.user);
-      router.push("/dashboard");
+      await api.post("/register", form);
+      // Account created; verify email with the 6-digit code.
+      router.push(`/verify-email?email=${encodeURIComponent(form.email)}`);
     } catch (err) {
       setError(apiError(err, "Registration failed."));
     } finally {
@@ -58,6 +58,11 @@ function RegisterForm() {
             <label className="text-sm text-muted">Email</label>
             <input type="email" className="input-field mt-1" value={form.email}
               onChange={(e) => setForm({ ...form, email: e.target.value })} required />
+          </div>
+          <div>
+            <label className="text-sm text-muted">Phone number</label>
+            <input type="tel" className="input-field mt-1" value={form.phone}
+              onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="+60…" required />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Copy, Check, Wallet } from "lucide-react";
 import api, { apiError } from "@/lib/api";
 import { usdt, shortDate } from "@/lib/format";
 import StatusPill from "@/components/StatusPill";
@@ -14,9 +15,14 @@ export default function DepositPage() {
   const [msg, setMsg] = useState(""); const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [history, setHistory] = useState<Deposit[]>([]);
+  const [addr, setAddr] = useState<{ address: string; network: string }>({ address: "", network: "BEP20 (BSC)" });
+  const [copied, setCopied] = useState(false);
 
   const load = () => api.get("/deposits").then((r) => setHistory(r.data.data));
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+    api.get("/public-settings").then((r) => setAddr({ address: r.data.deposit_address, network: r.data.deposit_network }));
+  }, []);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -39,6 +45,21 @@ export default function DepositPage() {
         <div className="glass p-6">
           <h3 className="font-semibold">New Deposit</h3>
           <p className="text-sm text-muted mt-1">Funds are credited to your A-WALLET after admin approval and a 200% package is activated.</p>
+
+          {/* Admin deposit address */}
+          <div className="mt-4 rounded-lg border border-[var(--line)] bg-black/30 p-4">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium flex items-center gap-2"><Wallet size={16} className="text-gold-light" /> Send USDT to (deposit address)</span>
+              <span className="rank-badge">{addr.network}</span>
+            </div>
+            <div className="mt-3 flex items-center gap-2 bg-black/40 rounded-lg p-3">
+              <span className="flex-1 text-xs break-all font-mono">{addr.address || "loading…"}</span>
+              <button type="button" onClick={() => { navigator.clipboard.writeText(addr.address); setCopied(true); setTimeout(() => setCopied(false), 1500); }}
+                className="btn-ghost p-2 shrink-0" title="Copy address">{copied ? <Check size={15} className="text-green-400" /> : <Copy size={15} />}</button>
+            </div>
+            <p className="text-xs text-muted mt-2">⚠️ Send <b>USDT on {addr.network}</b> only. After sending, submit the amount + TXID below for approval.</p>
+          </div>
+
           {msg && <div className="mt-4 text-sm text-green-400 bg-green-500/10 border border-green-500/30 rounded-lg px-4 py-3">{msg}</div>}
           {error && <div className="mt-4 text-sm text-red-400 bg-red-500/10 border border-red-500/30 rounded-lg px-4 py-3">{error}</div>}
           <form onSubmit={submit} className="mt-5 space-y-4">

@@ -48,16 +48,50 @@ class MiscController extends Controller
             'withdrawal_fee_percent' => (float) $settings->get('withdrawal_fee_percent'),
             'sponsor_bonus_percents' => $settings->get('sponsor_bonus_percents'),
             'match_percents'         => $settings->get('match_percents'),
+            'deposit_address'        => $settings->get('deposit_address'),
+            'deposit_network'        => $settings->get('deposit_network'),
         ]);
     }
 
     public function updateProfile(Request $request)
     {
+        // Members may edit nickname, heir details and their BEP20 wallet address.
+        // Email and phone are NOT editable here (admin-only).
         $data = $request->validate([
+            'nickname'       => ['nullable', 'string', 'max:30'],
+            'heir_name'      => ['nullable', 'string', 'max:120'],
+            'heir_phone'     => ['nullable', 'string', 'max:30'],
             'wallet_address' => ['nullable', 'string', 'max:120'],
         ]);
         $request->user()->update($data);
         return response()->json(['message' => 'Profile updated.']);
+    }
+
+    public function submitKyc(Request $request)
+    {
+        $user = $request->user();
+        if (($user->kyc_status ?? 'unsubmitted') === 'verified') {
+            return response()->json(['message' => 'Your KYC is already verified.'], 422);
+        }
+
+        $data = $request->validate([
+            'id_type'   => ['required', 'in:ic,passport,license'],
+            // id_number must be unique across users (no duplicate IC/passport/license).
+            'id_number' => ['required', 'string', 'max:60', \Illuminate\Validation\Rule::unique('users', 'id_number')->ignore($user->id)],
+            'document'  => ['required', 'image', 'max:6144'],
+        ]);
+
+        $path = $request->file('document')->store('kyc', config('regal.proof_disk', 'local'));
+
+        $user->update([
+            'id_type'           => $data['id_type'],
+            'id_number'         => $data['id_number'],
+            'kyc_document_path' => $path,
+            'kyc_status'        => 'pending',
+            'kyc_note'          => null,
+        ]);
+
+        return response()->json(['message' => 'KYC submitted. An admin will review it shortly.']);
     }
 
     public function changePassword(Request $request)

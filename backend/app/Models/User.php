@@ -16,18 +16,22 @@ class User extends Authenticatable
     use HasApiTokens, HasFactory, Notifiable, SoftDeletes;
 
     protected $fillable = [
-        'username', 'name', 'email', 'password', 'sponsor_id', 'rank_id',
+        'username', 'name', 'nickname', 'email', 'phone', 'password', 'sponsor_id', 'rank_id',
         'referral_code', 'total_invested', 'total_fund', 'wallet_address',
+        'heir_name', 'heir_phone',
+        'id_type', 'id_number', 'kyc_document_path', 'kyc_status', 'kyc_note',
+        'kyc_verified_at', 'kyc_verified_by', 'email_verification_code', 'email_verified_at',
         'is_admin', 'is_frozen', 'two_factor_secret', 'two_factor_enabled',
         'last_login_ip', 'last_login_at',
     ];
 
     protected $hidden = [
-        'password', 'remember_token', 'two_factor_secret',
+        'password', 'remember_token', 'two_factor_secret', 'email_verification_code',
     ];
 
     protected $casts = [
         'email_verified_at'  => 'datetime',
+        'kyc_verified_at'    => 'datetime',
         'last_login_at'      => 'datetime',
         'is_admin'           => 'boolean',
         'is_frozen'          => 'boolean',

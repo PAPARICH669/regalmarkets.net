@@ -23,6 +23,11 @@ export default function LandingLoginPage() {
       setAuth(data.token, data.user);
       router.push(data.user.is_admin ? "/admin" : "/dashboard");
     } catch (err) {
+      const e = err as { response?: { data?: { needs_verification?: boolean; email?: string } } };
+      if (e.response?.data?.needs_verification) {
+        router.push(`/verify-email?email=${encodeURIComponent(e.response.data.email || form.login)}`);
+        return;
+      }
       setError(apiError(err, "Login failed."));
     } finally {
       setLoading(false);

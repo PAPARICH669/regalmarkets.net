@@ -71,6 +71,10 @@ return [
         'end'   => '07:00', // active again at 07:00 (window is 00:00–06:59)
     ],
 
+    // Admin USDT (BEP20) wallet address members deposit into.
+    'deposit_address' => env('DEPOSIT_ADDRESS', '0x98513096683485c204b2C88b0D8Ae8c524C7646b'),
+    'deposit_network' => 'BEP20 (BSC)',
+
     // Where uploaded payment proofs are stored (private disk, served via controller).
     'proof_disk' => 'local',
 ];

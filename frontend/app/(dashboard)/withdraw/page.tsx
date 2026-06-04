@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Coins } from "lucide-react";
 import api, { apiError } from "@/lib/api";
+import { useAuth } from "@/lib/auth";
 import { usdt, shortDate } from "@/lib/format";
 import StatusPill from "@/components/StatusPill";
 
@@ -9,6 +11,7 @@ interface Withdrawal { id: number; amount: string; fee: string; net_amount: stri
 interface Cfg { min: number; max_daily: number; fee_percent: number; processing_hours: number; }
 
 export default function WithdrawPage() {
+  const { user, refresh } = useAuth();
   const [amount, setAmount] = useState("");
   const [address, setAddress] = useState("");
   const [cfg, setCfg] = useState<Cfg | null>(null);
@@ -18,6 +21,7 @@ export default function WithdrawPage() {
 
   const load = () => api.get("/withdrawals").then((r) => setHistory(r.data.data));
   useEffect(() => { load(); api.get("/withdrawals/config").then((r) => setCfg(r.data)); }, []);
+  useEffect(() => { if (user?.wallet_address) setAddress(user.wallet_address); }, [user?.wallet_address]);
 
   const fee = cfg && amount ? (Number(amount) * cfg.fee_percent) / 100 : 0;
 
@@ -27,7 +31,7 @@ export default function WithdrawPage() {
     try {
       const { data } = await api.post("/withdrawals", { amount, wallet_address: address });
       setMsg(data.message); setAmount("");
-      load();
+      load(); refresh();
     } catch (err) { setError(apiError(err)); } finally { setLoading(false); }
   }
 
@@ -41,6 +45,10 @@ export default function WithdrawPage() {
             From E-WALLET. Min {cfg ? usdt(cfg.min) : "…"}, max {cfg ? usdt(cfg.max_daily) : "…"}/day.
             Fee {cfg?.fee_percent ?? "…"}%. Processed within {cfg?.processing_hours ?? 72} working hours.
           </p>
+          <div className="mt-4 flex items-center justify-between bg-black/30 rounded-lg p-3">
+            <span className="text-sm text-muted flex items-center gap-2"><Coins size={16} className="text-gold-light" /> E-WALLET balance</span>
+            <span className="text-lg font-bold gold-text">{usdt(user?.wallet_e ?? 0)}</span>
+          </div>
           {msg && <div className="mt-4 text-sm text-green-400 bg-green-500/10 border border-green-500/30 rounded-lg px-4 py-3">{msg}</div>}
           {error && <div className="mt-4 text-sm text-red-400 bg-red-500/10 border border-red-500/30 rounded-lg px-4 py-3">{error}</div>}
           <form onSubmit={submit} className="mt-5 space-y-4">
@@ -49,8 +57,12 @@ export default function WithdrawPage() {
               <input type="number" step="0.01" className="input-field mt-1" value={amount} onChange={(e) => setAmount(e.target.value)} required />
             </div>
             <div>
-              <label className="text-sm text-muted">USDT wallet address</label>
-              <input className="input-field mt-1" value={address} onChange={(e) => setAddress(e.target.value)} required />
+              <label className="text-sm text-muted">
+                USDT wallet address <span className="text-gold-light font-medium">(BEP20 only)</span>
+              </label>
+              <input className="input-field mt-1" value={address} onChange={(e) => setAddress(e.target.value)}
+                placeholder="0x… (BEP20 / BSC network)" required />
+              <p className="text-xs text-muted mt-1">⚠️ Use a BEP20 (BSC) USDT address only. Wrong-network withdrawals are unrecoverable.</p>
             </div>
             {amount && cfg && (
               <div className="text-sm bg-black/30 rounded-lg p-3 space-y-1">

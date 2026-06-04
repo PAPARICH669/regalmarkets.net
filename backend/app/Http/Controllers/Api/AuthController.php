@@ -19,6 +19,7 @@ class AuthController extends Controller
         $data = $request->validate([
             'username'       => ['required', 'string', 'min:3', 'max:30', 'alpha_dash', 'unique:users,username'],
             'email'          => ['required', 'email', 'unique:users,email'],
+            'phone'          => ['required', 'string', 'max:30', 'unique:users,phone'],
             'password'       => ['required', 'string', 'min:6', 'confirmed'],
             'referral_code'  => ['nullable', 'string', 'exists:users,referral_code'],
             'wallet_address' => ['nullable', 'string', 'max:120'],
@@ -29,29 +30,88 @@ class AuthController extends Controller
             : null;
 
         $userRank = Rank::byName('USER');
+        $code = (string) random_int(100000, 999999);
 
         $user = User::create([
-            'username'       => $data['username'],
-            'name'           => $data['username'],
-            'email'          => $data['email'],
-            'password'       => Hash::make($data['password']),
-            'sponsor_id'     => $sponsor?->id,
-            'rank_id'        => $userRank?->id,
-            'referral_code'  => $this->uniqueReferralCode(),
-            'wallet_address' => $data['wallet_address'] ?? null,
+            'username'                => $data['username'],
+            'name'                    => $data['username'],
+            'nickname'                => $data['username'],
+            'email'                   => $data['email'],
+            'phone'                   => $data['phone'],
+            'password'                => Hash::make($data['password']),
+            'sponsor_id'              => $sponsor?->id,
+            'rank_id'                 => $userRank?->id,
+            'referral_code'           => $this->uniqueReferralCode(),
+            'wallet_address'          => $data['wallet_address'] ?? null,
+            'email_verification_code' => $code,
+            'email_verified_at'       => null,
         ]);
 
         // Provision both wallets
         Wallet::create(['user_id' => $user->id, 'type' => 'A', 'balance' => 0]);
         Wallet::create(['user_id' => $user->id, 'type' => 'E', 'balance' => 0]);
 
-        $token = $user->createToken('api')->plainTextToken;
+        $this->sendVerificationEmail($user, $code);
+
+        // No token until the email is verified.
+        return response()->json([
+            'message'             => 'Registration successful. Enter the 6-digit code sent to your email to activate your account.',
+            'needs_verification'  => true,
+            'email'               => $user->email,
+        ], 201);
+    }
+
+    public function verifyEmail(Request $request)
+    {
+        $data = $request->validate([
+            'email' => ['required', 'email', 'exists:users,email'],
+            'code'  => ['required', 'string'],
+        ]);
+
+        $user = User::where('email', $data['email'])->first();
+
+        if ($user->email_verified_at) {
+            // already verified
+        } elseif (! $user->email_verification_code || ! hash_equals($user->email_verification_code, trim($data['code']))) {
+            throw ValidationException::withMessages(['code' => 'Invalid verification code.']);
+        }
+
+        $user->update(['email_verified_at' => now(), 'email_verification_code' => null]);
+        $user->update(['last_login_ip' => $request->ip(), 'last_login_at' => now()]);
 
         return response()->json([
-            'message' => 'Registration successful.',
-            'token'   => $token,
+            'message' => 'Email verified. Welcome to Regal Markets!',
+            'token'   => $user->createToken('api')->plainTextToken,
             'user'    => $this->userPayload($user->fresh(['rank', 'wallets'])),
-        ], 201);
+        ]);
+    }
+
+    public function resendCode(Request $request)
+    {
+        $data = $request->validate(['email' => ['required', 'email', 'exists:users,email']]);
+        $user = User::where('email', $data['email'])->first();
+        if (! $user->email_verified_at) {
+            $code = (string) random_int(100000, 999999);
+            $user->update(['email_verification_code' => $code]);
+            $this->sendVerificationEmail($user, $code);
+        }
+        return response()->json(['message' => 'If the account is unverified, a new code has been sent.']);
+    }
+
+    protected function sendVerificationEmail(User $user, string $code): void
+    {
+        try {
+            $html = '<div style="font-family:Arial,sans-serif;background:#04102a;padding:32px;color:#eef3fc">'
+                . '<div style="max-width:520px;margin:auto;background:#0a1c40;border:1px solid rgba(201,162,39,.3);border-radius:14px;padding:28px">'
+                . '<h2 style="color:#e7c873;margin:0 0 8px">Regal Markets</h2>'
+                . '<p style="margin:0 0 16px;color:#9fb1d4">Your email verification code is:</p>'
+                . '<p style="font-size:34px;font-weight:bold;letter-spacing:8px;color:#e7c873;margin:0 0 16px">' . $code . '</p>'
+                . '<p style="margin:0;color:#9fb1d4;font-size:12px">Enter this code to activate your account. If you did not register, ignore this email.</p>'
+                . '</div></div>';
+            app(\App\Services\MailService::class)->send($user->email, $user->username, 'Your Regal Markets verification code', $html);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Verification email failed: ' . $e->getMessage());
+        }
     }
 
     public function login(Request $request)
@@ -78,6 +138,18 @@ class AuthController extends Controller
 
         if (! $ok) {
             throw ValidationException::withMessages(['login' => 'Invalid credentials.']);
+        }
+
+        if (! $user->email_verified_at) {
+            // Re-send a fresh code and tell the frontend to show the verify screen.
+            $code = (string) random_int(100000, 999999);
+            $user->update(['email_verification_code' => $code]);
+            $this->sendVerificationEmail($user, $code);
+            return response()->json([
+                'message'            => 'Please verify your email. A new code has been sent.',
+                'needs_verification' => true,
+                'email'              => $user->email,
+            ], 403);
         }
 
         if ($user->is_frozen) {
@@ -161,12 +233,21 @@ class AuthController extends Controller
             'id'             => $user->id,
             'username'       => $user->username,
             'name'           => $user->name ?: $user->username,
+            'nickname'       => $user->nickname ?: $user->username,
             'email'          => $user->email,
+            'phone'          => $user->phone,
             'rank'           => $user->rankName(),
             'rank_level'     => $user->rank?->level ?? 1,
             'referral_code'  => $user->referral_code,
             'sponsor'        => $user->sponsor?->username,
             'wallet_address' => $user->wallet_address,
+            'heir_name'      => $user->heir_name,
+            'heir_phone'     => $user->heir_phone,
+            'id_type'        => $user->id_type,
+            'id_number'      => $user->id_number,
+            'kyc_status'     => $user->kyc_status ?? 'unsubmitted',
+            'kyc_note'       => $user->kyc_note,
+            'email_verified' => (bool) $user->email_verified_at,
             'is_admin'       => $user->is_admin,
             'is_frozen'      => $user->is_frozen,
             'total_invested' => (float) $user->total_invested,

@@ -6,7 +6,8 @@ import { usdt } from "@/lib/format";
 import RankBadge from "@/components/RankBadge";
 
 interface Member {
-  id: number; username: string; email: string; total_fund: string; total_invested: string;
+  id: number; username: string; email: string; phone?: string; kyc_status?: string;
+  total_fund: string; total_invested: string;
   is_frozen: boolean; referrals_count: number; rank?: { id: number; name: string };
 }
 interface Rank { id: number; name: string; }
@@ -34,6 +35,12 @@ export default function AdminMembers() {
   }
   async function setRank(id: number, rank_id: number) {
     try { await api.post(`/admin/members/${id}/rank`, { rank_id }); load(); } catch (e) { setError(apiError(e)); }
+  }
+  async function editContact(id: number, email: string, phone: string) {
+    const newEmail = window.prompt("Email:", email); if (newEmail === null) return;
+    const newPhone = window.prompt("Phone:", phone || "") ?? "";
+    try { await api.post(`/admin/members/${id}/contact`, { email: newEmail, phone: newPhone }); load(); }
+    catch (e) { setError(apiError(e)); }
   }
   async function resetPw(id: number, username: string) {
     const pwd = window.prompt(`New password for ${username} (min 6, leave blank to auto-generate):`);
@@ -68,6 +75,7 @@ export default function AdminMembers() {
                     <button onClick={() => freeze(m.id)} className="btn-ghost px-2 py-1 text-xs">{m.is_frozen ? "Unfreeze" : "Freeze"}</button>
                     <button onClick={() => adjust(m.id)} className="btn-ghost px-2 py-1 text-xs">Adjust</button>
                     <button onClick={() => resetPw(m.id, m.username)} className="btn-ghost px-2 py-1 text-xs">Reset PW</button>
+                    <button onClick={() => editContact(m.id, m.email, m.phone || "")} className="btn-ghost px-2 py-1 text-xs">Contact</button>
                     <select className="bg-[var(--surface)] border border-[var(--line)] rounded px-1 py-1 text-xs"
                       value={m.rank?.id ?? ""} onChange={(e) => setRank(m.id, Number(e.target.value))}>
                       {ranks.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
