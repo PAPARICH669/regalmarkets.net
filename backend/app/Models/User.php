@@ -104,4 +104,16 @@ class User extends Authenticatable
     {
         return $query->where('is_admin', false);
     }
+
+    /**
+     * Send the password reset link via the Brevo HTTP API (the VPS blocks SMTP).
+     * Builds a link to the Next.js /reset-password page.
+     */
+    public function sendPasswordResetNotification($token)
+    {
+        $base = rtrim(config('app.frontend_url', env('FRONTEND_URL', 'http://localhost:3000')), '/');
+        $url  = $base . '/reset-password?token=' . $token . '&email=' . urlencode($this->getEmailForPasswordReset());
+
+        app(\App\Services\MailService::class)->sendPasswordReset($this->email, $this->username, $url);
+    }
 }
