@@ -35,7 +35,6 @@ Route::middleware('throttle:10,1')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/login', [AuthController::class, 'login'])->middleware('maintenance');
     Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
-    Route::post('/reset-password', [AuthController::class, 'resetPassword']);
 });
 
 // ---- Authenticated members --------------------------------------------------
@@ -43,6 +42,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::put('/profile', [MiscController::class, 'updateProfile']);
+    Route::put('/profile/password', [MiscController::class, 'changePassword']);
 
     Route::get('/dashboard', [DashboardController::class, 'index']);
     Route::get('/wallet-transactions', [MiscController::class, 'walletTransactions']);
@@ -93,6 +93,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/members/{user}/freeze', [AdminMemberController::class, 'freeze']);
         Route::post('/members/{user}/adjust-wallet', [AdminMemberController::class, 'adjustWallet']);
         Route::post('/members/{user}/rank', [AdminMemberController::class, 'editRank']);
+        Route::post('/members/{user}/reset-password', [AdminMemberController::class, 'resetPassword']);
 
         Route::get('/settings', [AdminSettingController::class, 'index']);
         Route::put('/settings', [AdminSettingController::class, 'update']);

@@ -83,4 +83,23 @@ class AdminMemberController extends Controller
     {
         return response()->json($network->tree($user, 6));
     }
+
+    public function resetPassword(Request $request, User $user)
+    {
+        $data = $request->validate([
+            'password' => ['nullable', 'string', 'min:6'],
+        ]);
+
+        // Use the provided password, or generate a temporary one to hand to the member.
+        $newPassword = $data['password'] ?? (\Illuminate\Support\Str::random(10));
+        $user->update(['password' => \Illuminate\Support\Facades\Hash::make($newPassword)]);
+        $user->tokens()->delete(); // log the member out everywhere
+
+        $this->audit->log($request, 'member.reset_password', $user);
+
+        return response()->json([
+            'message'      => 'Password reset. Share the new password with the member securely.',
+            'new_password' => $newPassword,
+        ]);
+    }
 }

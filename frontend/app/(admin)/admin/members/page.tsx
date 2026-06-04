@@ -35,6 +35,14 @@ export default function AdminMembers() {
   async function setRank(id: number, rank_id: number) {
     try { await api.post(`/admin/members/${id}/rank`, { rank_id }); load(); } catch (e) { setError(apiError(e)); }
   }
+  async function resetPw(id: number, username: string) {
+    const pwd = window.prompt(`New password for ${username} (min 6, leave blank to auto-generate):`);
+    if (pwd === null) return;
+    try {
+      const { data } = await api.post(`/admin/members/${id}/reset-password`, pwd ? { password: pwd } : {});
+      window.alert(`Password reset for ${username}.\nNew password: ${data.new_password}\n\nShare it with the member securely.`);
+    } catch (e) { setError(apiError(e)); }
+  }
 
   return (
     <div className="space-y-5">
@@ -59,6 +67,7 @@ export default function AdminMembers() {
                   <div className="flex flex-wrap gap-1.5">
                     <button onClick={() => freeze(m.id)} className="btn-ghost px-2 py-1 text-xs">{m.is_frozen ? "Unfreeze" : "Freeze"}</button>
                     <button onClick={() => adjust(m.id)} className="btn-ghost px-2 py-1 text-xs">Adjust</button>
+                    <button onClick={() => resetPw(m.id, m.username)} className="btn-ghost px-2 py-1 text-xs">Reset PW</button>
                     <select className="bg-[var(--surface)] border border-[var(--line)] rounded px-1 py-1 text-xs"
                       value={m.rank?.id ?? ""} onChange={(e) => setRank(m.id, Number(e.target.value))}>
                       {ranks.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}

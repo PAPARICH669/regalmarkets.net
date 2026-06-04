@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   LayoutDashboard, ArrowDownToLine, ArrowUpFromLine, Repeat, Send,
-  Network, Crown, Megaphone, LogOut, Menu, X, Wallet,
+  Network, Crown, Megaphone, LogOut, Menu, X, Wallet, UserCog,
 } from "lucide-react";
 import Logo from "@/components/Logo";
 import RankBadge from "@/components/RankBadge";
@@ -20,6 +20,7 @@ const NAV = [
   { href: "/network", label: "Team Network", icon: Network },
   { href: "/ranking", label: "Ranking", icon: Crown },
   { href: "/announcements", label: "Announcements", icon: Megaphone },
+  { href: "/profile", label: "Profile & Security", icon: UserCog },
 ];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {

@@ -59,4 +59,27 @@ class MiscController extends Controller
         $request->user()->update($data);
         return response()->json(['message' => 'Profile updated.']);
     }
+
+    public function changePassword(Request $request)
+    {
+        $data = $request->validate([
+            'current_password' => ['required', 'string'],
+            'password'         => ['required', 'string', 'min:6', 'confirmed'],
+        ]);
+
+        $user = $request->user();
+        if (! \Illuminate\Support\Facades\Hash::check($data['current_password'], $user->password)) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'current_password' => 'Current password is incorrect.',
+            ]);
+        }
+
+        $user->update(['password' => \Illuminate\Support\Facades\Hash::make($data['password'])]);
+
+        // Invalidate other sessions/tokens for safety, keep the current one.
+        $current = $user->currentAccessToken();
+        $user->tokens()->where('id', '!=', $current?->id)->delete();
+
+        return response()->json(['message' => 'Password changed successfully.']);
+    }
 }
