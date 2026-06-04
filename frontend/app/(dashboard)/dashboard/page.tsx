@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import StatCard from "@/components/StatCard";
 import RankBadge from "@/components/RankBadge";
+import RankCard from "@/components/RankCard";
 import api from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { usdt, shortDate } from "@/lib/format";
@@ -49,6 +50,9 @@ export default function DashboardPage() {
         </div>
         {user && <RankBadge rank={user.rank} />}
       </div>
+
+      {/* Member / rank card */}
+      <RankCard />
 
       {/* Wallets */}
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
