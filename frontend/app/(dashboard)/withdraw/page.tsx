@@ -6,6 +6,7 @@ import api, { apiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { usdt, shortDate } from "@/lib/format";
 import StatusPill from "@/components/StatusPill";
+import KycBanner from "@/components/KycBanner";
 
 interface Withdrawal { id: number; amount: string; fee: string; net_amount: string; wallet_address: string; txid: string | null; status: string; created_at: string; }
 interface Cfg { min: number; max_daily: number; fee_percent: number; processing_hours: number; }
@@ -38,6 +39,7 @@ export default function WithdrawPage() {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">Withdraw USDT</h1>
+      <KycBanner action="withdraw" />
       <div className="grid lg:grid-cols-2 gap-6">
         <div className="glass p-6">
           <h3 className="font-semibold">Request Withdrawal</h3>

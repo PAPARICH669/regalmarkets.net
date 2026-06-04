@@ -5,6 +5,7 @@ import { Copy, Check, Wallet } from "lucide-react";
 import api, { apiError } from "@/lib/api";
 import { usdt, shortDate } from "@/lib/format";
 import StatusPill from "@/components/StatusPill";
+import KycBanner from "@/components/KycBanner";
 
 interface Deposit { id: number; amount: string; txid: string | null; status: string; created_at: string; }
 
@@ -41,6 +42,7 @@ export default function DepositPage() {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">Deposit USDT</h1>
+      <KycBanner action="deposit" />
       <div className="grid lg:grid-cols-2 gap-6">
         <div className="glass p-6">
           <h3 className="font-semibold">New Deposit</h3>

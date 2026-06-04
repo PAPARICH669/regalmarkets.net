@@ -60,12 +60,13 @@ export default function AdminMembers() {
       {error && <div className="text-sm text-red-400 bg-red-500/10 border border-red-500/30 rounded-lg px-4 py-3">{error}</div>}
       <div className="glass overflow-x-auto">
         <table className="w-full text-sm">
-          <thead className="bg-white/5 text-gold-light text-left"><tr><th className="px-4 py-3">Member</th><th>Rank</th><th>Fund</th><th>Invested</th><th>Directs</th><th>Status</th><th>Actions</th></tr></thead>
+          <thead className="bg-white/5 text-gold-light text-left"><tr><th className="px-4 py-3">Member</th><th>Rank</th><th>KYC</th><th>Fund</th><th>Invested</th><th>Directs</th><th>Status</th><th>Actions</th></tr></thead>
           <tbody>
             {items.map((m) => (
               <tr key={m.id} className="border-t border-[var(--line)]">
                 <td className="px-4 py-3">{m.username}<div className="text-xs text-muted">{m.email}</div></td>
                 <td>{m.rank ? <RankBadge rank={m.rank.name} /> : "—"}</td>
+                <td><KycPill status={m.kyc_status} /></td>
                 <td>{usdt(m.total_fund)}</td>
                 <td>{usdt(m.total_invested)}</td>
                 <td>{m.referrals_count}</td>
@@ -84,10 +85,21 @@ export default function AdminMembers() {
                 </td>
               </tr>
             ))}
-            {items.length === 0 && <tr><td colSpan={7} className="py-6 text-center text-muted">No members.</td></tr>}
+            {items.length === 0 && <tr><td colSpan={8} className="py-6 text-center text-muted">No members.</td></tr>}
           </tbody>
         </table>
       </div>
     </div>
   );
+}
+
+function KycPill({ status }: { status?: string }) {
+  const s = status || "unsubmitted";
+  const map: Record<string, string> = {
+    unsubmitted: "bg-white/10 text-muted",
+    pending: "bg-yellow-500/15 text-yellow-400",
+    verified: "bg-green-500/15 text-green-400",
+    rejected: "bg-red-500/15 text-red-400",
+  };
+  return <span className={`text-xs px-2 py-0.5 rounded-full capitalize ${map[s]}`}>{s}</span>;
 }

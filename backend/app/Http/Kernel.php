@@ -68,5 +68,6 @@ class Kernel extends HttpKernel
         'admin'        => \App\Http\Middleware\IsAdmin::class,
         'not.frozen'   => \App\Http\Middleware\EnsureNotFrozen::class,
         'maintenance'  => \App\Http\Middleware\MaintenanceWindow::class,
+        'kyc'          => \App\Http\Middleware\EnsureKycVerified::class,
     ];
 }

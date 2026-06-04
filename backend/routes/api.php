@@ -53,7 +53,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Deposits
     Route::get('/deposits', [DepositController::class, 'index']);
-    Route::post('/deposits', [DepositController::class, 'store']);
+    Route::post('/deposits', [DepositController::class, 'store'])->middleware('kyc');
 
     // Network
     Route::get('/network/tree', [NetworkController::class, 'tree']);
@@ -73,7 +73,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware(['not.frozen', 'maintenance'])->group(function () {
         Route::get('/withdrawals/config', [WithdrawalController::class, 'config']);
         Route::get('/withdrawals', [WithdrawalController::class, 'index']);
-        Route::post('/withdrawals', [WithdrawalController::class, 'store']);
+        Route::post('/withdrawals', [WithdrawalController::class, 'store'])->middleware('kyc');
 
         Route::get('/transfers', [TransferController::class, 'index']);
         Route::post('/transfers/self', [TransferController::class, 'self']);
