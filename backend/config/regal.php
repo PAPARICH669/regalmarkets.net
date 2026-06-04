@@ -43,24 +43,25 @@ return [
     // Index 0 => level 1.
     'sponsor_bonus_percents' => [10, 5, 3, 2, 1],
 
-    // Matching bonus override percentages by rank level (1..5).
-    // Differential rollup: an upline earns (their% - highest% already paid below them).
+    // Matching bonus override percentages by rank.
+    // Rank-difference model: an upline earns (upline% - the highest rank% already
+    // covered below it on the path, starting from the ROI earner's own rank%).
     'match_percents' => [
-        'USER'         => 2,
+        'USER'         => 1,
         'FAN'          => 4,
         'SENIOR'       => 8,
         'TEAM LEADER'  => 12,
         'GROUP LEADER' => 16,
     ],
 
-    // Rank requirements. "produce N rank X" => N qualifying direct legs whose subtree
-    // contains at least one member of rank X (documented in docs/BUSINESS_LOGIC.md).
+    // Rank requirements. "produce_rank N" => N DIRECT (level-1) referrals whose rank
+    // is at least that rank. (documented in docs/BUSINESS_LOGIC.md).
     'ranks' => [
         // name => [level, match_percent, min_fund, rule]
-        'USER'         => ['level' => 1, 'match' => 2,  'min_fund' => 10],
+        'USER'         => ['level' => 1, 'match' => 1,  'min_fund' => 10],
         'FAN'          => ['level' => 2, 'match' => 4,  'min_fund' => 100,  'direct_min_deposit' => 100, 'directs_required' => 3],
-        'SENIOR'       => ['level' => 3, 'match' => 8,  'min_fund' => 100,  'produce_rank' => 'FAN',         'produce_count' => 3],
-        'TEAM LEADER'  => ['level' => 4, 'match' => 12, 'min_fund' => 500,  'produce_rank' => 'SENIOR',      'produce_count' => 3],
+        'SENIOR'       => ['level' => 3, 'match' => 8,  'min_fund' => 300,  'produce_rank' => 'FAN',         'produce_count' => 3],
+        'TEAM LEADER'  => ['level' => 4, 'match' => 12, 'min_fund' => 1000, 'produce_rank' => 'SENIOR',      'produce_count' => 3],
         'GROUP LEADER' => ['level' => 5, 'match' => 16, 'min_fund' => 5000, 'produce_rank' => 'TEAM LEADER', 'produce_count' => 3],
     ],
 

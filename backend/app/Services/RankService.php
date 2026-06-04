@@ -117,16 +117,17 @@ class RankService
             return $qualifying >= $rank->directs_required;
         }
 
-        // SENIOR/TL/GL: count legs that produced the required rank
+        // SENIOR/TL/GL: count DIRECT (level-1) referrals whose rank is at least the
+        // required rank. e.g. SENIOR needs >= 3 direct FAN-or-higher.
         if ($rank->produce_rank && $rank->produce_count) {
             $targetLevel = $this->levelOfName($rank->produce_rank);
-            $legs = 0;
+            $qualifying = 0;
             foreach ($directs as $d) {
-                if ($this->subtreeHasLevel($d, $targetLevel, $level, $children)) {
-                    $legs++;
+                if (($level[$d] ?? 1) >= $targetLevel) {
+                    $qualifying++;
                 }
             }
-            return $legs >= $rank->produce_count;
+            return $qualifying >= $rank->produce_count;
         }
 
         return true;

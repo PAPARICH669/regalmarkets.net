@@ -7,20 +7,24 @@ use App\Models\RoiLog;
 use App\Models\User;
 
 /**
- * Unlimited-level differential rollup matching bonus.
+ * Unlimited-level "Rank Difference" matching bonus.
  *
- * Driven by a downline's daily ROI. Walking UP the sponsor chain, each upline
- * earns (their rank match% − the highest match% already paid below them) of the
- * ROI amount:
+ * Rank match%: USER 1, FAN 4, SENIOR 8, TEAM LEADER 12, GROUP LEADER 16.
  *
- *   - Rule 1 (same/lower rank stops): if an upline's % does not exceed what was
- *     already paid, their differential is <= 0 → propagation stops.
- *   - Rule 2 (higher rank gets the balance): an upline of higher rank receives
- *     only the remaining override above the highest already paid.
+ * Driven by a downline's daily ROI. Walking UP the sponsor chain, the running
+ * "floor" starts at the EARNER's own rank%. Each upline earns
+ *   share = (upline rank%  −  floor)
+ * of the ROI, then the floor rises to the upline's rank%.
  *
- * Example  GROUP LEADER(16) ← TEAM LEADER(12) ← SENIOR(8) ← USER(2 earner):
- *   SENIOR 8% (8−0), TEAM LEADER 4% (12−8), GROUP LEADER 4% (16−12).
- * Example  GROUP LEADER ← GROUP LEADER: second GL gets 16−16=0 → STOP.
+ *   - Cut-off: if an upline's rank% is <= the floor (i.e. a downline below it has
+ *     an equal or higher rank), share <= 0 and the ENTIRE leg above is cut (break).
+ *   - To keep earning down a leg, an upline must out-rank every member below it.
+ *
+ * Example  GROUP LEADER(16) ← TEAM LEADER(12) ← SENIOR(8) ← USER(1 earner):
+ *   floor starts 1 → SENIOR 7% (8−1), TEAM LEADER 4% (12−8), GROUP LEADER 4% (16−12).
+ * Example  Ali GROUP LEADER over a direct leg headed by:
+ *   TEAM LEADER → 16−12 = 4% of that whole leg; SENIOR → 8%; FAN → 12%; USER → 15%.
+ * Example  GROUP LEADER ← GROUP LEADER: upline GL gets 16−16 = 0 → leg cut (STOP).
  */
 class MatchingBonusService
 {
@@ -33,9 +37,13 @@ class MatchingBonusService
     {
         $earner    = $roiLog->user;
         $roiAmount = $roiLog->amount;
-        $percents  = $this->settings->get('match_percents'); // ['USER'=>2,...]
+        $percents  = $this->settings->get('match_percents'); // ['USER'=>1,...]
 
-        $paidPercent = 0.0; // highest match% already awarded below the current node
+        // Rank-difference model: the running floor starts at the EARNER's own rank%.
+        // Each upline earns (their rank% - this floor); the floor then rises to the
+        // upline's rank%. A same-or-higher rank yields share <= 0 and cuts the whole
+        // leg above (break).
+        $paidPercent = (float) ($percents[$earner->rankName()] ?? 0);
         $depth       = 0;
         $node        = $earner->sponsor;
 

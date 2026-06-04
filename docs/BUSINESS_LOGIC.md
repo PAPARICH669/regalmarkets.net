@@ -36,36 +36,40 @@ paidPercent = 0
 node = earner.sponsor
 while node:
     uplinePct = matchPercent[node.rank]
-    share = uplinePct - paidPercent          # differential
-    if share <= 0: break                     # Rule 1: same/lower rank → STOP
+    share = uplinePct - floor                # rank difference
+    if share <= 0: break                     # same/higher rank below → CUT whole leg
     credit node E-WALLET  (roiAmount * share / 100)
-    paidPercent = uplinePct
-    if paidPercent >= 16: break              # top rank reached
+    floor = uplinePct
+    if floor >= 16: break                    # top rank reached
     node = node.sponsor
 ```
+Match %: **USER 1, FAN 4, SENIOR 8, TEAM LEADER 12, GROUP LEADER 16**. The `floor` starts at the
+**ROI earner's own rank%** (not 0), so each upline earns the rank difference above the highest-ranked
+member below it.
 
-- **Rule 1 (same rank stops):** `GROUP LEADER ← GROUP LEADER` → second GL = 16−16 = 0 → stop.
-- **Rule 2 (higher rank gets the balance):** each upline earns only the override above the highest
-  already paid below them.
+- **Cut-off (same/higher rank):** if any downline in a leg has a rank **equal to or higher** than the
+  upline, that upline (and everyone above) earns **nothing** from that leg. e.g. `GL ← GL` → 16−16=0 → cut.
+- **Continuous earning:** an upline must out-rank every member below it in a leg to keep earning.
 
-**Worked example** — a USER earns ROI under `GROUP LEADER(16) ← TEAM LEADER(12) ← SENIOR(8) ← USER`:
-SENIOR `8−0 = 8%`, TEAM LEADER `12−8 = 4%`, GROUP LEADER `16−12 = 4%`. (Asserted in
-`tests/Feature/BonusEngineTest.php`.) Frozen uplines forfeit their share but the rollup continues.
+**Worked examples** (asserted in `tests/Feature/BonusEngineTest.php`):
+- Vertical `GROUP LEADER(16) ← TEAM LEADER(12) ← SENIOR(8) ← USER(1, earner)`:
+  SENIOR `8−1 = 7%`, TEAM LEADER `12−8 = 4%`, GROUP LEADER `16−12 = 4%`.
+- Ali = GROUP LEADER over a direct leg headed by: TEAM LEADER → **4%** (16−12), SENIOR → **8%**,
+  FAN → **12%**, USER → **15%** — applied to that whole leg's ROI.
 
 ## Rank engine (`RankService`, `rank:update`)
 
-Promotes (never auto-demotes) to a fixpoint. Requirements:
+Promotes (never auto-demotes) to a fixpoint. All requirements are **direct (level-1)** based:
 
-| Rank | Requirement |
-|------|-------------|
-| USER | default |
-| FAN | `total_fund ≥ 100` **and** ≥ 3 direct referrals each with ≥ 100 USDT deposit |
-| SENIOR | produce ≥ 3 **FAN** legs |
-| TEAM LEADER | `total_fund ≥ 500` **and** produce ≥ 3 **SENIOR** legs |
-| GROUP LEADER | `total_fund ≥ 5000` **and** produce ≥ 3 **TEAM LEADER** legs |
+| Rank | Requirement | Match % |
+|------|-------------|---------|
+| USER | Total deposit $10–$99 | 1% |
+| FAN | `total_fund ≥ 100` **and** ≥ 3 direct referrals each depositing ≥ $100 | 4% |
+| SENIOR | `total_fund ≥ 300` **and** ≥ 3 direct **FAN** (or higher) | 8% |
+| TEAM LEADER | `total_fund ≥ 1000` **and** ≥ 3 direct **SENIOR** (or higher) | 12% |
+| GROUP LEADER | `total_fund ≥ 5000` **and** ≥ 3 direct **TEAM LEADER** (or higher) | 16% |
 
-> **Interpretation:** "produce N rank X" = **N qualifying legs** — N distinct direct downlines whose
-> subtree (incl. themselves) contains a member of rank ≥ X. Each promotion writes `rank_histories`.
+> "3 direct X" = 3 **level-1** referrals whose rank is at least X. Each promotion writes `rank_histories`.
 
 ## Deposit → activation (`DepositService`)
 

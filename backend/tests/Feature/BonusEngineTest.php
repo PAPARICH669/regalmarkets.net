@@ -59,8 +59,9 @@ class BonusEngineTest extends TestCase
 
         app(MatchingBonusService::class)->distributeForRoi($roiLog);
 
-        // SENIOR 8% (8-0), TEAM LEADER 4% (12-8), GROUP LEADER 4% (16-12)
-        $this->assertEquals('8.00000000', $senior->walletE->refresh()->balance);
+        // Earner is USER(1%). Floor starts at 1:
+        // SENIOR 7% (8-1), TEAM LEADER 4% (12-8), GROUP LEADER 4% (16-12)
+        $this->assertEquals('7.00000000', $senior->walletE->refresh()->balance);
         $this->assertEquals('4.00000000', $tl->walletE->refresh()->balance);
         $this->assertEquals('4.00000000', $gl->walletE->refresh()->balance);
     }
@@ -82,9 +83,31 @@ class BonusEngineTest extends TestCase
 
         app(MatchingBonusService::class)->distributeForRoi($roiLog);
 
-        // First GL gets 16; second GL would be 16-16=0 -> stop, nothing above.
-        $this->assertEquals('16.00000000', $gl2->walletE->refresh()->balance);
+        // Earner USER(1): gl2 gets 16-1=15; topGl is same rank as gl2 -> 16-16=0 -> cut.
+        $this->assertEquals('15.00000000', $gl2->walletE->refresh()->balance);
         $this->assertEquals('0.00000000', $topGl->walletE->refresh()->balance);
+    }
+
+    /** @test */
+    public function rank_difference_per_direct_leg()
+    {
+        // Ali = GROUP LEADER, with direct downlines of varying ranks (the spec example).
+        $ali   = $this->makeUser('ali', null, 'GROUP LEADER');
+        $samad = $this->makeUser('samad', $ali, 'TEAM LEADER'); // 16-12 = 4
+        $yusri = $this->makeUser('yusri', $ali, 'SENIOR');      // 16-8  = 8
+        $muaz  = $this->makeUser('muaz', $ali, 'FAN');          // 16-4  = 12
+        $nurul = $this->makeUser('nurul', $ali, 'USER');        // 16-1  = 15
+
+        foreach ([$samad, $yusri, $muaz, $nurul] as $earner) {
+            $roiLog = RoiLog::create([
+                'investment_package_id' => $this->stubPackage($earner),
+                'user_id' => $earner->id, 'amount' => 100, 'roi_date' => now()->toDateString(),
+            ]);
+            app(MatchingBonusService::class)->distributeForRoi($roiLog);
+        }
+
+        // Ali earns 4 + 8 + 12 + 15 = 39 USDT total
+        $this->assertEquals('39.00000000', $ali->walletE->refresh()->balance);
     }
 
     /** @test */
