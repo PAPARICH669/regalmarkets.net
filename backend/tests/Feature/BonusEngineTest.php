@@ -89,7 +89,7 @@ class BonusEngineTest extends TestCase
     }
 
     /** @test */
-    public function user_rank_earns_1pct_from_levels_1_and_2_only()
+    public function user_rank_earns_1pct_from_level_1_only()
     {
         // u3 ← u2 ← u1 ← earner, all USER rank.
         $u3     = $this->makeUser('u3', null, 'USER');
@@ -103,9 +103,9 @@ class BonusEngineTest extends TestCase
         ]);
         app(MatchingBonusService::class)->distributeForRoi($roiLog);
 
-        // Level 1 and level 2 USER uplines each earn 1% (even same rank); level 3 earns nothing.
+        // Only the level-1 USER upline earns 1% (even same rank); level 2+ earn nothing.
         $this->assertEquals('1.00000000', $u1->walletE->refresh()->balance);
-        $this->assertEquals('1.00000000', $u2->walletE->refresh()->balance);
+        $this->assertEquals('0.00000000', $u2->walletE->refresh()->balance);
         $this->assertEquals('0.00000000', $u3->walletE->refresh()->balance);
     }
 
