@@ -4,6 +4,7 @@ import api, { setToken } from "./api";
 export interface AuthUser {
   id: number;
   username: string;
+  name: string;
   email: string;
   rank: string;
   rank_level: number;

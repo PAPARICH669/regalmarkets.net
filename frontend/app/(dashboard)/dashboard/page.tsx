@@ -6,7 +6,9 @@ import {
 } from "lucide-react";
 import StatCard from "@/components/StatCard";
 import EarningsChart from "@/components/EarningsChart";
+import RankBadge from "@/components/RankBadge";
 import api from "@/lib/api";
+import { useAuth } from "@/lib/auth";
 import { usdt } from "@/lib/format";
 
 interface Dashboard {
@@ -24,6 +26,7 @@ interface Dashboard {
 }
 
 export default function DashboardPage() {
+  const user = useAuth((s) => s.user);
   const [d, setD] = useState<Dashboard | null>(null);
   const [copied, setCopied] = useState(false);
 
@@ -33,9 +36,16 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Dashboard</h1>
-        <p className="text-muted text-sm">Your investment & earnings at a glance.</p>
+      <div className="flex items-start justify-between flex-wrap gap-3">
+        <div>
+          <h1 className="text-2xl font-bold">
+            Welcome back, <span className="gold-text">{user?.name || user?.username}</span>
+          </h1>
+          <p className="text-muted text-sm">
+            @{user?.username} · Your investment & earnings at a glance.
+          </p>
+        </div>
+        {user && <RankBadge rank={user.rank} />}
       </div>
 
       {/* Wallets */}

@@ -160,6 +160,7 @@ class AuthController extends Controller
         return [
             'id'             => $user->id,
             'username'       => $user->username,
+            'name'           => $user->name ?: $user->username,
             'email'          => $user->email,
             'rank'           => $user->rankName(),
             'rank_level'     => $user->rank?->level ?? 1,
