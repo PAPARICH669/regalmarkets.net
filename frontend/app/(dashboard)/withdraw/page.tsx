@@ -50,7 +50,7 @@ export default function WithdrawPage() {
           </p>
           {cfg && (
             <div className="mt-3 text-sm text-gold-light bg-gold-light/5 border border-gold-light/20 rounded-lg px-4 py-2">
-              ⏰ Withdrawal requests are accepted only between <b>{cfg.window_start}–{cfg.window_end}</b> (Malaysia time).
+              ⏰ Withdrawal requests are accepted only between <b>{cfg.window_start}–{cfg.window_end}</b>.
             </div>
           )}
           <div className="mt-4 flex items-center justify-between bg-black/30 rounded-lg p-3">

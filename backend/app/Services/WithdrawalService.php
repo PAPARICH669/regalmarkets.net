@@ -35,7 +35,7 @@ class WithdrawalService
         $end    = Carbon::createFromFormat('H:i', $wEnd, $tz)->setDateFrom($now);
         if ($now->lt($start) || $now->gte($end)) {
             throw ValidationException::withMessages([
-                'amount' => "Withdrawals can only be requested between {$wStart} and {$wEnd} (Malaysia time).",
+                'amount' => "Withdrawals can only be requested between {$wStart} and {$wEnd}.",
             ]);
         }
 
