@@ -15,7 +15,7 @@ const NAV = [
   { href: "/deposit", label: "Deposit", icon: ArrowDownToLine },
   { href: "/withdraw", label: "Withdraw", icon: ArrowUpFromLine },
   { href: "/transfer", label: "Transfer", icon: Send },
-  { href: "/reinvest", label: "Reinvest", icon: Repeat },
+  { href: "/fund", label: "Fund", icon: Repeat },
   { href: "/network", label: "Team Network", icon: Network },
   { href: "/reports", label: "Reports", icon: FileBarChart },
   { href: "/ranking", label: "Ranking", icon: Crown },

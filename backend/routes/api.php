@@ -14,8 +14,8 @@ use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\DepositController;
 use App\Http\Controllers\Api\LogController;
 use App\Http\Controllers\Api\MiscController;
+use App\Http\Controllers\Api\FundController;
 use App\Http\Controllers\Api\NetworkController;
-use App\Http\Controllers\Api\ReinvestController;
 use App\Http\Controllers\Api\TransferController;
 use App\Http\Controllers\Api\WithdrawalController;
 use Illuminate\Support\Facades\Route;
@@ -80,7 +80,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/transfers/self', [TransferController::class, 'self']);
         Route::post('/transfers/member', [TransferController::class, 'member']);
 
-        Route::post('/reinvest', [ReinvestController::class, 'store']);
+        Route::post('/fund', [FundController::class, 'store']);
     });
 
     // ---- Admin --------------------------------------------------------------

@@ -54,7 +54,7 @@ export default function TransferPage() {
             <form onSubmit={selfTransfer} className="space-y-4">
               <p className="text-sm text-muted">
                 Move earnings from E-WALLET to A-WALLET (min {cfg ? usdt(cfg.min) : "…"}). A → E is not allowed.
-                A <b className="text-foreground">{feePct}% fee</b> applies and only A-WALLET funds can be reinvested.
+                A <b className="text-foreground">{feePct}% fee</b> applies. Only A-WALLET funds can be used to Fund a package.
               </p>
               <div className="flex items-center justify-between bg-black/30 rounded-lg p-3 text-sm">
                 <span className="text-muted">E-WALLET balance</span>

@@ -7,16 +7,15 @@ use App\Models\User;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Deposit lifecycle. Users request (pending); admin approves → activation
- * pipeline: credit A-WALLET, lock capital into a package, pay sponsor bonuses,
- * recompute fund + rank.
+ * Deposit lifecycle. Users request (pending); admin approves → the funds land in
+ * the member's A-WALLET (capital) and drive their fund/rank. The member then
+ * separately clicks "Fund" to lock A-WALLET capital into a 200% package — that
+ * step (FundService) is what starts the daily commission and pays sponsor bonus.
  */
 class DepositService
 {
     public function __construct(
         protected WalletService $wallets,
-        protected SponsorBonusService $sponsor,
-        protected InvestmentService $investment,
         protected RankService $ranks,
     ) {}
 
@@ -46,20 +45,15 @@ class DepositService
 
             $user = $deposit->user;
 
-            // 1. Deposit lands in A-WALLET
+            // 1. Deposit lands in A-WALLET (capital). It stays here until the
+            //    member clicks "Fund" to lock it into a 200% package.
             $this->wallets->credit($user, 'A', $deposit->amount, 'deposit', $deposit, [], 'Deposit approved');
 
             // 2. Fund aggregate (drives rank)
             $user->increment('total_fund', $deposit->amount);
-
-            // 3. Auto-activate investment package (locks capital out of A-WALLET)
-            $this->investment->activate($user, $deposit->amount, 'deposit', $deposit);
-
-            // 4. Sponsor bonus (instant, into uplines' E-WALLET)
-            $this->sponsor->distribute($user, $deposit->amount, $deposit);
         });
 
-        // 5. Re-evaluate ranks across the network (fund + production may have changed)
+        // 3. Re-evaluate ranks across the network (total_fund changed)
         $this->ranks->updateAll();
 
         return $deposit->refresh();

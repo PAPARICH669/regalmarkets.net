@@ -21,8 +21,8 @@ class Kernel extends ConsoleKernel
         $schedule->command('maintenance:sync')->dailyAt('00:00')->timezone($tz);
         $schedule->command('maintenance:sync')->dailyAt('07:00')->timezone($tz);
 
-        // After maintenance ends: pay ROI, then recompute ranks
-        $schedule->command('roi:run')->dailyAt('07:05')->timezone($tz)->withoutOverlapping();
+        // After maintenance ends: pay daily commission, then recompute ranks
+        $schedule->command('roi:run')->dailyAt('07:01')->timezone($tz)->withoutOverlapping();
         $schedule->command('rank:update')->dailyAt('07:10')->timezone($tz)->withoutOverlapping();
     }
 

@@ -18,7 +18,7 @@ return new class extends Migration
             $table->decimal('daily_roi_percent', 6, 2);
             $table->decimal('daily_amount', 18, 8);
             $table->enum('status', ['active', 'completed'])->default('active');
-            $table->enum('source', ['deposit', 'reinvest'])->default('deposit');
+            $table->enum('source', ['deposit', 'reinvest', 'fund'])->default('deposit');
             $table->timestamp('activated_at')->nullable();
             $table->timestamp('completed_at')->nullable();
             $table->timestamps();

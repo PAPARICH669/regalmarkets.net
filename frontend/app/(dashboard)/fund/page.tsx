@@ -6,7 +6,7 @@ import api, { apiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { usdt } from "@/lib/format";
 
-export default function ReinvestPage() {
+export default function FundPage() {
   const { user, refresh } = useAuth();
   const [amount, setAmount] = useState("");
   const [msg, setMsg] = useState(""); const [error, setError] = useState("");
@@ -16,19 +16,22 @@ export default function ReinvestPage() {
 
   async function submit(e: React.FormEvent) {
     e.preventDefault(); setMsg(""); setError(""); setLoading(true);
-    try { const { data } = await api.post("/reinvest", { amount }); setMsg(data.message); setAmount(""); refresh(); }
+    try { const { data } = await api.post("/fund", { amount }); setMsg(data.message); setAmount(""); refresh(); }
     catch (err) { setError(apiError(err)); } finally { setLoading(false); }
   }
 
+  const preview = amount ? Number(amount) * 2 : 0;
+
   return (
     <div className="space-y-6 max-w-lg">
-      <h1 className="text-2xl font-bold">Reinvest</h1>
+      <h1 className="text-2xl font-bold">Fund</h1>
       <div className="glass p-6">
         <span className="inline-grid place-items-center w-12 h-12 rounded-xl gold-gradient text-black mb-4"><Repeat size={22} /></span>
-        <h3 className="font-semibold">Compound your capital</h3>
+        <h3 className="font-semibold">Activate your 200% package</h3>
         <p className="text-sm text-muted mt-1">
-          Reinvest from your A-WALLET (min 10 USDT) to activate a fresh 200% package.
-          To use earnings, first transfer E-WALLET → A-WALLET (fee applies) on the Transfer page.
+          Fund from your <b className="text-foreground">A-WALLET</b> (capital) to start a fresh package.
+          Your remaining commission becomes <b className="text-gold-light">2× (200%)</b> of the funded amount,
+          paid out daily. Deposits land in A-WALLET first — fund here to activate.
         </p>
         <div className="mt-4 bg-black/30 rounded-lg p-3 text-sm flex justify-between">
           <span className="text-muted">A-WALLET balance</span>
@@ -40,7 +43,13 @@ export default function ReinvestPage() {
 
         <form onSubmit={submit} className="mt-5 space-y-4">
           <input type="number" step="0.01" min="10" className="input-field" placeholder="Amount (USDT)" value={amount} onChange={(e) => setAmount(e.target.value)} required />
-          <button disabled={loading} className="btn-gold w-full py-2.5">{loading ? "Processing…" : "Reinvest Now"}</button>
+          {amount && (
+            <div className="text-sm bg-black/30 rounded-lg p-3 flex justify-between">
+              <span className="text-muted">Total commission (200%)</span>
+              <span className="gold-text font-semibold">{usdt(preview)}</span>
+            </div>
+          )}
+          <button disabled={loading} className="btn-gold w-full py-2.5">{loading ? "Processing…" : "Fund Now"}</button>
         </form>
       </div>
     </div>

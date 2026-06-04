@@ -46,7 +46,7 @@ export default function DepositPage() {
       <div className="grid lg:grid-cols-2 gap-6">
         <div className="glass p-6">
           <h3 className="font-semibold">New Deposit</h3>
-          <p className="text-sm text-muted mt-1">Funds are credited to your A-WALLET after admin approval and a 200% package is activated.</p>
+          <p className="text-sm text-muted mt-1">Funds are credited to your <b className="text-foreground">A-WALLET</b> after admin approval. Then go to <b className="text-gold-light">Fund</b> to activate your 200% package.</p>
 
           {/* Admin deposit address */}
           <div className="mt-4 rounded-lg border border-[var(--line)] bg-black/30 p-4">
