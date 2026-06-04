@@ -19,12 +19,12 @@ class LogController extends Controller
     public function sponsor(Request $request)
     {
         return SponsorBonusLog::where('to_user_id', $request->user()->id)
-            ->with('fromUser:id,username')->latest()->paginate(20);
+            ->with('fromUser:id,username,name')->latest()->paginate(25);
     }
 
     public function matching(Request $request)
     {
         return MatchingBonusLog::where('to_user_id', $request->user()->id)
-            ->with('fromUser:id,username')->latest()->paginate(20);
+            ->with('fromUser:id,username,name')->latest()->paginate(25);
     }
 }
