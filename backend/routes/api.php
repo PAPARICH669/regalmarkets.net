@@ -82,6 +82,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/transfers/self', [TransferController::class, 'self']);
         Route::post('/transfers/member', [TransferController::class, 'member']);
 
+        Route::get('/fund', [FundController::class, 'index']);
         Route::post('/fund', [FundController::class, 'store']);
     });
 

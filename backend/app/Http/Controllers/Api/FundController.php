@@ -3,12 +3,20 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\InvestmentPackage;
 use App\Services\FundService;
 use Illuminate\Http\Request;
 
 class FundController extends Controller
 {
     public function __construct(protected FundService $fund) {}
+
+    public function index(Request $request)
+    {
+        return InvestmentPackage::where('user_id', $request->user()->id)
+            ->latest()
+            ->paginate(15);
+    }
 
     public function store(Request $request)
     {

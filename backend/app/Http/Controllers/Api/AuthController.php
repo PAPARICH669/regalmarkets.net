@@ -270,6 +270,7 @@ class AuthController extends Controller
             'wallet_a'       => (float) $user->walletBalance('A'),
             'wallet_e'       => (float) $user->walletBalance('E'),
             'two_factor_enabled' => $user->two_factor_enabled,
+            'created_at'     => $user->created_at?->toIso8601String(),
         ];
     }
 }

@@ -8,7 +8,7 @@ import StatCard from "@/components/StatCard";
 import RankBadge from "@/components/RankBadge";
 import api from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import { usdt } from "@/lib/format";
+import { usdt, shortDate } from "@/lib/format";
 
 interface Dashboard {
   rank: string;
@@ -43,6 +43,9 @@ export default function DashboardPage() {
           <p className="text-muted text-sm">
             Your investment & earnings at a glance.
           </p>
+          {user?.created_at && (
+            <p className="text-muted text-xs mt-1">Member since {shortDate(user.created_at)}</p>
+          )}
         </div>
         {user && <RankBadge rank={user.rank} />}
       </div>

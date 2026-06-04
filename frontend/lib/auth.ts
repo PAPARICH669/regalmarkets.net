@@ -27,6 +27,7 @@ export interface AuthUser {
   wallet_a: number;
   wallet_e: number;
   two_factor_enabled: boolean;
+  created_at?: string | null;
 }
 
 interface AuthState {
