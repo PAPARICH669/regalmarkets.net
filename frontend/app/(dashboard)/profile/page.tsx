@@ -139,8 +139,8 @@ export default function ProfilePage() {
                 </div>
               </div>
               <div>
-                <label className="text-sm text-muted">Upload ID image</label>
-                <input type="file" accept="image/*" className="input-field mt-1" onChange={(e) => setKyc({ ...kyc, document: e.target.files?.[0] || null })} required />
+                <label className="text-sm text-muted">Upload ID (image or PDF, max 8MB)</label>
+                <input type="file" accept="image/*,.pdf,.heic,.heif" className="input-field mt-1" onChange={(e) => setKyc({ ...kyc, document: e.target.files?.[0] || null })} required />
               </div>
               <button disabled={kLoad} className="btn-gold px-6 py-2.5">{kLoad ? "Submitting…" : "Submit KYC"}</button>
             </form>

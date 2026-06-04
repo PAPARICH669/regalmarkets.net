@@ -78,7 +78,7 @@ class MiscController extends Controller
             'id_type'   => ['required', 'in:ic,passport,license'],
             // id_number must be unique across users (no duplicate IC/passport/license).
             'id_number' => ['required', 'string', 'max:60', \Illuminate\Validation\Rule::unique('users', 'id_number')->ignore($user->id)],
-            'document'  => ['required', 'image', 'max:6144'],
+            'document'  => ['required', 'file', 'mimes:jpg,jpeg,png,webp,heic,heif,pdf', 'max:8192'],
         ]);
 
         $path = $request->file('document')->store('kyc', config('regal.proof_disk', 'local'));
