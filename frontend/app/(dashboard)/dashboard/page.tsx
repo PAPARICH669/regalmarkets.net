@@ -64,7 +64,10 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2"><EarningsChart data={d.earnings_series} /></div>
+        <div className="lg:col-span-2 space-y-6">
+          <EarningsChart data={d.earnings_series} dataKey="roi" title="Daily ROI — last 14 days" kind="bar" color="#e7c873" />
+          <EarningsChart data={d.earnings_series} dataKey="total" title="Total Earnings — last 14 days" />
+        </div>
 
         {/* Referral */}
         <div className="glass p-5 flex flex-col">
