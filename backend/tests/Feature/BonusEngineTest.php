@@ -89,6 +89,27 @@ class BonusEngineTest extends TestCase
     }
 
     /** @test */
+    public function user_rank_earns_1pct_from_levels_1_and_2_only()
+    {
+        // u3 ← u2 ← u1 ← earner, all USER rank.
+        $u3     = $this->makeUser('u3', null, 'USER');
+        $u2     = $this->makeUser('u2', $u3, 'USER');
+        $u1     = $this->makeUser('u1', $u2, 'USER');
+        $earner = $this->makeUser('eu', $u1, 'USER');
+
+        $roiLog = RoiLog::create([
+            'investment_package_id' => $this->stubPackage($earner),
+            'user_id' => $earner->id, 'amount' => 100, 'roi_date' => now()->toDateString(),
+        ]);
+        app(MatchingBonusService::class)->distributeForRoi($roiLog);
+
+        // Level 1 and level 2 USER uplines each earn 1% (even same rank); level 3 earns nothing.
+        $this->assertEquals('1.00000000', $u1->walletE->refresh()->balance);
+        $this->assertEquals('1.00000000', $u2->walletE->refresh()->balance);
+        $this->assertEquals('0.00000000', $u3->walletE->refresh()->balance);
+    }
+
+    /** @test */
     public function rank_difference_per_direct_leg()
     {
         // Ali = GROUP LEADER, with direct downlines of varying ranks (the spec example).
