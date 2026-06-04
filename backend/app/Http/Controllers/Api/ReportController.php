@@ -47,6 +47,9 @@ class ReportController extends Controller
             ->get([DB::raw('DATE(created_at) as d'), DB::raw('SUM(amount) as total')])
             ->keyBy(fn ($r) => (string) $r->d);
 
+        // Denominator for the daily ROI rate = the member's invested capital.
+        $invested = (float) $user->total_invested;
+
         $rows = [];
         $sumRoi = $sumSpon = $sumMatch = 0.0;
         for ($i = 0; $i < $days; $i++) {
@@ -56,11 +59,12 @@ class ReportController extends Controller
             $m = (float) ($matching[$date]->total ?? 0);
             $sumRoi += $r; $sumSpon += $s; $sumMatch += $m;
             $rows[] = [
-                'date'     => $date,
-                'roi'      => round($r, 8),
-                'sponsor'  => round($s, 8),
-                'matching' => round($m, 8),
-                'total'    => round($r + $s + $m, 8),
+                'date'        => $date,
+                'roi'         => round($r, 8),
+                'roi_percent' => $invested > 0 ? round($r / $invested * 100, 3) : 0,
+                'sponsor'     => round($s, 8),
+                'matching'    => round($m, 8),
+                'total'       => round($r + $s + $m, 8),
             ];
         }
 
@@ -71,6 +75,8 @@ class ReportController extends Controller
 
         return response()->json([
             'range_days'          => $days,
+            'total_invested'      => $invested,
+            'daily_roi_rate'      => (float) app(\App\Services\SettingsService::class)->get('roi_daily_percent'),
             'daily'               => $rows,
             'totals'              => [
                 'roi'      => round($sumRoi, 8),

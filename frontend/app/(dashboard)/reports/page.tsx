@@ -8,7 +8,7 @@ import { usdt, shortDate } from "@/lib/format";
 
 type Tab = "summary" | "roi" | "sponsor" | "matching" | "group";
 
-interface DailyRow { date: string; roi: number; sponsor: number; matching: number; total: number; }
+interface DailyRow { date: string; roi: number; roi_percent: number; sponsor: number; matching: number; total: number; }
 interface LevelRow { level: number; members: number; sales: number; invested: number; }
 interface Report {
   daily: DailyRow[];
@@ -103,13 +103,15 @@ export default function ReportsPage() {
             <div className="overflow-x-auto max-h-[460px] overflow-y-auto">
               <table className="w-full text-sm">
                 <thead className="text-gold-light text-left sticky top-0 bg-[var(--surface)]">
-                  <tr><th className="py-2">Date</th><th>Daily ROI</th><th>Sponsor</th><th>Matching</th><th>Total</th></tr>
+                  <tr><th className="py-2">Date</th><th>Daily ROI</th><th>ROI %</th><th>Sponsor</th><th>Matching</th><th>Total</th></tr>
                 </thead>
                 <tbody>
                   {(r?.daily ?? []).map((row) => (
                     <tr key={row.date} className={`border-t border-[var(--line)] ${row.total === 0 ? "opacity-50" : ""}`}>
                       <td className="py-2">{shortDate(row.date).split(",")[0]}</td>
-                      <td>{usdt(row.roi)}</td><td>{usdt(row.sponsor)}</td><td>{usdt(row.matching)}</td>
+                      <td>{usdt(row.roi)}</td>
+                      <td className="text-gold-light">{row.roi_percent ? row.roi_percent + "%" : "—"}</td>
+                      <td>{usdt(row.sponsor)}</td><td>{usdt(row.matching)}</td>
                       <td className="gold-text font-medium">{usdt(row.total)}</td>
                     </tr>
                   ))}
