@@ -21,13 +21,22 @@ class AuthController extends Controller
             'email'          => ['required', 'email', 'unique:users,email'],
             'phone'          => ['required', 'string', 'max:30', 'unique:users,phone'],
             'password'       => ['required', 'string', 'min:6', 'confirmed'],
-            'referral_code'  => ['nullable', 'string', 'exists:users,referral_code'],
+            'referral_code'  => ['nullable', 'string', 'max:60'],
             'wallet_address' => ['nullable', 'string', 'max:120'],
         ]);
 
-        $sponsor = ! empty($data['referral_code'])
-            ? User::where('referral_code', $data['referral_code'])->first()
-            : null;
+        // Resolve sponsor by USERNAME or referral code (the referral link uses the
+        // sponsor's username so new members don't pick the wrong sponsor).
+        $sponsor = null;
+        if (! empty($data['referral_code'])) {
+            $ref = trim($data['referral_code']);
+            $sponsor = User::where('username', $ref)->orWhere('referral_code', $ref)->first();
+            if (! $sponsor) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'referral_code' => 'Sponsor not found. Please check the referral link.',
+                ]);
+            }
+        }
 
         $userRank = Rank::byName('USER');
         $code = (string) random_int(100000, 999999);

@@ -93,7 +93,7 @@ function RegisterForm() {
             </div>
           </div>
           {form.referral_code && (
-            <p className="text-xs text-gold-light">Sponsor referral applied ✓</p>
+            <p className="text-xs text-gold-light">Sponsor: <b>{form.referral_code}</b> ✓</p>
           )}
           <button disabled={loading} className="btn-gold w-full py-2.5">
             {loading ? "Creating…" : "Create Account"}

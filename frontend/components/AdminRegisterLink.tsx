@@ -10,7 +10,7 @@ export default function AdminRegisterLink() {
 
   if (!user) return null;
   const origin = typeof window !== "undefined" ? window.location.origin : "https://regalmarkets.net";
-  const refLink = `${origin}/register?ref=${user.referral_code}`;
+  const refLink = `${origin}/register?ref=${user.username}`;
   const plainLink = `${origin}/register`;
 
   const copy = (text: string, which: "ref" | "plain") => {

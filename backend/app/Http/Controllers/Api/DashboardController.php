@@ -57,7 +57,7 @@ class DashboardController extends Controller
             'rank'           => $user->rankName(),
             'rank_level'     => $user->rank?->level ?? 1,
             'referral_code'  => $user->referral_code,
-            'referral_link'  => rtrim(config('app.frontend_url', env('FRONTEND_URL', 'http://localhost:3000')), '/') . '/register?ref=' . $user->referral_code,
+            'referral_link'  => rtrim(config('app.frontend_url', env('FRONTEND_URL', 'http://localhost:3000')), '/') . '/register?ref=' . $user->username,
             'wallets'        => [
                 'A' => (float) $user->walletBalance('A'),
                 'E' => (float) $user->walletBalance('E'),
