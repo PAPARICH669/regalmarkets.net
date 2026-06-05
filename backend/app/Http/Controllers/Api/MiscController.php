@@ -86,6 +86,21 @@ class MiscController extends Controller
         return Announcement::active()->latest('published_at')->take(20)->get();
     }
 
+    /** Recent registrations feed (welcome wall): username + country, latest first. */
+    public function recentMembers()
+    {
+        return \App\Models\User::where('is_admin', false)->where('is_staff', false)
+            ->whereNotNull('email_verified_at')
+            ->latest('created_at')
+            ->take(12)
+            ->get(['username', 'country', 'created_at'])
+            ->map(fn ($u) => [
+                'username'   => $u->username,
+                'country'    => $u->country,
+                'created_at' => $u->created_at?->toIso8601String(),
+            ]);
+    }
+
     public function maintenanceStatus(MaintenanceService $maintenance)
     {
         return response()->json($maintenance->status());

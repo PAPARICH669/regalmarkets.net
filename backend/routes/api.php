@@ -71,6 +71,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/announcements', [MiscController::class, 'announcements']);
     Route::get('/leaderboard', [MiscController::class, 'leaderboard']);
+    Route::get('/recent-members', [MiscController::class, 'recentMembers']);
 
     // Actions blocked during maintenance + when frozen
     Route::middleware(['not.frozen', 'maintenance'])->group(function () {

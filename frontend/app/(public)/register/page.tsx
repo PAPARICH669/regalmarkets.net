@@ -17,7 +17,8 @@ function RegisterForm() {
     username: "", email: "", phone: "", password: "", password_confirmation: "",
     referral_code: "",
   });
-  const [dial, setDial] = useState(COUNTRIES[0].dial); // default Malaysia +60
+  const [country, setCountry] = useState(COUNTRIES[0].iso); // default Malaysia (MY)
+  const dial = COUNTRIES.find((c) => c.iso === country)?.dial ?? COUNTRIES[0].dial;
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -32,7 +33,7 @@ function RegisterForm() {
     setLoading(true);
     try {
       // Combine the selected country dial code with the local number.
-      const payload = { ...form, phone: `${dial}${form.phone.replace(/^0+/, "")}` };
+      const payload = { ...form, country, phone: `${dial}${form.phone.replace(/^0+/, "")}` };
       await api.post("/register", payload);
       // Account created; verify email with the 6-digit code.
       router.push(`/verify-email?email=${encodeURIComponent(form.email)}`);
@@ -68,12 +69,12 @@ function RegisterForm() {
             <div className="mt-1 flex gap-2">
               <select
                 className="input-field w-32 shrink-0"
-                value={dial}
-                onChange={(e) => setDial(e.target.value)}
-                aria-label="Country code"
+                value={country}
+                onChange={(e) => setCountry(e.target.value)}
+                aria-label="Country"
               >
                 {COUNTRIES.map((c) => (
-                  <option key={c.iso} value={c.dial}>{c.flag} {c.dial}</option>
+                  <option key={c.iso} value={c.iso}>{c.flag} {c.dial}</option>
                 ))}
               </select>
               <input type="tel" className="input-field flex-1" value={form.phone}

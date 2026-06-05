@@ -7,6 +7,7 @@ import {
 import StatCard from "@/components/StatCard";
 import RankCard from "@/components/RankCard";
 import Leaderboard from "@/components/Leaderboard";
+import WelcomeFeed from "@/components/WelcomeFeed";
 import api from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { usdt } from "@/lib/format";
@@ -63,8 +64,11 @@ export default function DashboardPage() {
         <StatCard label="Matching Bonus" value={usdt(d.totals.matching_bonus)} icon={<Layers size={18} />} />
       </div>
 
-      {/* Top 5 sales leaderboard */}
-      <Leaderboard />
+      {/* Leaderboard + welcome feed */}
+      <div className="grid lg:grid-cols-2 gap-6">
+        <Leaderboard />
+        <WelcomeFeed />
+      </div>
 
       {/* Referral */}
       <div className="glass p-5">

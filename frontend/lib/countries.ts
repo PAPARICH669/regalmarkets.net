@@ -2,6 +2,14 @@
 // markets, then the rest alphabetically by name.
 export interface Country { name: string; iso: string; dial: string; flag: string; }
 
+/** ISO-2 country code -> flag emoji (regional indicator pair). */
+export function flagEmoji(iso?: string | null): string {
+  if (!iso || iso.length !== 2) return "🌐";
+  const cc = iso.toUpperCase();
+  if (!/^[A-Z]{2}$/.test(cc)) return "🌐";
+  return String.fromCodePoint(0x1f1e6 + (cc.charCodeAt(0) - 65), 0x1f1e6 + (cc.charCodeAt(1) - 65));
+}
+
 export const COUNTRIES: Country[] = [
   { name: "Malaysia", iso: "MY", dial: "+60", flag: "🇲🇾" },
   { name: "Singapore", iso: "SG", dial: "+65", flag: "🇸🇬" },

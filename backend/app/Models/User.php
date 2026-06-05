@@ -16,7 +16,7 @@ class User extends Authenticatable
     use HasApiTokens, HasFactory, Notifiable, SoftDeletes;
 
     protected $fillable = [
-        'username', 'name', 'nickname', 'email', 'phone', 'password', 'sponsor_id', 'rank_id',
+        'username', 'name', 'nickname', 'email', 'phone', 'country', 'password', 'sponsor_id', 'rank_id',
         'referral_code', 'total_invested', 'total_fund', 'wallet_address',
         'heir_name', 'heir_phone',
         'id_type', 'id_number', 'kyc_document_path', 'kyc_document_hash', 'kyc_status', 'kyc_note',
