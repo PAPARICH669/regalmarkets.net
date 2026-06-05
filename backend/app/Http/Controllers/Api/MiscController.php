@@ -41,12 +41,12 @@ class MiscController extends Controller
                 // 2) sponsor map for the whole tree
                 $sponsorOf = \App\Models\User::pluck('sponsor_id', 'id');
 
-                // 3) roll each member's personal sales UP the sponsor chain,
-                //    crediting the member themselves AND every upline
-                //    (group sales = own sales + entire downline)
+                // 3) credit each member's personal sales to their UPLINE only
+                //    (start from the sponsor — a member's own sales are excluded;
+                //    group sales = entire downline volume, not self)
                 $group = [];
                 foreach ($personal as $uid => $amt) {
-                    $node = (int) $uid; $guard = 0;
+                    $node = (int) ($sponsorOf[$uid] ?? 0); $guard = 0;
                     while ($node && $guard++ < 200) {
                         $group[$node] = ($group[$node] ?? 0) + (float) $amt;
                         $node = (int) ($sponsorOf[$node] ?? 0);
