@@ -1,0 +1,35 @@
+// Country dial codes for the phone field. Malaysia first (default), then common
+// markets, then the rest alphabetically by name.
+export interface Country { name: string; iso: string; dial: string; flag: string; }
+
+export const COUNTRIES: Country[] = [
+  { name: "Malaysia", iso: "MY", dial: "+60", flag: "🇲🇾" },
+  { name: "Singapore", iso: "SG", dial: "+65", flag: "🇸🇬" },
+  { name: "Indonesia", iso: "ID", dial: "+62", flag: "🇮🇩" },
+  { name: "Thailand", iso: "TH", dial: "+66", flag: "🇹🇭" },
+  { name: "Philippines", iso: "PH", dial: "+63", flag: "🇵🇭" },
+  { name: "Vietnam", iso: "VN", dial: "+84", flag: "🇻🇳" },
+  { name: "Brunei", iso: "BN", dial: "+673", flag: "🇧🇳" },
+  { name: "Cambodia", iso: "KH", dial: "+855", flag: "🇰🇭" },
+  { name: "Myanmar", iso: "MM", dial: "+95", flag: "🇲🇲" },
+  { name: "Laos", iso: "LA", dial: "+856", flag: "🇱🇦" },
+  { name: "Australia", iso: "AU", dial: "+61", flag: "🇦🇺" },
+  { name: "Bangladesh", iso: "BD", dial: "+880", flag: "🇧🇩" },
+  { name: "Canada", iso: "CA", dial: "+1", flag: "🇨🇦" },
+  { name: "China", iso: "CN", dial: "+86", flag: "🇨🇳" },
+  { name: "France", iso: "FR", dial: "+33", flag: "🇫🇷" },
+  { name: "Germany", iso: "DE", dial: "+49", flag: "🇩🇪" },
+  { name: "Hong Kong", iso: "HK", dial: "+852", flag: "🇭🇰" },
+  { name: "India", iso: "IN", dial: "+91", flag: "🇮🇳" },
+  { name: "Japan", iso: "JP", dial: "+81", flag: "🇯🇵" },
+  { name: "Nepal", iso: "NP", dial: "+977", flag: "🇳🇵" },
+  { name: "New Zealand", iso: "NZ", dial: "+64", flag: "🇳🇿" },
+  { name: "Pakistan", iso: "PK", dial: "+92", flag: "🇵🇰" },
+  { name: "Saudi Arabia", iso: "SA", dial: "+966", flag: "🇸🇦" },
+  { name: "South Korea", iso: "KR", dial: "+82", flag: "🇰🇷" },
+  { name: "Sri Lanka", iso: "LK", dial: "+94", flag: "🇱🇰" },
+  { name: "Taiwan", iso: "TW", dial: "+886", flag: "🇹🇼" },
+  { name: "United Arab Emirates", iso: "AE", dial: "+971", flag: "🇦🇪" },
+  { name: "United Kingdom", iso: "GB", dial: "+44", flag: "🇬🇧" },
+  { name: "United States", iso: "US", dial: "+1", flag: "🇺🇸" },
+];

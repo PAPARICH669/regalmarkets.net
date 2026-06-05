@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import api, { apiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { COUNTRIES } from "@/lib/countries";
 import Logo from "@/components/Logo";
 
 function RegisterForm() {
@@ -16,6 +17,7 @@ function RegisterForm() {
     username: "", email: "", phone: "", password: "", password_confirmation: "",
     referral_code: "",
   });
+  const [dial, setDial] = useState(COUNTRIES[0].dial); // default Malaysia +60
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -29,7 +31,9 @@ function RegisterForm() {
     setError("");
     setLoading(true);
     try {
-      await api.post("/register", form);
+      // Combine the selected country dial code with the local number.
+      const payload = { ...form, phone: `${dial}${form.phone.replace(/^0+/, "")}` };
+      await api.post("/register", payload);
       // Account created; verify email with the 6-digit code.
       router.push(`/verify-email?email=${encodeURIComponent(form.email)}`);
     } catch (err) {
@@ -60,9 +64,21 @@ function RegisterForm() {
               onChange={(e) => setForm({ ...form, email: e.target.value })} required />
           </div>
           <div>
-            <label className="text-sm text-muted">Phone number</label>
-            <input type="tel" className="input-field mt-1" value={form.phone}
-              onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="+60…" required />
+            <label className="text-sm text-muted">Phone number <span className="text-red-500">*</span></label>
+            <div className="mt-1 flex gap-2">
+              <select
+                className="input-field w-32 shrink-0"
+                value={dial}
+                onChange={(e) => setDial(e.target.value)}
+                aria-label="Country code"
+              >
+                {COUNTRIES.map((c) => (
+                  <option key={c.iso} value={c.dial}>{c.flag} {c.dial}</option>
+                ))}
+              </select>
+              <input type="tel" className="input-field flex-1" value={form.phone}
+                onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="12 345 6789" required />
+            </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>

@@ -6,7 +6,8 @@ import { shortDate } from "@/lib/format";
 
 interface Kyc {
   id: number; username: string; name: string; email: string; phone: string;
-  id_type: string; id_number: string; kyc_status: string; kyc_note: string | null; updated_at: string;
+  id_type: string; id_number: string; kyc_status: string; kyc_note: string | null;
+  kyc_document_path: string | null; updated_at: string;
 }
 
 export default function AdminKycPage() {
@@ -40,6 +41,7 @@ export default function AdminKycPage() {
         <h1 className="text-2xl font-bold">KYC Verification</h1>
         <select className="input-field w-auto" value={filter} onChange={(e) => setFilter(e.target.value)}>
           <option value="pending">Pending</option>
+          <option value="unsubmitted">Unsubmitted</option>
           <option value="verified">Verified</option>
           <option value="rejected">Rejected</option>
         </select>
@@ -57,14 +59,18 @@ export default function AdminKycPage() {
                 <td className="capitalize">{k.id_type}</td>
                 <td className="font-mono text-xs">{k.id_number}</td>
                 <td className="text-xs text-muted">{shortDate(k.updated_at)}</td>
-                <td><button onClick={() => viewDoc(k.id)} className="btn-ghost px-3 py-1 text-xs">View ID</button></td>
                 <td>
-                  {k.kyc_status === "pending" ? (
+                  {k.kyc_document_path
+                    ? <button onClick={() => viewDoc(k.id)} className="btn-ghost px-3 py-1 text-xs">View ID</button>
+                    : <span className="text-xs text-muted">No document</span>}
+                </td>
+                <td>
+                  {k.kyc_status !== "verified" ? (
                     <div className="flex gap-2">
                       <button onClick={() => verify(k.id)} className="btn-gold px-3 py-1 text-xs">Verify</button>
                       <button onClick={() => reject(k.id)} className="btn-ghost px-3 py-1 text-xs text-red-400">Reject</button>
                     </div>
-                  ) : <span className="text-xs text-muted capitalize">{k.kyc_status}{k.kyc_note ? ` · ${k.kyc_note}` : ""}</span>}
+                  ) : <span className="text-xs text-green-400">Verified</span>}
                 </td>
               </tr>
             ))}

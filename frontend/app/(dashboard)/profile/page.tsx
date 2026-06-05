@@ -98,8 +98,9 @@ export default function ProfilePage() {
           </div>
 
           <div className="border-t border-[var(--line)] pt-4">
-            <label className="text-sm text-muted flex items-center gap-2"><Wallet size={15} className="text-gold-light" /> USDT Withdrawal Address <span className="text-gold-light text-xs">(BEP20 only)</span></label>
+            <label className="text-sm text-muted flex items-center gap-2"><Wallet size={15} className="text-gold-light" /> USDT Withdrawal Address <span className="text-red-500">*</span> <span className="text-gold-light text-xs">(BEP20 only)</span></label>
             <input className="input-field mt-1" value={form.wallet_address} onChange={(e) => setForm({ ...form, wallet_address: e.target.value })} placeholder="0x… (BEP20 / BSC)" />
+            <p className="text-xs text-muted mt-1">Required for withdrawal.</p>
           </div>
 
           <button disabled={pLoad} className="btn-gold px-6 py-2.5">{pLoad ? "Saving…" : "Save Profile"}</button>
@@ -117,8 +118,9 @@ export default function ProfilePage() {
         ) : (
           <>
             <p className="text-sm text-muted mt-1">
-              Submit your ID (IC / passport / driving license) for manual admin verification.
+              Upload a valid, non-expired <b className="text-foreground">National ID card, Passport, or Driving License</b> for manual admin verification.
               Processed within <b className="text-foreground">72 working hours</b> (Mon–Fri, weekends excluded).
+              <b className="text-red-400"> You cannot withdraw until your KYC is verified.</b>
               {status === "rejected" && user?.kyc_note && <span className="text-red-400"> Rejected: {user.kyc_note}</span>}
               {status === "pending" && <span className="text-yellow-400"> Pending admin review…</span>}
             </p>
@@ -127,20 +129,20 @@ export default function ProfilePage() {
             <form onSubmit={submitKyc} className="mt-4 space-y-4">
               <div className="grid sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="text-sm text-muted">ID type</label>
+                  <label className="text-sm text-muted">ID type <span className="text-red-500">*</span></label>
                   <select className="input-field mt-1" value={kyc.id_type} onChange={(e) => setKyc({ ...kyc, id_type: e.target.value })}>
-                    <option value="ic">IC / National ID</option>
+                    <option value="ic">National ID Card (IC)</option>
                     <option value="passport">Passport</option>
                     <option value="license">Driving License</option>
                   </select>
                 </div>
                 <div>
-                  <label className="text-sm text-muted">ID number</label>
+                  <label className="text-sm text-muted">ID number <span className="text-red-500">*</span></label>
                   <input className="input-field mt-1" value={kyc.id_number} onChange={(e) => setKyc({ ...kyc, id_number: e.target.value })} required />
                 </div>
               </div>
               <div>
-                <label className="text-sm text-muted">Upload ID (image or PDF, max 8MB)</label>
+                <label className="text-sm text-muted">Upload document <span className="text-red-500">*</span> <span className="text-xs">(valid &amp; not expired · image or PDF, max 8MB)</span></label>
                 <input type="file" accept="image/*,.pdf,.heic,.heif" className="input-field mt-1" onChange={(e) => setKyc({ ...kyc, document: e.target.files?.[0] || null })} required />
               </div>
               <button disabled={kLoad} className="btn-gold px-6 py-2.5">{kLoad ? "Submitting…" : "Submit KYC"}</button>

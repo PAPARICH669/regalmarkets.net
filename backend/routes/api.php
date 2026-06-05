@@ -53,9 +53,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index']);
     Route::get('/wallet-transactions', [MiscController::class, 'walletTransactions']);
 
-    // Deposits
+    // Deposits — allowed without KYC (deposit + fund are open; only withdrawal needs KYC)
     Route::get('/deposits', [DepositController::class, 'index']);
-    Route::post('/deposits', [DepositController::class, 'store'])->middleware('kyc');
+    Route::post('/deposits', [DepositController::class, 'store']);
 
     // Network
     Route::get('/network/tree', [NetworkController::class, 'tree']);
