@@ -59,6 +59,12 @@ class RoiService
     /** @return array{amount:string,completed:bool}|null  null when nothing paid */
     protected function payPackage(InvestmentPackage $package, string $date, float $percent): ?array
     {
+        // Commission starts the DAY AFTER funding. Skip packages activated on or
+        // after this ROI date (i.e. funded "today" earns its first payout tomorrow).
+        if ($package->activated_at && $package->activated_at->toDateString() >= $date) {
+            return null;
+        }
+
         // Idempotency guard outside the transaction (fast path)
         $already = RoiLog::where('investment_package_id', $package->id)
             ->whereDate('roi_date', $date)->exists();

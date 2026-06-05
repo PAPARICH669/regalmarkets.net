@@ -158,6 +158,8 @@ class BonusEngineTest extends TestCase
         // Give A-WALLET capital so activate() can lock it
         app(WalletService::class)->credit($user, 'A', 100, 'deposit');
         $package = app(InvestmentService::class)->activate($user, 100, 'deposit');
+        // Commission starts the day AFTER funding, so backdate activation before the run window.
+        $package->update(['activated_at' => now()->subDays(206)]);
 
         $roi = app(RoiService::class);
         // 1% of 100 = 1/day, 200 total -> 200 days. Fast-forward by running 205 distinct dates.
@@ -169,6 +171,24 @@ class BonusEngineTest extends TestCase
         $this->assertEquals('200.00000000', $package->total_paid);
         $this->assertEquals('completed', $package->status);
         $this->assertEquals('200.00000000', $user->walletE->refresh()->balance);
+    }
+
+    /** @test */
+    public function commission_starts_the_day_after_funding()
+    {
+        $user = $this->makeUser('latestart', null, 'USER');
+        app(WalletService::class)->credit($user, 'A', 100, 'deposit');
+        app(InvestmentService::class)->activate($user, 100, 'deposit'); // funded "today"
+
+        $roi = app(RoiService::class);
+
+        // Same day as funding: NO commission yet.
+        $roi->runForDate(now());
+        $this->assertEquals('0.00000000', $user->walletE->refresh()->balance);
+
+        // Next day: first commission paid (1% of 100 = 1).
+        $roi->runForDate(now()->addDay());
+        $this->assertEquals('1.00000000', $user->walletE->refresh()->balance);
     }
 
     protected function stubPackage(User $user): int
