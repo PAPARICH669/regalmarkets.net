@@ -70,6 +70,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/reports/daily', [\App\Http\Controllers\Api\ReportController::class, 'daily']);
 
     Route::get('/announcements', [MiscController::class, 'announcements']);
+    Route::get('/leaderboard', [MiscController::class, 'leaderboard']);
 
     // Actions blocked during maintenance + when frozen
     Route::middleware(['not.frozen', 'maintenance'])->group(function () {

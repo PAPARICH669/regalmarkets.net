@@ -4,10 +4,12 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Announcement;
+use App\Models\Deposit;
 use App\Models\Rank;
 use App\Models\WalletTransaction;
 use App\Services\MaintenanceService;
 use App\Services\SettingsService;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 
 class MiscController extends Controller
@@ -15,6 +17,34 @@ class MiscController extends Controller
     public function ranks()
     {
         return Rank::orderBy('level')->get();
+    }
+
+    /**
+     * Top 5 sales leaderboard for the CURRENT month (approved deposit volume).
+     * Computed live, so it updates through the day and resets each new month.
+     */
+    public function leaderboard()
+    {
+        $start = now()->startOfMonth();
+
+        $rows = Deposit::where('status', 'approved')
+            ->where('approved_at', '>=', $start)
+            ->select('user_id', DB::raw('SUM(amount) as sales'))
+            ->groupBy('user_id')
+            ->orderByDesc('sales')
+            ->limit(5)
+            ->with(['user:id,username,nickname,rank_id', 'user.rank:id,name'])
+            ->get();
+
+        return response()->json([
+            'month' => now()->format('F Y'),
+            'top'   => $rows->values()->map(fn ($r, $i) => [
+                'position' => $i + 1,
+                'name'     => $r->user?->nickname ?: ($r->user?->username ?? 'Member'),
+                'rank'     => $r->user?->rankName() ?? 'USER',
+                'sales'    => (float) $r->sales,
+            ]),
+        ]);
     }
 
     public function announcements()

@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import StatCard from "@/components/StatCard";
 import RankCard from "@/components/RankCard";
+import Leaderboard from "@/components/Leaderboard";
 import api from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { usdt } from "@/lib/format";
@@ -61,6 +62,9 @@ export default function DashboardPage() {
         <StatCard label="Sponsor Bonus" value={usdt(d.totals.sponsor_bonus)} icon={<Gift size={18} />} />
         <StatCard label="Matching Bonus" value={usdt(d.totals.matching_bonus)} icon={<Layers size={18} />} />
       </div>
+
+      {/* Top 5 sales leaderboard */}
+      <Leaderboard />
 
       {/* Referral */}
       <div className="glass p-5">
