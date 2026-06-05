@@ -20,31 +20,63 @@ class MiscController extends Controller
     }
 
     /**
-     * Top 5 sales leaderboard for the CURRENT month (approved deposit volume).
-     * Computed live, so it updates through the day and resets each new month.
+     * Top 5 GROUP-SALES leaderboard for the CURRENT month. A member's group sales =
+     * their own approved deposits + the approved deposits of their entire downline
+     * (this month). Computed live (cached briefly), resets each new month.
      */
     public function leaderboard()
     {
-        $start = now()->startOfMonth();
+        $start   = now()->startOfMonth();
+        $payload = \Illuminate\Support\Facades\Cache::remember(
+            'leaderboard.' . $start->format('Y-m'),
+            300, // refresh at most every 5 minutes
+            function () use ($start) {
+                // 1) personal approved-deposit volume this month, per user
+                $personal = Deposit::where('status', 'approved')
+                    ->where('approved_at', '>=', $start)
+                    ->select('user_id', DB::raw('SUM(amount) as s'))
+                    ->groupBy('user_id')
+                    ->pluck('s', 'user_id');
 
-        $rows = Deposit::where('status', 'approved')
-            ->where('approved_at', '>=', $start)
-            ->select('user_id', DB::raw('SUM(amount) as sales'))
-            ->groupBy('user_id')
-            ->orderByDesc('sales')
-            ->limit(5)
-            ->with(['user:id,username,nickname,rank_id', 'user.rank:id,name'])
-            ->get();
+                // 2) sponsor map for the whole tree
+                $sponsorOf = \App\Models\User::pluck('sponsor_id', 'id');
 
-        return response()->json([
-            'month' => now()->format('F Y'),
-            'top'   => $rows->values()->map(fn ($r, $i) => [
-                'position' => $i + 1,
-                'name'     => $r->user?->nickname ?: ($r->user?->username ?? 'Member'),
-                'rank'     => $r->user?->rankName() ?? 'USER',
-                'sales'    => (float) $r->sales,
-            ]),
-        ]);
+                // 3) roll each member's personal sales UP the sponsor chain
+                $group = [];
+                foreach ($personal as $uid => $amt) {
+                    $node = (int) $uid; $guard = 0;
+                    while ($node && $guard++ < 200) {
+                        $group[$node] = ($group[$node] ?? 0) + (float) $amt;
+                        $node = (int) ($sponsorOf[$node] ?? 0);
+                    }
+                }
+
+                // 4) drop admins/staff, then take the top 5
+                $adminIds = \App\Models\User::where('is_admin', true)->orWhere('is_staff', true)->pluck('id');
+                foreach ($adminIds as $id) {
+                    unset($group[$id]);
+                }
+                arsort($group);
+                $top = array_slice($group, 0, 5, true);
+
+                $users = \App\Models\User::whereIn('id', array_keys($top))
+                    ->with('rank:id,name')->get()->keyBy('id');
+
+                $pos = 0; $out = [];
+                foreach ($top as $uid => $sales) {
+                    $u = $users[$uid] ?? null;
+                    $out[] = [
+                        'position' => ++$pos,
+                        'name'     => $u?->nickname ?: ($u?->username ?? 'Member'),
+                        'rank'     => $u?->rankName() ?? 'USER',
+                        'sales'    => (float) $sales,
+                    ];
+                }
+                return ['month' => now()->format('F Y'), 'top' => $out];
+            }
+        );
+
+        return response()->json($payload);
     }
 
     public function announcements()
