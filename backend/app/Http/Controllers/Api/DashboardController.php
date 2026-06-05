@@ -25,10 +25,15 @@ class DashboardController extends Controller
         $totalPaid    = (float) $packages->sum('total_paid');
         $remainingRoi = max($totalReturn - $totalPaid, 0);
 
-        // Daily ROI = current (admin-set, variable) daily % × active principal.
+        // Daily commission = admin-set daily % × ELIGIBLE active principal.
+        // Commission starts the day AFTER funding, so packages activated today are
+        // excluded — they begin earning (and showing here) tomorrow.
+        $today           = Carbon::today()->toDateString();
         $dailyPercent    = (float) app(\App\Services\SettingsService::class)->get('roi_daily_percent');
-        $activePrincipal = (float) $activePackages->sum('principal');
-        $dailyRoi        = round($dailyPercent / 100 * $activePrincipal, 8);
+        $eligiblePrincipal = (float) $activePackages
+            ->filter(fn ($p) => $p->activated_at && $p->activated_at->toDateString() < $today)
+            ->sum('principal');
+        $dailyRoi        = round($dailyPercent / 100 * $eligiblePrincipal, 8);
 
         $sponsorBonus  = (float) SponsorBonusLog::where('to_user_id', $user->id)->sum('amount');
         $matchingBonus = (float) MatchingBonusLog::where('to_user_id', $user->id)->sum('amount');
