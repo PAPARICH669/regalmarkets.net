@@ -28,10 +28,15 @@ interface Dashboard {
 
 export default function DashboardPage() {
   const user = useAuth((s) => s.user);
+  const refresh = useAuth((s) => s.refresh);
   const [d, setD] = useState<Dashboard | null>(null);
   const [copied, setCopied] = useState(false);
 
-  useEffect(() => { api.get("/dashboard").then((r) => setD(r.data)); }, []);
+  // Always pull fresh wallet/rank/commission data on every dashboard view.
+  useEffect(() => {
+    refresh();
+    api.get("/dashboard").then((r) => setD(r.data));
+  }, [refresh]);
 
   if (!d) return <div className="text-muted py-10">Loading dashboard…</div>;
 
