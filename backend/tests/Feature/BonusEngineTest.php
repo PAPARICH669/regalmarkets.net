@@ -191,6 +191,25 @@ class BonusEngineTest extends TestCase
         $this->assertEquals('1.00000000', $user->walletE->refresh()->balance);
     }
 
+    /** @test */
+    public function total_fund_drops_when_package_completes_200_percent()
+    {
+        $user = $this->makeUser('funder', null, 'USER');
+        $user->update(['total_fund' => 100]);
+        app(WalletService::class)->credit($user, 'A', 100, 'deposit');
+        $package = app(InvestmentService::class)->activate($user, 100, 'fund');
+        $package->update(['activated_at' => now()->subDays(206)]);
+
+        $roi = app(RoiService::class);
+        for ($d = 0; $d < 205; $d++) {
+            $roi->runForDate(now()->subDays(205 - $d));
+        }
+
+        $this->assertEquals('completed', $package->refresh()->status);
+        // The completed package's principal (100) is removed from total_fund.
+        $this->assertEquals('0.00000000', $user->fresh()->total_fund);
+    }
+
     protected function stubPackage(User $user): int
     {
         return \App\Models\InvestmentPackage::create([

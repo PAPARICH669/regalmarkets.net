@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\InvestmentPackage;
 use App\Models\RoiLog;
+use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -113,6 +114,16 @@ class RoiService
                 'status'            => $isComplete ? 'completed' : 'active',
                 'completed_at'      => $isComplete ? now() : null,
             ]);
+
+            // When the package hits 200%, remove its principal from the member's
+            // total_fund so only still-earning (incomplete) capital remains counted.
+            if ($isComplete) {
+                $u = User::lockForUpdate()->find($package->user_id);
+                if ($u) {
+                    $newFund = bcsub((string) $u->total_fund, (string) $package->principal, 8);
+                    $u->update(['total_fund' => bccomp($newFund, '0', 8) < 0 ? '0' : $newFund]);
+                }
+            }
 
             // Matching bonus rollup off this ROI payout.
             $this->matching->distributeForRoi($roiLog);
