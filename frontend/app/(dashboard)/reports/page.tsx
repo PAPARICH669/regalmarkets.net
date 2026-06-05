@@ -1,18 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { TrendingUp, Gift, Layers, Coins, Network as NetIcon } from "lucide-react";
-import StatCard from "@/components/StatCard";
+import { useEffect, useState } from "react";
+import { Network as NetIcon } from "lucide-react";
 import api from "@/lib/api";
 import { usdt, shortDate } from "@/lib/format";
 
-type Tab = "summary" | "roi" | "sponsor" | "matching" | "group";
+type Tab = "roi" | "sponsor" | "matching" | "group";
 
-interface DailyRow { date: string; roi: number; roi_percent: number; sponsor: number; matching: number; total: number; }
 interface LevelRow { level: number; members: number; sales: number; invested: number; }
 interface Report {
-  daily: DailyRow[];
-  totals: { roi: number; sponsor: number; matching: number; earnings: number };
   group_sales_by_level: LevelRow[];
   total_group_sales: number;
   total_group_members: number;
@@ -23,7 +19,6 @@ interface MatchLog { id: number; from_user?: FromUser; upline_rank: string; appl
 interface RoiLog { id: number; amount: string; roi_date: string; package?: { id: number; principal: string } }
 
 const TABS: { key: Tab; label: string }[] = [
-  { key: "summary", label: "Daily Summary" },
   { key: "roi", label: "Daily Commission" },
   { key: "sponsor", label: "Sponsor Bonus" },
   { key: "matching", label: "Matching Bonus" },
@@ -41,18 +36,15 @@ function FromCell({ u }: { u?: FromUser }) {
 }
 
 export default function ReportsPage() {
-  const [tab, setTab] = useState<Tab>("summary");
-  const [days, setDays] = useState(30);
+  const [tab, setTab] = useState<Tab>("roi");
   const [r, setR] = useState<Report | null>(null);
   const [roi, setRoi] = useState<RoiLog[]>([]);
   const [sponsor, setSponsor] = useState<SponsorLog[]>([]);
   const [matching, setMatching] = useState<MatchLog[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const loadDaily = useCallback(() => {
-    api.get(`/reports/daily?days=${days}`).then((res) => setR(res.data));
-  }, [days]);
-  useEffect(() => { loadDaily(); }, [loadDaily]);
+  // Group-sales structure (network) — fetched once.
+  useEffect(() => { api.get("/reports/daily").then((res) => setR(res.data)); }, []);
 
   useEffect(() => {
     setLoading(true);
@@ -65,18 +57,9 @@ export default function ReportsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <h1 className="text-2xl font-bold">Reports</h1>
-          <p className="text-muted text-sm">Choose a report to view.</p>
-        </div>
-        {(tab === "summary") && (
-          <select className="input-field w-auto" value={days} onChange={(e) => setDays(Number(e.target.value))}>
-            <option value={7}>Last 7 days</option>
-            <option value={30}>Last 30 days</option>
-            <option value={90}>Last 90 days</option>
-          </select>
-        )}
+      <div>
+        <h1 className="text-2xl font-bold">Reports</h1>
+        <p className="text-muted text-sm">Your records from the first commission &amp; bonus you earned.</p>
       </div>
 
       {/* Report selector buttons */}
@@ -88,39 +71,6 @@ export default function ReportsPage() {
           </button>
         ))}
       </div>
-
-      {/* ---- Daily Summary ---- */}
-      {tab === "summary" && (
-        <div className="space-y-6">
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <StatCard label={`Commission (${days}d)`} value={usdt(r?.totals.roi ?? 0)} icon={<TrendingUp size={18} />} accent />
-            <StatCard label={`Sponsor (${days}d)`} value={usdt(r?.totals.sponsor ?? 0)} icon={<Gift size={18} />} />
-            <StatCard label={`Matching (${days}d)`} value={usdt(r?.totals.matching ?? 0)} icon={<Layers size={18} />} />
-            <StatCard label={`Total (${days}d)`} value={usdt(r?.totals.earnings ?? 0)} icon={<Coins size={18} />} accent />
-          </div>
-          <div className="glass p-5">
-            <h3 className="font-semibold mb-4">Daily Breakdown</h3>
-            <div className="overflow-x-auto max-h-[460px] overflow-y-auto">
-              <table className="w-full text-sm">
-                <thead className="text-gold-light text-left sticky top-0 bg-[var(--surface)]">
-                  <tr><th className="py-2">Date</th><th>Daily Commission</th><th>Commission %</th><th>Sponsor</th><th>Matching</th><th>Total</th></tr>
-                </thead>
-                <tbody>
-                  {(r?.daily ?? []).map((row) => (
-                    <tr key={row.date} className={`border-t border-[var(--line)] ${row.total === 0 ? "opacity-50" : ""}`}>
-                      <td className="py-2">{shortDate(row.date).split(",")[0]}</td>
-                      <td>{usdt(row.roi)}</td>
-                      <td className="text-gold-light">{row.roi_percent ? row.roi_percent + "%" : "—"}</td>
-                      <td>{usdt(row.sponsor)}</td><td>{usdt(row.matching)}</td>
-                      <td className="gold-text font-medium">{usdt(row.total)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* ---- Daily Commission detail ---- */}
       {tab === "roi" && (
@@ -142,7 +92,7 @@ export default function ReportsPage() {
       {tab === "sponsor" && (
         <div className="glass p-5">
           <h3 className="font-semibold mb-1">Sponsor Bonus</h3>
-          <p className="text-sm text-muted mb-4">Earned instantly when a downline activates a deposit.</p>
+          <p className="text-sm text-muted mb-4">Earned instantly when a downline funds a package.</p>
           <ReportTable head={["From Member", "Level", "%", "Amount", "Date"]} loading={loading} empty={sponsor.length === 0}>
             {sponsor.map((x) => (
               <tr key={x.id} className="border-t border-[var(--line)]">
