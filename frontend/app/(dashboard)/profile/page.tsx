@@ -118,8 +118,8 @@ export default function ProfilePage() {
         ) : (
           <>
             <p className="text-sm text-muted mt-1">
-              Upload a valid, non-expired <b className="text-foreground">National ID card, Passport, or Driving License</b> for manual admin verification.
-              Processed within <b className="text-foreground">72 working hours</b> (Mon–Fri, weekends excluded).
+              Upload a valid, non-expired <b className="text-foreground">National ID card, Passport, or Driving License</b>.
+              KYC is processed within <b className="text-foreground">72 working hours</b> (Mon–Fri, weekends excluded).
               <b className="text-red-400"> You cannot withdraw until your KYC is verified.</b>
               {status === "rejected" && user?.kyc_note && <span className="text-red-400"> Rejected: {user.kyc_note}</span>}
               {status === "pending" && <span className="text-yellow-400"> Pending admin review…</span>}
