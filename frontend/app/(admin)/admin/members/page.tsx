@@ -3,16 +3,19 @@
 import { useCallback, useEffect, useState } from "react";
 import api, { apiError } from "@/lib/api";
 import { usdt } from "@/lib/format";
+import { useAuth } from "@/lib/auth";
 import RankBadge from "@/components/RankBadge";
 
 interface Member {
   id: number; username: string; email: string; phone?: string; kyc_status?: string;
   total_fund: string; total_invested: string;
-  is_frozen: boolean; referrals_count: number; rank?: { id: number; name: string };
+  is_frozen: boolean; is_staff?: boolean; is_admin?: boolean; referrals_count: number; rank?: { id: number; name: string };
 }
 interface Rank { id: number; name: string; }
 
 export default function AdminMembers() {
+  const me = useAuth((s) => s.user);
+  const isAdmin = !!me?.is_admin;
   const [items, setItems] = useState<Member[]>([]);
   const [ranks, setRanks] = useState<Rank[]>([]);
   const [search, setSearch] = useState("");
@@ -21,7 +24,7 @@ export default function AdminMembers() {
   const load = useCallback(() => {
     api.get(`/admin/members${search ? `?search=${encodeURIComponent(search)}` : ""}`).then((r) => setItems(r.data.data));
   }, [search]);
-  useEffect(() => { load(); api.get("/ranks").then((r) => setRanks(r.data)); }, [load]);
+  useEffect(() => { load(); if (isAdmin) api.get("/ranks").then((r) => setRanks(r.data)); }, [load, isAdmin]);
 
   async function freeze(id: number) {
     try { await api.post(`/admin/members/${id}/freeze`); load(); } catch (e) { setError(apiError(e)); }
@@ -41,6 +44,9 @@ export default function AdminMembers() {
     const newPhone = window.prompt("Phone:", phone || "") ?? "";
     try { await api.post(`/admin/members/${id}/contact`, { email: newEmail, phone: newPhone }); load(); }
     catch (e) { setError(apiError(e)); }
+  }
+  async function toggleStaff(id: number) {
+    try { await api.post(`/admin/members/${id}/staff`); load(); } catch (e) { setError(apiError(e)); }
   }
   async function resetPw(id: number, username: string) {
     const pwd = window.prompt(`New password for ${username} (min 6, leave blank to auto-generate):`);
@@ -64,7 +70,13 @@ export default function AdminMembers() {
           <tbody>
             {items.map((m) => (
               <tr key={m.id} className="border-t border-[var(--line)]">
-                <td className="px-4 py-3">{m.username}<div className="text-xs text-muted">{m.email}</div><div className="text-xs text-muted">📞 {m.phone || "—"}</div></td>
+                <td className="px-4 py-3">
+                  {m.username}
+                  {m.is_admin && <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-gold-light/15 text-gold-light">ADMIN</span>}
+                  {m.is_staff && !m.is_admin && <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-300">STAFF</span>}
+                  <div className="text-xs text-muted">{m.email}</div>
+                  <div className="text-xs text-muted">📞 {m.phone || "—"}</div>
+                </td>
                 <td>{m.rank ? <RankBadge rank={m.rank.name} /> : "—"}</td>
                 <td><KycPill status={m.kyc_status} /></td>
                 <td>{usdt(m.total_fund)}</td>
@@ -73,14 +85,21 @@ export default function AdminMembers() {
                 <td>{m.is_frozen ? <span className="text-xs text-red-400">Frozen</span> : <span className="text-xs text-green-400">Active</span>}</td>
                 <td>
                   <div className="flex flex-wrap gap-1.5">
-                    <button onClick={() => freeze(m.id)} className="btn-ghost px-2 py-1 text-xs">{m.is_frozen ? "Unfreeze" : "Freeze"}</button>
-                    <button onClick={() => adjust(m.id)} className="btn-ghost px-2 py-1 text-xs">Adjust</button>
-                    <button onClick={() => resetPw(m.id, m.username)} className="btn-ghost px-2 py-1 text-xs">Reset PW</button>
                     <button onClick={() => editContact(m.id, m.email, m.phone || "")} className="btn-ghost px-2 py-1 text-xs">Contact</button>
-                    <select className="bg-[var(--surface)] border border-[var(--line)] rounded px-1 py-1 text-xs"
-                      value={m.rank?.id ?? ""} onChange={(e) => setRank(m.id, Number(e.target.value))}>
-                      {ranks.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
-                    </select>
+                    {isAdmin && (<>
+                      <button onClick={() => freeze(m.id)} className="btn-ghost px-2 py-1 text-xs">{m.is_frozen ? "Unfreeze" : "Freeze"}</button>
+                      <button onClick={() => adjust(m.id)} className="btn-ghost px-2 py-1 text-xs">Adjust</button>
+                      <button onClick={() => resetPw(m.id, m.username)} className="btn-ghost px-2 py-1 text-xs">Reset PW</button>
+                      {!m.is_admin && (
+                        <button onClick={() => toggleStaff(m.id)} className={`px-2 py-1 text-xs rounded ${m.is_staff ? "bg-blue-500/20 text-blue-300" : "btn-ghost"}`}>
+                          {m.is_staff ? "Staff ✓" : "Make Staff"}
+                        </button>
+                      )}
+                      <select className="bg-[var(--surface)] border border-[var(--line)] rounded px-1 py-1 text-xs"
+                        value={m.rank?.id ?? ""} onChange={(e) => setRank(m.id, Number(e.target.value))}>
+                        {ranks.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
+                      </select>
+                    </>)}
                   </div>
                 </td>
               </tr>

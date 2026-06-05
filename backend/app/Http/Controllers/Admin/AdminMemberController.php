@@ -117,6 +117,20 @@ class AdminMemberController extends Controller
         return response()->json(['message' => 'Contact details updated.', 'user' => $user]);
     }
 
+    /** Grant/revoke limited staff access (KYC + edit profile). Admin only. */
+    public function toggleStaff(Request $request, User $user)
+    {
+        if ($user->is_admin) {
+            return response()->json(['message' => 'Cannot change staff role of an admin.'], 422);
+        }
+        $user->update(['is_staff' => ! $user->is_staff]);
+        $this->audit->log($request, 'member.toggle_staff', $user, ['is_staff' => $user->is_staff]);
+        return response()->json([
+            'message' => $user->is_staff ? 'Staff access granted.' : 'Staff access revoked.',
+            'user'    => $user,
+        ]);
+    }
+
     /** List KYC submissions (default pending). */
     public function kycList(Request $request)
     {

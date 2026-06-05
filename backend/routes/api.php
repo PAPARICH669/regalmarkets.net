@@ -86,49 +86,55 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/fund', [FundController::class, 'store']);
     });
 
-    // ---- Admin --------------------------------------------------------------
-    Route::middleware('admin')->prefix('admin')->group(function () {
-        Route::get('/dashboard', [AdminDashboardController::class, 'index']);
-
-        Route::get('/deposits', [AdminDepositController::class, 'index']);
-        Route::post('/deposits/{deposit}/approve', [AdminDepositController::class, 'approve']);
-        Route::post('/deposits/{deposit}/reject', [AdminDepositController::class, 'reject']);
-
-        Route::get('/withdrawals', [AdminWithdrawalController::class, 'index']);
-        Route::post('/withdrawals/{withdrawal}/approve', [AdminWithdrawalController::class, 'approve']);
-        Route::post('/withdrawals/{withdrawal}/reject', [AdminWithdrawalController::class, 'reject']);
-
+    // ---- Admin & Staff ------------------------------------------------------
+    Route::middleware('staff')->prefix('admin')->group(function () {
+        // Shared by admin + staff: member lookup, edit profile, KYC review.
         Route::get('/members', [AdminMemberController::class, 'index']);
         Route::get('/members/{user}', [AdminMemberController::class, 'show']);
-        Route::get('/members/{user}/tree', [AdminMemberController::class, 'tree']);
-        Route::post('/members/{user}/freeze', [AdminMemberController::class, 'freeze']);
-        Route::post('/members/{user}/adjust-wallet', [AdminMemberController::class, 'adjustWallet']);
-        Route::post('/members/{user}/rank', [AdminMemberController::class, 'editRank']);
-        Route::post('/members/{user}/reset-password', [AdminMemberController::class, 'resetPassword']);
         Route::post('/members/{user}/contact', [AdminMemberController::class, 'editContact']);
         Route::get('/kyc', [AdminMemberController::class, 'kycList']);
         Route::get('/members/{user}/kyc-document', [AdminMemberController::class, 'kycDocument']);
         Route::post('/members/{user}/kyc/verify', [AdminMemberController::class, 'verifyKyc']);
         Route::post('/members/{user}/kyc/reject', [AdminMemberController::class, 'rejectKyc']);
 
-        Route::get('/settings', [AdminSettingController::class, 'index']);
-        Route::put('/settings', [AdminSettingController::class, 'update']);
+        // Full-admin only.
+        Route::middleware('admin')->group(function () {
+            Route::get('/dashboard', [AdminDashboardController::class, 'index']);
 
-        Route::get('/roi/status', [\App\Http\Controllers\Admin\AdminRoiController::class, 'status']);
-        Route::post('/roi/run', [\App\Http\Controllers\Admin\AdminRoiController::class, 'run']);
+            Route::get('/deposits', [AdminDepositController::class, 'index']);
+            Route::post('/deposits/{deposit}/approve', [AdminDepositController::class, 'approve']);
+            Route::post('/deposits/{deposit}/reject', [AdminDepositController::class, 'reject']);
 
-        Route::get('/announcements', [AdminAnnouncementController::class, 'index']);
-        Route::post('/announcements', [AdminAnnouncementController::class, 'store']);
-        Route::put('/announcements/{announcement}', [AdminAnnouncementController::class, 'update']);
-        Route::delete('/announcements/{announcement}', [AdminAnnouncementController::class, 'destroy']);
+            Route::get('/withdrawals', [AdminWithdrawalController::class, 'index']);
+            Route::post('/withdrawals/{withdrawal}/approve', [AdminWithdrawalController::class, 'approve']);
+            Route::post('/withdrawals/{withdrawal}/reject', [AdminWithdrawalController::class, 'reject']);
 
-        Route::get('/maintenance', [AdminMaintenanceController::class, 'status']);
-        Route::post('/maintenance/toggle', [AdminMaintenanceController::class, 'toggle']);
+            Route::get('/members/{user}/tree', [AdminMemberController::class, 'tree']);
+            Route::post('/members/{user}/freeze', [AdminMemberController::class, 'freeze']);
+            Route::post('/members/{user}/adjust-wallet', [AdminMemberController::class, 'adjustWallet']);
+            Route::post('/members/{user}/rank', [AdminMemberController::class, 'editRank']);
+            Route::post('/members/{user}/reset-password', [AdminMemberController::class, 'resetPassword']);
+            Route::post('/members/{user}/staff', [AdminMemberController::class, 'toggleStaff']);
 
-        Route::get('/logs/matching', [AdminLogController::class, 'matching']);
-        Route::get('/logs/sponsor', [AdminLogController::class, 'sponsor']);
-        Route::get('/logs/audit', [AdminLogController::class, 'audit']);
+            Route::get('/settings', [AdminSettingController::class, 'index']);
+            Route::put('/settings', [AdminSettingController::class, 'update']);
 
-        Route::get('/reports/{type}', [AdminReportController::class, 'export']);
+            Route::get('/roi/status', [\App\Http\Controllers\Admin\AdminRoiController::class, 'status']);
+            Route::post('/roi/run', [\App\Http\Controllers\Admin\AdminRoiController::class, 'run']);
+
+            Route::get('/announcements', [AdminAnnouncementController::class, 'index']);
+            Route::post('/announcements', [AdminAnnouncementController::class, 'store']);
+            Route::put('/announcements/{announcement}', [AdminAnnouncementController::class, 'update']);
+            Route::delete('/announcements/{announcement}', [AdminAnnouncementController::class, 'destroy']);
+
+            Route::get('/maintenance', [AdminMaintenanceController::class, 'status']);
+            Route::post('/maintenance/toggle', [AdminMaintenanceController::class, 'toggle']);
+
+            Route::get('/logs/matching', [AdminLogController::class, 'matching']);
+            Route::get('/logs/sponsor', [AdminLogController::class, 'sponsor']);
+            Route::get('/logs/audit', [AdminLogController::class, 'audit']);
+
+            Route::get('/reports/{type}', [AdminReportController::class, 'export']);
+        });
     });
 });

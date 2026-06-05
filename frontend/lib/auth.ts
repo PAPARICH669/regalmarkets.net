@@ -21,6 +21,7 @@ export interface AuthUser {
   kyc_note?: string | null;
   email_verified?: boolean;
   is_admin: boolean;
+  is_staff?: boolean;
   is_frozen: boolean;
   total_invested: number;
   total_fund: number;

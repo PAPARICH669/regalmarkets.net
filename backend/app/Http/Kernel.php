@@ -66,6 +66,7 @@ class Kernel extends HttpKernel
 
         // Regal Markets
         'admin'        => \App\Http\Middleware\IsAdmin::class,
+        'staff'        => \App\Http\Middleware\EnsureStaffOrAdmin::class,
         'not.frozen'   => \App\Http\Middleware\EnsureNotFrozen::class,
         'maintenance'  => \App\Http\Middleware\MaintenanceWindow::class,
         'kyc'          => \App\Http\Middleware\EnsureKycVerified::class,

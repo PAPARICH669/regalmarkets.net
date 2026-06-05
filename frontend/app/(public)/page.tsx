@@ -86,7 +86,8 @@ export default function LandingLoginPage() {
     try {
       const { data } = await api.post("/login", form);
       setAuth(data.token, data.user);
-      router.push(data.user.is_admin ? "/admin" : "/dashboard");
+      const dest = data.user.is_admin ? "/admin" : data.user.is_staff ? "/admin/kyc" : "/dashboard";
+      router.push(dest);
     } catch (err) {
       const e = err as { response?: { status?: number; data?: { needs_verification?: boolean; email?: string; maintenance?: Maint } } };
       if (e.response?.data?.needs_verification) {

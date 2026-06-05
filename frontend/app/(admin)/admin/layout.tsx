@@ -10,12 +10,13 @@ import {
 import Logo from "@/components/Logo";
 import { useAuth } from "@/lib/auth";
 
+// `staff: true` items are visible to limited staff users; the rest are admin-only.
 const NAV = [
   { href: "/admin", label: "Overview", icon: LayoutDashboard },
   { href: "/admin/deposits", label: "Deposits", icon: ArrowDownToLine },
   { href: "/admin/withdrawals", label: "Withdrawals", icon: ArrowUpFromLine },
-  { href: "/admin/members", label: "Members", icon: Users },
-  { href: "/admin/kyc", label: "KYC", icon: ShieldCheck },
+  { href: "/admin/members", label: "Members", icon: Users, staff: true },
+  { href: "/admin/kyc", label: "KYC", icon: ShieldCheck, staff: true },
   { href: "/admin/roi", label: "Daily Commission", icon: TrendingUp },
   { href: "/admin/logs", label: "Bonus Logs", icon: Layers },
   { href: "/admin/settings", label: "Settings", icon: Settings },
@@ -30,16 +31,20 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const { user, loading, hydrated, bootstrap, logout } = useAuth();
   const [open, setOpen] = useState(false);
 
+  const isStaffOnly = !!user && !user.is_admin && !!user.is_staff;
+
   useEffect(() => { bootstrap(); }, [bootstrap]);
   useEffect(() => {
     if (hydrated && !loading) {
       if (!user) router.replace("/login");
-      else if (!user.is_admin) router.replace("/dashboard");
+      else if (!user.is_admin && !user.is_staff) router.replace("/dashboard");
     }
   }, [hydrated, loading, user, router]);
 
   if (!hydrated || loading) return <div className="min-h-screen grid place-items-center text-muted">Loading…</div>;
-  if (!user || !user.is_admin) return null;
+  if (!user || (!user.is_admin && !user.is_staff)) return null;
+
+  const navItems = isStaffOnly ? NAV.filter((n) => n.staff) : NAV;
 
   return (
     <div className="min-h-screen flex">
@@ -47,9 +52,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <div className="h-16 flex items-center px-5 border-b border-[var(--line)] gap-2">
           <Logo size="sm" />
         </div>
-        <div className="px-5 py-2 text-xs uppercase tracking-wider text-gold-light flex items-center gap-1"><ShieldCheck size={13} /> Admin</div>
+        <div className="px-5 py-2 text-xs uppercase tracking-wider text-gold-light flex items-center gap-1"><ShieldCheck size={13} /> {isStaffOnly ? "Staff" : "Admin"}</div>
         <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
-          {NAV.map((item) => {
+          {navItems.map((item) => {
             const active = pathname === item.href;
             const Icon = item.icon;
             return (
@@ -71,7 +76,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <div className="flex-1 min-w-0">
         <header className="h-16 border-b border-[var(--line)] flex items-center justify-between px-5 sticky top-0 bg-[rgba(4,16,42,0.85)] backdrop-blur-md z-30">
           <button className="lg:hidden btn-ghost p-2" onClick={() => setOpen(true)}><Menu size={18} /></button>
-          <span className="ml-auto text-sm text-muted">{user.username} · Administrator</span>
+          <span className="ml-auto text-sm text-muted">{user.username} · {isStaffOnly ? "Staff" : "Administrator"}</span>
         </header>
         <div className="p-5 max-w-7xl mx-auto">{children}</div>
       </div>

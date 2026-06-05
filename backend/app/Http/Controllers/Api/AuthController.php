@@ -271,6 +271,7 @@ class AuthController extends Controller
             'kyc_note'       => $user->kyc_note,
             'email_verified' => (bool) $user->email_verified_at,
             'is_admin'       => $user->is_admin,
+            'is_staff'       => $user->is_staff,
             'is_frozen'      => $user->is_frozen,
             'total_invested' => (float) $user->total_invested,
             'total_fund'     => (float) $user->total_fund,
