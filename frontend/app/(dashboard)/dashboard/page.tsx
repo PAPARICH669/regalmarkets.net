@@ -54,12 +54,12 @@ export default function DashboardPage() {
         <StatCard label="A-WALLET (Capital)" value={usdt(d.wallets.A)} icon={<Wallet size={18} />} accent />
         <StatCard label="E-WALLET (Earnings)" value={usdt(d.wallets.E)} icon={<Coins size={18} />} accent />
         <StatCard label="Total Investment" value={usdt(d.totals.total_invested)} icon={<Landmark size={18} />} />
-        <StatCard label="Daily Commission" value={usdt(d.totals.daily_roi)} icon={<TrendingUp size={18} />} />
+        <StatCard label="Totally Commission" value={usdt(d.totals.roi_earned)} icon={<TrendingUp size={18} />} accent
+          sub={`of ${usdt(d.totals.total_return)} · 200% target`} />
       </div>
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard label="Remaining Commission" value={usdt(d.totals.remaining_roi)} icon={<TrendingUp size={18} />} />
-        <StatCard label="Commission Earned" value={usdt(d.totals.roi_earned)} icon={<Coins size={18} />} />
         <StatCard label="Sponsor Bonus" value={usdt(d.totals.sponsor_bonus)} icon={<Gift size={18} />} />
         <StatCard label="Matching Bonus" value={usdt(d.totals.matching_bonus)} icon={<Layers size={18} />} />
       </div>
