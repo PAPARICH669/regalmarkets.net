@@ -67,7 +67,7 @@ function MaintenanceNotice({ m }: { m: Maint }) {
 export default function LandingLoginPage() {
   const router = useRouter();
   const setAuth = useAuth((s) => s.setAuth);
-  const [form, setForm] = useState({ login: "", password: "" });
+  const [form, setForm] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [maint, setMaint] = useState<Maint | null>(null);
@@ -90,7 +90,7 @@ export default function LandingLoginPage() {
     } catch (err) {
       const e = err as { response?: { status?: number; data?: { needs_verification?: boolean; email?: string; maintenance?: Maint } } };
       if (e.response?.data?.needs_verification) {
-        router.push(`/verify-email?email=${encodeURIComponent(e.response.data.email || form.login)}`);
+        router.push(`/verify-email?email=${encodeURIComponent(e.response.data.email || form.email)}`);
         return;
       }
       // Maintenance block (members only) — show the notice instead of a plain error.
@@ -122,12 +122,13 @@ export default function LandingLoginPage() {
 
         <form onSubmit={submit} className="space-y-4">
           <div>
-            <label className="text-sm text-muted">Login</label>
+            <label className="text-sm text-muted">Email</label>
             <input
+              type="email"
               className="input-field mt-1"
-              value={form.login}
-              onChange={(e) => setForm({ ...form, login: e.target.value })}
-              placeholder="Username or email"
+              value={form.email}
+              onChange={(e) => setForm({ ...form, email: e.target.value })}
+              placeholder="you@email.com"
               required
             />
           </div>

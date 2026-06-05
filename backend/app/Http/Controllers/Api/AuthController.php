@@ -133,13 +133,11 @@ class AuthController extends Controller
     public function login(Request $request)
     {
         $data = $request->validate([
-            'login'    => ['required', 'string'], // username or email
+            'email'    => ['required', 'email'],
             'password' => ['required', 'string'],
         ]);
 
-        $user = User::where('username', $data['login'])
-            ->orWhere('email', $data['login'])
-            ->first();
+        $user = User::where('email', $data['email'])->first();
 
         $ok = $user && Hash::check($data['password'], $user->password);
 
@@ -153,7 +151,7 @@ class AuthController extends Controller
         }
 
         if (! $ok) {
-            throw ValidationException::withMessages(['login' => 'Invalid credentials.']);
+            throw ValidationException::withMessages(['email' => 'Invalid email or password.']);
         }
 
         // Members cannot log in during the maintenance window; admins always can.
@@ -177,7 +175,7 @@ class AuthController extends Controller
         }
 
         if ($user->is_frozen) {
-            throw ValidationException::withMessages(['login' => 'Your account is frozen. Contact support.']);
+            throw ValidationException::withMessages(['email' => 'Your account is frozen. Contact support.']);
         }
 
         $user->update(['last_login_ip' => $request->ip(), 'last_login_at' => now()]);

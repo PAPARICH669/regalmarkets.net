@@ -81,12 +81,24 @@ class MiscController extends Controller
             'document'  => ['required', 'file', 'mimes:jpg,jpeg,png,webp,heic,heif,pdf', 'max:8192'],
         ]);
 
+        // Reject a document file that another account has already used (anti-duplicate).
+        $hash = hash_file('sha256', $request->file('document')->getRealPath());
+        $dupe = \App\Models\User::where('kyc_document_hash', $hash)
+            ->where('id', '!=', $user->id)
+            ->exists();
+        if ($dupe) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'document' => 'This document has already been used by another account.',
+            ]);
+        }
+
         $path = $request->file('document')->store('kyc', config('regal.proof_disk', 'local'));
 
         $user->update([
             'id_type'           => $data['id_type'],
             'id_number'         => $data['id_number'],
             'kyc_document_path' => $path,
+            'kyc_document_hash' => $hash,
             'kyc_status'        => 'pending',
             'kyc_note'          => null,
         ]);
