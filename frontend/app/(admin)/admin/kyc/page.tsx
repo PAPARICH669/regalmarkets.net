@@ -55,7 +55,7 @@ export default function AdminKycPage() {
           <tbody>
             {items.map((k) => (
               <tr key={k.id} className="border-t border-[var(--line)]">
-                <td className="px-4 py-3">{k.name || k.username}<div className="text-xs text-muted">@{k.username} · {k.email}</div></td>
+                <td className="px-4 py-3">{k.name || k.username}<div className="text-xs text-muted">@{k.username} · {k.email}</div><div className="text-xs text-muted">📞 {k.phone || "—"}</div></td>
                 <td className="capitalize">{k.id_type}</td>
                 <td className="font-mono text-xs">{k.id_number}</td>
                 <td className="text-xs text-muted">{shortDate(k.updated_at)}</td>

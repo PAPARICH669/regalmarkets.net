@@ -80,8 +80,12 @@ export default function ProfilePage() {
               <label className="text-sm text-muted">Email <span className="text-xs">(admin only)</span></label>
               <input className="input-field mt-1 opacity-60" value={user?.email || ""} disabled />
             </div>
+            <div>
+              <label className="text-sm text-muted">Phone number <span className="text-xs">(admin only)</span></label>
+              <input className="input-field mt-1 opacity-60" value={user?.phone || "—"} disabled />
+            </div>
           </div>
-          <p className="text-xs text-muted">To change your email, contact admin/support.</p>
+          <p className="text-xs text-muted">To change your email or phone, contact admin/support.</p>
 
           <div className="border-t border-[var(--line)] pt-4">
             <p className="text-sm font-medium flex items-center gap-2 mb-3"><Users size={16} className="text-gold-light" /> Beneficiary (Pewaris)</p>

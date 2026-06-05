@@ -55,7 +55,7 @@ export default function AdminMembers() {
     <div className="space-y-5">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <h1 className="text-2xl font-bold">Members</h1>
-        <input className="input-field w-64" placeholder="Search username/email…" value={search} onChange={(e) => setSearch(e.target.value)} />
+        <input className="input-field w-64" placeholder="Search username/email/phone…" value={search} onChange={(e) => setSearch(e.target.value)} />
       </div>
       {error && <div className="text-sm text-red-400 bg-red-500/10 border border-red-500/30 rounded-lg px-4 py-3">{error}</div>}
       <div className="glass overflow-x-auto">
@@ -64,7 +64,7 @@ export default function AdminMembers() {
           <tbody>
             {items.map((m) => (
               <tr key={m.id} className="border-t border-[var(--line)]">
-                <td className="px-4 py-3">{m.username}<div className="text-xs text-muted">{m.email}</div></td>
+                <td className="px-4 py-3">{m.username}<div className="text-xs text-muted">{m.email}</div><div className="text-xs text-muted">📞 {m.phone || "—"}</div></td>
                 <td>{m.rank ? <RankBadge rank={m.rank.name} /> : "—"}</td>
                 <td><KycPill status={m.kyc_status} /></td>
                 <td>{usdt(m.total_fund)}</td>

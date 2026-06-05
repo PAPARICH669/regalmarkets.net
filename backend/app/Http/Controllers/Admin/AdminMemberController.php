@@ -23,7 +23,9 @@ class AdminMemberController extends Controller
     {
         $q = User::with('rank:id,name,level')->withCount('referrals')->latest();
         if ($search = $request->query('search')) {
-            $q->where(fn ($w) => $w->where('username', 'like', "%$search%")->orWhere('email', 'like', "%$search%"));
+            $q->where(fn ($w) => $w->where('username', 'like', "%$search%")
+                ->orWhere('email', 'like', "%$search%")
+                ->orWhere('phone', 'like', "%$search%"));
         }
         if ($request->boolean('frozen')) {
             $q->where('is_frozen', true);
