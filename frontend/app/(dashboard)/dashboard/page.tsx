@@ -5,11 +5,10 @@ import {
   Wallet, TrendingUp, Gift, Layers, Landmark, Coins, Users, Copy, Check,
 } from "lucide-react";
 import StatCard from "@/components/StatCard";
-import RankBadge from "@/components/RankBadge";
 import RankCard from "@/components/RankCard";
 import api from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import { usdt, shortDate } from "@/lib/format";
+import { usdt } from "@/lib/format";
 
 interface Dashboard {
   rank: string;
@@ -36,19 +35,13 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-start justify-between flex-wrap gap-3">
-        <div>
-          <h1 className="text-2xl font-bold">
-            Welcome back, <span className="gold-text">{user?.nickname || user?.username}</span>
-          </h1>
-          <p className="text-muted text-sm">
-            Your investment & earnings at a glance.
-          </p>
-          {user?.created_at && (
-            <p className="text-muted text-xs mt-1">Member since {shortDate(user.created_at)}</p>
-          )}
-        </div>
-        {user && <RankBadge rank={user.rank} />}
+      <div>
+        <h1 className="text-2xl font-bold">
+          Welcome back, <span className="gold-text">{user?.nickname || user?.username}</span>
+        </h1>
+        <p className="text-muted text-sm">
+          Your investment & earnings at a glance.
+        </p>
       </div>
 
       {/* Member / rank card */}
