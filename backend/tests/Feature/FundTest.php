@@ -6,14 +6,13 @@ use App\Models\Rank;
 use App\Models\User;
 use App\Models\Wallet;
 use App\Services\FundService;
-use App\Services\TransferService;
 use App\Services\WalletService;
 use Database\Seeders\RankSeeder;
 use Database\Seeders\SettingsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
-class TransferReinvestTest extends TestCase
+class FundTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -39,35 +38,20 @@ class TransferReinvestTest extends TestCase
     }
 
     /** @test */
-    public function self_transfer_charges_10_percent_fee()
-    {
-        $user = $this->makeUser('mover');
-        app(WalletService::class)->credit($user, 'E', 100, 'roi');
-
-        $transfer = app(TransferService::class)->selfEtoA($user, 100);
-
-        // 10% fee on 100 => 10 fee, 90 net into A-WALLET, E-WALLET emptied.
-        $this->assertEquals('10.00000000', $transfer->fee);
-        $this->assertEquals('90.00000000', $transfer->net_amount);
-        $this->assertEquals('0.00000000', $user->walletE->refresh()->balance);
-        $this->assertEquals('90.00000000', $user->walletA->refresh()->balance);
-    }
-
-    /** @test */
-    public function reinvest_uses_a_wallet_only()
+    public function fund_uses_a_wallet_only()
     {
         $user = $this->makeUser('compounder');
-        // E-WALLET funds alone must NOT be fundable.
+        // E-WALLET funds alone must NOT be fundable (E-WALLET is withdrawal-only).
         app(WalletService::class)->credit($user, 'E', 100, 'roi');
 
         try {
             app(FundService::class)->fund($user, 100);
             $this->fail('Fund should fail without A-WALLET funds.');
         } catch (\Throwable $e) {
-            // expected: insufficient A-WALLET balance (E-WALLET cannot be funded directly)
+            // expected: insufficient A-WALLET balance
         }
 
-        // Fund A-WALLET and the fund succeeds, debiting A-WALLET.
+        // Fund A-WALLET and the fund succeeds, debiting A-WALLET only.
         app(WalletService::class)->credit($user, 'A', 100, 'deposit');
         $package = app(FundService::class)->fund($user, 100);
 

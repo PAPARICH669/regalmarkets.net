@@ -5,7 +5,6 @@ namespace Tests\Feature;
 use App\Models\Rank;
 use App\Models\User;
 use App\Models\Wallet;
-use App\Services\TransferService;
 use App\Services\WalletService;
 use App\Services\WithdrawalService;
 use Carbon\Carbon;
@@ -41,32 +40,6 @@ class WalletRulesTest extends TestCase
         Wallet::create(['user_id' => $user->id, 'type' => 'A', 'balance' => 0]);
         Wallet::create(['user_id' => $user->id, 'type' => 'E', 'balance' => 0]);
         return $user;
-    }
-
-    /** @test */
-    public function e_to_a_self_transfer_is_allowed()
-    {
-        $user = $this->makeUser('alice');
-        app(WalletService::class)->credit($user, 'E', 50, 'roi');
-
-        app(TransferService::class)->selfEtoA($user, 30);
-
-        // 10% fee on 30 = 3 → A-WALLET receives 27; full 30 leaves E-WALLET.
-        $this->assertEquals('20.00000000', $user->walletE->refresh()->balance);
-        $this->assertEquals('27.00000000', $user->walletA->refresh()->balance);
-    }
-
-    /** @test */
-    public function member_to_member_transfer_moves_a_wallet()
-    {
-        $from = $this->makeUser('bob');
-        $to   = $this->makeUser('carol');
-        app(WalletService::class)->credit($from, 'A', 100, 'deposit');
-
-        app(TransferService::class)->memberToMember($from, 'carol', 40);
-
-        $this->assertEquals('60.00000000', $from->walletA->refresh()->balance);
-        $this->assertEquals('40.00000000', $to->walletA->refresh()->balance);
     }
 
     /** @test */

@@ -143,11 +143,11 @@ class BonusEngineTest extends TestCase
 
         app(SponsorBonusService::class)->distribute($member, 100);
 
-        // [10,5,3,2,1]% of 100
-        $this->assertEquals('10.00000000', $l1->walletE->refresh()->balance);
-        $this->assertEquals('5.00000000', $l2->walletE->refresh()->balance);
-        $this->assertEquals('3.00000000', $l3->walletE->refresh()->balance);
-        $this->assertEquals('2.00000000', $l4->walletE->refresh()->balance);
+        // [7,4,2,1,1]% of 100
+        $this->assertEquals('7.00000000', $l1->walletE->refresh()->balance);
+        $this->assertEquals('4.00000000', $l2->walletE->refresh()->balance);
+        $this->assertEquals('2.00000000', $l3->walletE->refresh()->balance);
+        $this->assertEquals('1.00000000', $l4->walletE->refresh()->balance);
         $this->assertEquals('1.00000000', $l5->walletE->refresh()->balance);
     }
 

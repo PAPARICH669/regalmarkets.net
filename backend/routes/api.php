@@ -16,7 +16,6 @@ use App\Http\Controllers\Api\LogController;
 use App\Http\Controllers\Api\MiscController;
 use App\Http\Controllers\Api\FundController;
 use App\Http\Controllers\Api\NetworkController;
-use App\Http\Controllers\Api\TransferController;
 use App\Http\Controllers\Api\WithdrawalController;
 use Illuminate\Support\Facades\Route;
 
@@ -78,11 +77,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/withdrawals/config', [WithdrawalController::class, 'config']);
         Route::get('/withdrawals', [WithdrawalController::class, 'index']);
         Route::post('/withdrawals', [WithdrawalController::class, 'store'])->middleware('kyc');
-
-        Route::get('/transfers', [TransferController::class, 'index']);
-        Route::get('/transfers/config', [TransferController::class, 'config']);
-        Route::post('/transfers/self', [TransferController::class, 'self']);
-        Route::post('/transfers/member', [TransferController::class, 'member']);
 
         Route::get('/fund', [FundController::class, 'index']);
         Route::post('/fund', [FundController::class, 'store']);

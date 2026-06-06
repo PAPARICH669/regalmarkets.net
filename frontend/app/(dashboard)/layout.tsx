@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-  LayoutDashboard, ArrowDownToLine, ArrowUpFromLine, Repeat, Send,
+  LayoutDashboard, ArrowDownToLine, ArrowUpFromLine, Repeat,
   Network, Crown, Megaphone, LogOut, Menu, X, Wallet, UserCog, FileBarChart,
 } from "lucide-react";
 import Logo from "@/components/Logo";
@@ -14,7 +14,6 @@ const NAV = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/deposit", label: "Deposit", icon: ArrowDownToLine },
   { href: "/withdraw", label: "Withdraw", icon: ArrowUpFromLine },
-  { href: "/transfer", label: "Transfer", icon: Send },
   { href: "/fund", label: "Fund", icon: Repeat },
   { href: "/network", label: "Team Network", icon: Network },
   { href: "/reports", label: "Reports", icon: FileBarChart },

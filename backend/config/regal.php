@@ -49,9 +49,9 @@ return [
         'fee_percent' => 10.0, // % fee on E-WALLET → A-WALLET self transfers
     ],
 
-    // Unilevel sponsor bonus — paid instantly on deposit activation, into E-WALLET.
-    // Index 0 => level 1.
-    'sponsor_bonus_percents' => [10, 5, 3, 2, 1],
+    // Unilevel sponsor bonus — paid instantly when a downline funds a package, into E-WALLET.
+    // Index 0 => level 1.  L1 7%, L2 4%, L3 2%, L4 1%, L5 1%.
+    'sponsor_bonus_percents' => [7, 4, 2, 1, 1],
 
     // Matching bonus override percentages by rank.
     // Rank-difference model: an upline earns (upline% - the highest rank% already
