@@ -66,9 +66,10 @@ function RegisterForm() {
           </div>
           <div>
             <label className="text-sm text-muted">Phone number <span className="text-red-500">*</span></label>
-            <div className="mt-1 flex gap-2">
+            <div className="mt-1 flex gap-2 w-full">
               <select
-                className="input-field w-32 shrink-0"
+                className="input-field"
+                style={{ flex: "0 0 7rem", width: "7rem" }}
                 value={country}
                 onChange={(e) => setCountry(e.target.value)}
                 aria-label="Country"
@@ -77,8 +78,8 @@ function RegisterForm() {
                   <option key={c.iso} value={c.iso}>{c.flag} {c.dial}</option>
                 ))}
               </select>
-              <input type="tel" className="input-field flex-1" value={form.phone}
-                onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="12 345 6789" required />
+              <input type="tel" inputMode="numeric" className="input-field" style={{ flex: "1 1 0%", minWidth: 0 }}
+                value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="12 345 6789" required />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">

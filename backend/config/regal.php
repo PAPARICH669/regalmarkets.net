@@ -58,10 +58,10 @@ return [
     // covered below it on the path, starting from the ROI earner's own rank%).
     'match_percents' => [
         'USER'         => 1,
-        'FAN'          => 4,
-        'SENIOR'       => 8,
-        'TEAM LEADER'  => 12,
-        'GROUP LEADER' => 16,
+        'FAN'          => 3,
+        'SENIOR'       => 6,
+        'TEAM LEADER'  => 10,
+        'GROUP LEADER' => 15,
     ],
 
     // Rank requirements. "produce_rank N" => N DIRECT (level-1) referrals whose rank
@@ -69,10 +69,10 @@ return [
     'ranks' => [
         // name => [level, match_percent, min_fund, rule]
         'USER'         => ['level' => 1, 'match' => 1,  'min_fund' => 10],
-        'FAN'          => ['level' => 2, 'match' => 4,  'min_fund' => 100,  'direct_min_deposit' => 100, 'directs_required' => 3],
-        'SENIOR'       => ['level' => 3, 'match' => 8,  'min_fund' => 300,  'produce_rank' => 'FAN',         'produce_count' => 3],
-        'TEAM LEADER'  => ['level' => 4, 'match' => 12, 'min_fund' => 1000, 'produce_rank' => 'SENIOR',      'produce_count' => 3],
-        'GROUP LEADER' => ['level' => 5, 'match' => 16, 'min_fund' => 5000, 'produce_rank' => 'TEAM LEADER', 'produce_count' => 3],
+        'FAN'          => ['level' => 2, 'match' => 3,  'min_fund' => 100,  'direct_min_deposit' => 100, 'directs_required' => 3],
+        'SENIOR'       => ['level' => 3, 'match' => 6,  'min_fund' => 300,  'produce_rank' => 'FAN',         'produce_count' => 3],
+        'TEAM LEADER'  => ['level' => 4, 'match' => 10, 'min_fund' => 1000, 'produce_rank' => 'SENIOR',      'produce_count' => 3],
+        'GROUP LEADER' => ['level' => 5, 'match' => 15, 'min_fund' => 5000, 'produce_rank' => 'TEAM LEADER', 'produce_count' => 3],
     ],
 
     // Daily maintenance window (Asia/Kuala_Lumpur). Login/withdraw/transfer disabled.

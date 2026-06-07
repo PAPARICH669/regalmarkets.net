@@ -60,10 +60,10 @@ class BonusEngineTest extends TestCase
         app(MatchingBonusService::class)->distributeForRoi($roiLog);
 
         // Earner is USER(1%). Floor starts at 1:
-        // SENIOR 7% (8-1), TEAM LEADER 4% (12-8), GROUP LEADER 4% (16-12)
-        $this->assertEquals('7.00000000', $senior->walletE->refresh()->balance);
+        // SENIOR 5% (6-1), TEAM LEADER 4% (10-6), GROUP LEADER 5% (15-10)
+        $this->assertEquals('5.00000000', $senior->walletE->refresh()->balance);
         $this->assertEquals('4.00000000', $tl->walletE->refresh()->balance);
-        $this->assertEquals('4.00000000', $gl->walletE->refresh()->balance);
+        $this->assertEquals('5.00000000', $gl->walletE->refresh()->balance);
     }
 
     /** @test */
@@ -83,8 +83,8 @@ class BonusEngineTest extends TestCase
 
         app(MatchingBonusService::class)->distributeForRoi($roiLog);
 
-        // Earner USER(1): gl2 gets 16-1=15; topGl is same rank as gl2 -> 16-16=0 -> cut.
-        $this->assertEquals('15.00000000', $gl2->walletE->refresh()->balance);
+        // Earner USER(1): gl2 gets 15-1=14; topGl is same rank as gl2 -> 15-15=0 -> cut.
+        $this->assertEquals('14.00000000', $gl2->walletE->refresh()->balance);
         $this->assertEquals('0.00000000', $topGl->walletE->refresh()->balance);
     }
 
@@ -114,10 +114,10 @@ class BonusEngineTest extends TestCase
     {
         // Ali = GROUP LEADER, with direct downlines of varying ranks (the spec example).
         $ali   = $this->makeUser('ali', null, 'GROUP LEADER');
-        $samad = $this->makeUser('samad', $ali, 'TEAM LEADER'); // 16-12 = 4
-        $yusri = $this->makeUser('yusri', $ali, 'SENIOR');      // 16-8  = 8
-        $muaz  = $this->makeUser('muaz', $ali, 'FAN');          // 16-4  = 12
-        $nurul = $this->makeUser('nurul', $ali, 'USER');        // 16-1  = 15
+        $samad = $this->makeUser('samad', $ali, 'TEAM LEADER'); // 15-10 = 5
+        $yusri = $this->makeUser('yusri', $ali, 'SENIOR');      // 15-6  = 9
+        $muaz  = $this->makeUser('muaz', $ali, 'FAN');          // 15-3  = 12
+        $nurul = $this->makeUser('nurul', $ali, 'USER');        // 15-1  = 14
 
         foreach ([$samad, $yusri, $muaz, $nurul] as $earner) {
             $roiLog = RoiLog::create([
@@ -127,8 +127,8 @@ class BonusEngineTest extends TestCase
             app(MatchingBonusService::class)->distributeForRoi($roiLog);
         }
 
-        // Ali earns 4 + 8 + 12 + 15 = 39 USDT total
-        $this->assertEquals('39.00000000', $ali->walletE->refresh()->balance);
+        // Ali earns 5 + 9 + 12 + 14 = 40 USDT total
+        $this->assertEquals('40.00000000', $ali->walletE->refresh()->balance);
     }
 
     /** @test */
