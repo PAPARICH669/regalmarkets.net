@@ -20,9 +20,9 @@ class MiscController extends Controller
     }
 
     /**
-     * Top 5 GROUP-SALES leaderboard for the CURRENT month. A member's group sales =
-     * their own approved deposits + the approved deposits of their entire downline
-     * (this month). Computed live (cached briefly), resets each new month.
+     * Top 5 DIRECT-SPONSOR leaderboard for the CURRENT month. A member's score =
+     * the approved deposits of their DIRECT (level-1) sponsored members this month.
+     * Computed live (cached briefly), resets each new month.
      */
     public function leaderboard()
     {
@@ -38,18 +38,15 @@ class MiscController extends Controller
                     ->groupBy('user_id')
                     ->pluck('s', 'user_id');
 
-                // 2) sponsor map for the whole tree
+                // 2) sponsor map
                 $sponsorOf = \App\Models\User::pluck('sponsor_id', 'id');
 
-                // 3) credit each member's personal sales to their UPLINE only
-                //    (start from the sponsor — a member's own sales are excluded;
-                //    group sales = entire downline volume, not self)
+                // 3) credit each member's sales to their DIRECT sponsor only (level 1)
                 $group = [];
                 foreach ($personal as $uid => $amt) {
-                    $node = (int) ($sponsorOf[$uid] ?? 0); $guard = 0;
-                    while ($node && $guard++ < 200) {
-                        $group[$node] = ($group[$node] ?? 0) + (float) $amt;
-                        $node = (int) ($sponsorOf[$node] ?? 0);
+                    $sponsor = (int) ($sponsorOf[$uid] ?? 0);
+                    if ($sponsor) {
+                        $group[$sponsor] = ($group[$sponsor] ?? 0) + (float) $amt;
                     }
                 }
 

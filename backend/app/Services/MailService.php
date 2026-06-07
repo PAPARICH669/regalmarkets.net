@@ -111,4 +111,34 @@ class MailService
 
         return $this->send($toEmail, $toName, 'Withdrawal approved — Regal Markets', $this->shell('Withdrawal Successful', $inner));
     }
+
+    /** Deposit approved notification. */
+    public function sendDepositApproved(string $toEmail, ?string $toName, string $amount): bool
+    {
+        $name  = $toName ?: 'there';
+        $inner = <<<HTML
+        <p style="margin:0 0 14px;color:#9fb1d4">Hi {$name},</p>
+        <p style="margin:0 0 14px">✅ Your deposit of <b style="color:#e7c873">{$amount} USDT</b> has been <b>approved</b>.</p>
+        <p style="margin:0 0 14px;color:#9fb1d4">The amount is now credited to your A-WALLET. Go to <b>Fund</b> to activate your 200% package.</p>
+        HTML;
+
+        return $this->send($toEmail, $toName, 'Deposit approved — Regal Markets', $this->shell('Deposit Approved', $inner));
+    }
+
+    /** KYC rejected notification (with admin reason). */
+    public function sendKycRejected(string $toEmail, ?string $toName, ?string $reason): bool
+    {
+        $name    = $toName ?: 'there';
+        $reason  = $reason ?: 'Document could not be verified.';
+        $reasonE = htmlspecialchars($reason, ENT_QUOTES);
+        $inner = <<<HTML
+        <p style="margin:0 0 14px;color:#9fb1d4">Hi {$name},</p>
+        <p style="margin:0 0 14px">⚠️ Your <b style="color:#e7c873">KYC submission</b> was <b style="color:#ff8a8a">not approved</b>.</p>
+        <p style="margin:0 0 8px;color:#9fb1d4">Reason:</p>
+        <p style="margin:0 0 14px;padding:10px 12px;background:#0f2347;border-radius:8px">{$reasonE}</p>
+        <p style="margin:0 0 14px;color:#9fb1d4">Please re-submit a valid, non-expired ID document from your Profile page.</p>
+        HTML;
+
+        return $this->send($toEmail, $toName, 'KYC not approved — Regal Markets', $this->shell('KYC Rejected', $inner));
+    }
 }

@@ -64,11 +64,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               </Link>
             );
           })}
+          <button onClick={() => logout().then(() => router.replace("/login"))}
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-red-400 hover:bg-red-500/10">
+            <LogOut size={18} /> Logout
+          </button>
         </nav>
-        <button onClick={() => logout().then(() => router.replace("/login"))}
-          className="m-3 flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-red-400 hover:bg-red-500/10">
-          <LogOut size={18} /> Logout
-        </button>
       </aside>
 
       {open && <div className="fixed inset-0 bg-black/60 z-40 lg:hidden" onClick={() => setOpen(false)} />}

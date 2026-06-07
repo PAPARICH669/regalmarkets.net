@@ -163,8 +163,17 @@ class AdminMemberController extends Controller
     public function rejectKyc(Request $request, User $user)
     {
         $data = $request->validate(['note' => ['nullable', 'string', 'max:255']]);
-        $user->update(['kyc_status' => 'rejected', 'kyc_note' => $data['note'] ?? 'Rejected by admin']);
+        $note = $data['note'] ?? 'Rejected by admin';
+        $user->update(['kyc_status' => 'rejected', 'kyc_note' => $note]);
         $this->audit->log($request, 'member.kyc_reject', $user);
+
+        // Notify the member by email (failure must not block the rejection).
+        try {
+            app(\App\Services\MailService::class)->sendKycRejected($user->email, $user->name ?: $user->username, $note);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('KYC rejected email failed: ' . $e->getMessage());
+        }
+
         return response()->json(['message' => 'KYC rejected.']);
     }
 
