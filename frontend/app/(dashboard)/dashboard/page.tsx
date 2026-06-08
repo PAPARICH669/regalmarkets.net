@@ -56,8 +56,8 @@ export default function DashboardPage() {
 
       {/* Wallets */}
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="A-WALLET (Capital)" value={usdt(d.wallets.A)} icon={<Wallet size={18} />} accent href="/deposit" />
-        <StatCard label="E-WALLET (Earnings)" value={usdt(d.wallets.E)} icon={<Coins size={18} />} accent href="/withdraw" />
+        <StatCard label="A-WALLET (Deposit)" value={usdt(d.wallets.A)} icon={<Wallet size={18} />} accent href="/deposit" />
+        <StatCard label="E-WALLET (Withdrawal)" value={usdt(d.wallets.E)} icon={<Coins size={18} />} accent href="/withdraw" />
         <StatCard label="Total Investment" value={usdt(d.totals.total_invested)} icon={<Landmark size={18} />} href="/fund" />
         <StatCard label="Totally Commission" value={usdt(d.totals.roi_earned)} icon={<TrendingUp size={18} />} accent href="/reports?tab=roi" />
       </div>
