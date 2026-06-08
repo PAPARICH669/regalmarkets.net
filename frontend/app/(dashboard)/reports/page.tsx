@@ -43,6 +43,12 @@ export default function ReportsPage() {
   const [matching, setMatching] = useState<MatchLog[]>([]);
   const [loading, setLoading] = useState(false);
 
+  // Open a specific report tab when linked from a dashboard box (?tab=roi|sponsor|matching|group).
+  useEffect(() => {
+    const t = new URLSearchParams(window.location.search).get("tab");
+    if (t && ["roi", "sponsor", "matching", "group"].includes(t)) setTab(t as Tab);
+  }, []);
+
   // Group-sales structure (network) — fetched once.
   useEffect(() => { api.get("/reports/daily").then((res) => setR(res.data)); }, []);
 

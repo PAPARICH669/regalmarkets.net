@@ -22,7 +22,7 @@ interface Dashboard {
     sponsor_bonus: number; matching_bonus: number;
   };
   packages: { id: number; principal: number; total_return: number; total_paid: number; progress: number; status: string }[];
-  team: { total_team: number; direct_referrals: number; team_sales: number; rank_counts: Record<string, number> };
+  team: { total_team: number; direct_referrals: number; team_sales: number; team_invested: number; rank_counts: Record<string, number> };
   earnings_series: { date: string; roi: number; matching: number; sponsor: number; total: number }[];
 }
 
@@ -56,17 +56,16 @@ export default function DashboardPage() {
 
       {/* Wallets */}
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="A-WALLET (Capital)" value={usdt(d.wallets.A)} icon={<Wallet size={18} />} accent />
-        <StatCard label="E-WALLET (Earnings)" value={usdt(d.wallets.E)} icon={<Coins size={18} />} accent />
-        <StatCard label="Total Investment" value={usdt(d.totals.total_invested)} icon={<Landmark size={18} />} />
-        <StatCard label="Totally Commission" value={usdt(d.totals.roi_earned)} icon={<TrendingUp size={18} />} accent
-          sub={`of ${usdt(d.totals.total_return)} · 200% target`} />
+        <StatCard label="A-WALLET (Capital)" value={usdt(d.wallets.A)} icon={<Wallet size={18} />} accent href="/deposit" />
+        <StatCard label="E-WALLET (Earnings)" value={usdt(d.wallets.E)} icon={<Coins size={18} />} accent href="/withdraw" />
+        <StatCard label="Total Investment" value={usdt(d.totals.total_invested)} icon={<Landmark size={18} />} href="/fund" />
+        <StatCard label="Totally Commission" value={usdt(d.totals.roi_earned)} icon={<TrendingUp size={18} />} accent href="/reports?tab=roi" />
       </div>
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Remaining Commission" value={usdt(d.totals.remaining_roi)} icon={<TrendingUp size={18} />} />
-        <StatCard label="Sponsor Bonus" value={usdt(d.totals.sponsor_bonus)} icon={<Gift size={18} />} />
-        <StatCard label="Matching Bonus" value={usdt(d.totals.matching_bonus)} icon={<Layers size={18} />} />
+        <StatCard label="Remaining Commission" value={usdt(d.totals.remaining_roi)} icon={<TrendingUp size={18} />} href="/reports?tab=roi" />
+        <StatCard label="Sponsor Bonus" value={usdt(d.totals.sponsor_bonus)} icon={<Gift size={18} />} href="/reports?tab=sponsor" />
+        <StatCard label="Matching Bonus" value={usdt(d.totals.matching_bonus)} icon={<Layers size={18} />} href="/reports?tab=matching" />
       </div>
 
       {/* Leaderboard + welcome feed */}
@@ -94,8 +93,8 @@ export default function DashboardPage() {
             <p className="text-xs text-muted">Total Team</p>
           </div>
           <div className="bg-white/5 rounded-lg p-3">
-            <p className="text-lg font-bold">{usdt(d.team.team_sales)}</p>
-            <p className="text-xs text-muted">Team Sales Volume</p>
+            <p className="text-lg font-bold">{usdt(d.team.team_invested)}</p>
+            <p className="text-xs text-muted">Team Total Invest</p>
           </div>
         </div>
       </div>

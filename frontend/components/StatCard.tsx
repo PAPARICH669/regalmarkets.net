@@ -1,4 +1,5 @@
 import { ReactNode } from "react";
+import Link from "next/link";
 
 export default function StatCard({
   label,
@@ -6,15 +7,17 @@ export default function StatCard({
   icon,
   accent = false,
   sub,
+  href,
 }: {
   label: string;
   value: ReactNode;
   icon?: ReactNode;
   accent?: boolean;
   sub?: ReactNode;
+  href?: string;
 }) {
-  return (
-    <div className="glass card-hover p-5 animate-fade-up">
+  const inner = (
+    <>
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted">{label}</p>
         {icon && (
@@ -24,7 +27,21 @@ export default function StatCard({
         )}
       </div>
       <p className={`mt-3 text-2xl font-bold ${accent ? "gold-text" : ""}`}>{value}</p>
-      {sub && <p className="mt-1 text-xs text-muted">{sub}</p>}
-    </div>
+      {sub ? (
+        <p className="mt-1 text-xs text-muted">{sub}</p>
+      ) : href ? (
+        <p className="mt-1 text-xs text-gold-light">View report →</p>
+      ) : null}
+    </>
   );
+
+  if (href) {
+    return (
+      <Link href={href} className="glass card-hover p-5 animate-fade-up block hover:border-gold-light/40 transition">
+        {inner}
+      </Link>
+    );
+  }
+
+  return <div className="glass card-hover p-5 animate-fade-up">{inner}</div>;
 }
