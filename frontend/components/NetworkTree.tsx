@@ -38,7 +38,8 @@ function Node({ node, root = false }: { node: TreeNode; root?: boolean }) {
         <span className="text-xs px-2 py-0.5 rounded-full" style={{ color, background: `${color}1a` }}>
           {node.rank}
         </span>
-        <span className="text-xs text-muted">{usdt(node.total_fund)}</span>
+        {!root && <span className="text-[10px] text-muted">L{node.depth}</span>}
+        <span className="text-xs text-gold-light font-medium">Invest: {usdt(node.total_invested)}</span>
       </div>
       {open && hasChildren && (
         <div className="border-l border-[var(--line)] ml-4">

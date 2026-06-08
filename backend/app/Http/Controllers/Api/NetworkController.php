@@ -12,8 +12,8 @@ class NetworkController extends Controller
 
     public function tree(Request $request)
     {
-        $depth = (int) $request->query('depth', 5);
-        return response()->json($this->network->tree($request->user(), max(1, min($depth, 10))));
+        $depth = (int) $request->query('depth', 12);
+        return response()->json($this->network->tree($request->user(), max(1, min($depth, 12))));
     }
 
     public function stats(Request $request)

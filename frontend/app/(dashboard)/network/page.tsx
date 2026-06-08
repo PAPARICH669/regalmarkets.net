@@ -14,7 +14,7 @@ export default function NetworkPage() {
   const [stats, setStats] = useState<Stats | null>(null);
 
   useEffect(() => {
-    api.get("/network/tree?depth=6").then((r) => setTree(r.data));
+    api.get("/network/tree?depth=12").then((r) => setTree(r.data));
     api.get("/network/stats").then((r) => setStats(r.data));
   }, []);
 
