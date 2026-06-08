@@ -4,21 +4,15 @@ import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-  LayoutDashboard, ArrowDownToLine, ArrowUpFromLine, Repeat,
-  Network, Crown, Megaphone, LogOut, Menu, X, Wallet, UserCog, FileBarChart,
+  LayoutDashboard, Repeat, Network, LogOut, Menu, X, Wallet, UserCog,
 } from "lucide-react";
 import Logo from "@/components/Logo";
 import { useAuth } from "@/lib/auth";
 
 const NAV = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/deposit", label: "Deposit", icon: ArrowDownToLine },
-  { href: "/withdraw", label: "Withdraw", icon: ArrowUpFromLine },
   { href: "/fund", label: "Fund", icon: Repeat },
   { href: "/network", label: "Team Network", icon: Network },
-  { href: "/reports", label: "Reports", icon: FileBarChart },
-  { href: "/ranking", label: "Ranking", icon: Crown },
-  { href: "/announcements", label: "Announcements", icon: Megaphone },
   { href: "/profile", label: "Profile & Security", icon: UserCog },
 ];
 
