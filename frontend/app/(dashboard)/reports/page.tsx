@@ -129,34 +129,39 @@ export default function ReportsPage() {
         </div>
       )}
 
-      {/* ---- Group Sales by level ---- */}
-      {tab === "group" && (
+      {/* ---- Group Total Invest by level ---- */}
+      {tab === "group" && (() => {
+        const levels = r?.group_sales_by_level ?? [];
+        const totalInvest = levels.reduce((sum, l) => sum + Number(l.invested || 0), 0);
+        return (
         <div className="glass p-5">
           <div className="flex items-center justify-between flex-wrap gap-2 mb-4">
             <h3 className="font-semibold flex items-center gap-2"><NetIcon size={18} className="text-gold-light" /> Group Sales by Level</h3>
             <div className="text-right">
-              <p className="text-xs text-muted">Total Group Sales</p>
-              <p className="text-lg font-bold gold-text">{usdt(r?.total_group_sales ?? 0)} <span className="text-xs text-muted font-normal">· {r?.total_group_members ?? 0} members</span></p>
+              <p className="text-xs text-muted">Total Invest</p>
+              <p className="text-lg font-bold gold-text">{usdt(totalInvest)} <span className="text-xs text-muted font-normal">· {r?.total_group_members ?? 0} members</span></p>
             </div>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="text-gold-light text-left"><tr><th className="py-2">Level</th><th>Members</th><th>Group Sales</th><th>Invested</th></tr></thead>
+              <thead className="text-gold-light text-left"><tr><th className="py-2">Level</th><th>Members</th><th>Total Invest</th></tr></thead>
               <tbody>
-                {(r?.group_sales_by_level ?? []).map((l) => (
+                {levels.map((l) => (
                   <tr key={l.level} className="border-t border-[var(--line)]">
                     <td className="py-2">Level {l.level}</td><td>{l.members}</td>
-                    <td className="gold-text">{usdt(l.sales)}</td><td className="text-muted">{usdt(l.invested)}</td>
+                    <td className="gold-text">{usdt(l.invested)}</td>
                   </tr>
                 ))}
-                {(!r || r.group_sales_by_level.length === 0) && <tr><td colSpan={4} className="py-4 text-center text-muted">No downline sales yet.</td></tr>}
+                {levels.length === 0 && <tr><td colSpan={3} className="py-4 text-center text-muted">No downline invest yet.</td></tr>}
               </tbody>
-              {r && r.group_sales_by_level.length > 0 && (
-                <tfoot><tr className="border-t border-[var(--line)] font-semibold"><td className="py-2">Total</td><td>{r.total_group_members}</td><td className="gold-text">{usdt(r.total_group_sales)}</td><td></td></tr></tfoot>
+              {levels.length > 0 && (
+                <tfoot><tr className="border-t border-[var(--line)] font-semibold"><td className="py-2">Total</td><td>{r?.total_group_members ?? 0}</td><td className="gold-text">{usdt(totalInvest)}</td></tr></tfoot>
               )}
             </table>
           </div>
         </div>
+        );
+      })()
       )}
     </div>
   );

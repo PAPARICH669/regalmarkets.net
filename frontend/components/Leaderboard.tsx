@@ -6,7 +6,7 @@ import api from "@/lib/api";
 import { usdt } from "@/lib/format";
 
 interface Row { position: number; name: string; rank: string; sales: number; }
-interface Data { month: string; top: Row[]; }
+interface Data { top: Row[]; }
 
 const MEDAL: Record<number, string> = { 1: "🥇", 2: "🥈", 3: "🥉" };
 
@@ -21,9 +21,8 @@ export default function Leaderboard() {
         <h3 className="font-semibold flex items-center gap-2">
           <Trophy size={18} className="text-gold-light" /> Top 5 Sponsor
         </h3>
-        <span className="text-xs text-muted">{data?.month ?? ""}</span>
       </div>
-      <p className="text-xs text-muted mt-1">Direct sponsor sales this month · updated daily · resets monthly. Climb the board! 🚀</p>
+      <p className="text-xs text-muted mt-1">By direct sponsor&apos;s total invest · updated live. Climb the board! 🚀</p>
 
       <div className="mt-4 space-y-2">
         {data?.top?.map((r) => (

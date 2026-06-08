@@ -20,60 +20,47 @@ class MiscController extends Controller
     }
 
     /**
-     * Top 5 DIRECT-SPONSOR leaderboard for the CURRENT month. A member's score =
-     * the approved deposits of their DIRECT (level-1) sponsored members this month.
-     * Computed live (cached briefly), resets each new month.
+     * Top 5 SPONSOR leaderboard — ranks members by the TOTAL INVEST of their
+     * DIRECT (level-1) sponsored members. Computed live (cached briefly).
      */
     public function leaderboard()
     {
-        $start   = now()->startOfMonth();
-        $payload = \Illuminate\Support\Facades\Cache::remember(
-            'leaderboard.' . $start->format('Y-m'),
-            300, // refresh at most every 5 minutes
-            function () use ($start) {
-                // 1) personal approved-deposit volume this month, per user
-                $personal = Deposit::where('status', 'approved')
-                    ->where('approved_at', '>=', $start)
-                    ->select('user_id', DB::raw('SUM(amount) as s'))
-                    ->groupBy('user_id')
-                    ->pluck('s', 'user_id');
+        $payload = \Illuminate\Support\Facades\Cache::remember('leaderboard.directinvest', 300, function () {
+            $sponsorOf = \App\Models\User::pluck('sponsor_id', 'id');
+            $investOf  = \App\Models\User::pluck('total_invested', 'id');
 
-                // 2) sponsor map
-                $sponsorOf = \App\Models\User::pluck('sponsor_id', 'id');
-
-                // 3) credit each member's sales to their DIRECT sponsor only (level 1)
-                $group = [];
-                foreach ($personal as $uid => $amt) {
-                    $sponsor = (int) ($sponsorOf[$uid] ?? 0);
-                    if ($sponsor) {
-                        $group[$sponsor] = ($group[$sponsor] ?? 0) + (float) $amt;
-                    }
+            // Sum each member's total invest into their DIRECT sponsor's score.
+            $group = [];
+            foreach ($investOf as $uid => $inv) {
+                $sponsor = (int) ($sponsorOf[$uid] ?? 0);
+                if ($sponsor && (float) $inv > 0) {
+                    $group[$sponsor] = ($group[$sponsor] ?? 0) + (float) $inv;
                 }
-
-                // 4) drop admins/staff, then take the top 5
-                $adminIds = \App\Models\User::where('is_admin', true)->orWhere('is_staff', true)->pluck('id');
-                foreach ($adminIds as $id) {
-                    unset($group[$id]);
-                }
-                arsort($group);
-                $top = array_slice($group, 0, 5, true);
-
-                $users = \App\Models\User::whereIn('id', array_keys($top))
-                    ->with('rank:id,name')->get()->keyBy('id');
-
-                $pos = 0; $out = [];
-                foreach ($top as $uid => $sales) {
-                    $u = $users[$uid] ?? null;
-                    $out[] = [
-                        'position' => ++$pos,
-                        'name'     => $u?->nickname ?: ($u?->username ?? 'Member'),
-                        'rank'     => $u?->rankName() ?? 'USER',
-                        'sales'    => (float) $sales,
-                    ];
-                }
-                return ['month' => now()->format('F Y'), 'top' => $out];
             }
-        );
+
+            // Drop admins/staff, then take the top 5.
+            $adminIds = \App\Models\User::where('is_admin', true)->orWhere('is_staff', true)->pluck('id');
+            foreach ($adminIds as $id) {
+                unset($group[$id]);
+            }
+            arsort($group);
+            $top = array_slice($group, 0, 5, true);
+
+            $users = \App\Models\User::whereIn('id', array_keys($top))
+                ->with('rank:id,name')->get()->keyBy('id');
+
+            $pos = 0; $out = [];
+            foreach ($top as $uid => $amount) {
+                $u = $users[$uid] ?? null;
+                $out[] = [
+                    'position' => ++$pos,
+                    'name'     => $u?->nickname ?: ($u?->username ?? 'Member'),
+                    'rank'     => $u?->rankName() ?? 'USER',
+                    'sales'    => (float) $amount,
+                ];
+            }
+            return ['top' => $out];
+        });
 
         return response()->json($payload);
     }
