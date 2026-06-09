@@ -21,11 +21,16 @@ export default function AdminKycPage() {
   useEffect(() => { load(); }, [load]);
 
   async function viewDoc(id: number) {
+    // Open the tab synchronously (inside the click) so popup blockers allow it,
+    // then point it at the document once the blob has loaded.
+    const win = window.open("", "_blank");
     try {
       const res = await api.get(`/admin/members/${id}/kyc-document`, { responseType: "blob" });
       const url = window.URL.createObjectURL(res.data);
-      window.open(url, "_blank");
-    } catch (e) { setError(apiError(e)); }
+      if (win) win.location.href = url;
+      else { const a = document.createElement("a"); a.href = url; a.target = "_blank"; a.click(); }
+      setTimeout(() => window.URL.revokeObjectURL(url), 30000);
+    } catch (e) { if (win) win.close(); setError(apiError(e)); }
   }
   async function verify(id: number) {
     try { await api.post(`/admin/members/${id}/kyc/verify`); load(); } catch (e) { setError(apiError(e)); }

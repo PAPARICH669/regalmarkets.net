@@ -8,6 +8,7 @@ import {
   Megaphone, Wrench, Layers, FileText, LogOut, Menu, ShieldCheck, TrendingUp,
 } from "lucide-react";
 import Logo from "@/components/Logo";
+import IdleLogout from "@/components/IdleLogout";
 import { useAuth } from "@/lib/auth";
 
 // `staff: true` items are visible to limited staff users; the rest are admin-only.
@@ -48,6 +49,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   return (
     <div className="min-h-screen flex">
+      <IdleLogout />
       <aside className={`fixed lg:static z-50 w-64 h-screen lg:min-h-screen bg-[var(--surface)] border-r border-[var(--line)] flex flex-col transition-transform ${open ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}`}>
         <div className="h-16 flex items-center px-5 border-b border-[var(--line)] gap-2">
           <Logo size="sm" />

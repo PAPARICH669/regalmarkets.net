@@ -7,6 +7,7 @@ import {
   LayoutDashboard, Repeat, Network, LogOut, Menu, X, Wallet, UserCog,
 } from "lucide-react";
 import Logo from "@/components/Logo";
+import IdleLogout from "@/components/IdleLogout";
 import { useAuth } from "@/lib/auth";
 
 const NAV = [
@@ -34,6 +35,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="min-h-screen flex relative">
+      <IdleLogout />
       {/* Background logo watermark */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
