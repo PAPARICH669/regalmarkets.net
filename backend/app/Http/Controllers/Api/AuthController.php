@@ -181,11 +181,13 @@ class AuthController extends Controller
         }
 
         // ----- Two-step login: email TAC (OTP) -----
-        // When enabled, a 6-digit code is emailed and the caller must confirm it
-        // via /login/verify-tac before a token is issued. If the email cannot be
-        // sent (mail outage / misconfig), we fall back to a normal login so nobody
-        // gets locked out.
-        if ((bool) app(\App\Services\SettingsService::class)->get('login_tac_enabled', true)) {
+        // Applies to ADMIN and STAFF accounts only — regular members log in
+        // directly. When enabled, a 6-digit code is emailed and the caller must
+        // confirm it via /login/verify-tac before a token is issued. If the email
+        // cannot be sent (mail outage / misconfig), we fall back to a normal login
+        // so nobody gets locked out.
+        if (($user->is_admin || $user->is_staff)
+            && (bool) app(\App\Services\SettingsService::class)->get('login_tac_enabled', true)) {
             $code = (string) random_int(100000, 999999);
             $user->update([
                 'login_tac_code'       => $code,

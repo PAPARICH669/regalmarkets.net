@@ -67,9 +67,9 @@ export default function AdminSettings() {
           <label className="flex items-center gap-3 cursor-pointer">
             <input type="checkbox" className="w-4 h-4 accent-[var(--gold)]"
               checked={!!s.login_tac_enabled} onChange={(e) => setS((p) => ({ ...(p || {}), login_tac_enabled: e.target.checked }))} />
-            <span className="text-sm font-medium">Require email login code (TAC / 2FA)</span>
+            <span className="text-sm font-medium">Require email login code (TAC / 2FA) — admin &amp; staff</span>
           </label>
-          <p className="text-xs text-muted mt-1 ml-7">When on, every user &amp; admin must enter a 6-digit code emailed to them at login. Keep on for best security.</p>
+          <p className="text-xs text-muted mt-1 ml-7">When on, <b>admins and staff</b> must enter a 6-digit code emailed to them at login. Regular members log in without a code. Keep on for best security.</p>
         </div>
         <div className="sm:col-span-2 text-xs text-muted">
           Sponsor %: {JSON.stringify(s.sponsor_bonus_percents)} · Matching %: {JSON.stringify(s.match_percents)}
