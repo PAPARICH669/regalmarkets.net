@@ -27,5 +27,6 @@ class SettingsSeeder extends Seeder
         $settings->set('maintenance_start', config('regal.maintenance.start'));
         $settings->set('maintenance_end', config('regal.maintenance.end'));
         $settings->set('maintenance_manual', false);
+        $settings->set('login_tac_enabled', true);
     }
 }

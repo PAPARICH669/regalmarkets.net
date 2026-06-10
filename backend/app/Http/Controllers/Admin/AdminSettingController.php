@@ -35,6 +35,7 @@ class AdminSettingController extends Controller
             'match_percents'         => ['nullable', 'array'],
             'maintenance_start'      => ['nullable', 'string'],
             'maintenance_end'        => ['nullable', 'string'],
+            'login_tac_enabled'      => ['nullable', 'boolean'],
         ]);
 
         foreach ($data as $key => $value) {

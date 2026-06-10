@@ -85,6 +85,11 @@ export default function LandingLoginPage() {
     setLoading(true);
     try {
       const { data } = await api.post("/login", form);
+      // Two-step login: a TAC code was emailed — go enter it.
+      if (data.tac_required) {
+        router.push(`/verify-login?email=${encodeURIComponent(data.email || form.email)}`);
+        return;
+      }
       setAuth(data.token, data.user);
       const dest = data.user.is_admin ? "/admin" : data.user.is_staff ? "/admin/kyc" : "/dashboard";
       router.push(dest);

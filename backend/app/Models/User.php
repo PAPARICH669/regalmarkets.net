@@ -21,16 +21,18 @@ class User extends Authenticatable
         'heir_name', 'heir_phone',
         'id_type', 'id_number', 'kyc_document_path', 'kyc_document_hash', 'kyc_status', 'kyc_note',
         'kyc_verified_at', 'kyc_verified_by', 'email_verification_code', 'email_verified_at',
+        'login_tac_code', 'login_tac_expires_at',
         'is_admin', 'is_staff', 'is_frozen', 'two_factor_secret', 'two_factor_enabled',
         'last_login_ip', 'last_login_at',
     ];
 
     protected $hidden = [
-        'password', 'remember_token', 'two_factor_secret', 'email_verification_code',
+        'password', 'remember_token', 'two_factor_secret', 'email_verification_code', 'login_tac_code',
     ];
 
     protected $casts = [
         'email_verified_at'  => 'datetime',
+        'login_tac_expires_at' => 'datetime',
         'kyc_verified_at'    => 'datetime',
         'last_login_at'      => 'datetime',
         'is_admin'           => 'boolean',

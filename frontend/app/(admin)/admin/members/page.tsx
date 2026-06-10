@@ -8,7 +8,7 @@ import RankBadge from "@/components/RankBadge";
 
 interface Member {
   id: number; username: string; email: string; phone?: string; kyc_status?: string;
-  total_fund: string; total_invested: string;
+  total_fund: string; total_invested: string; wallet_address?: string | null;
   is_frozen: boolean; is_staff?: boolean; is_admin?: boolean; referrals_count: number; rank?: { id: number; name: string };
 }
 interface Rank { id: number; name: string; }
@@ -48,6 +48,12 @@ export default function AdminMembers() {
   async function toggleStaff(id: number) {
     try { await api.post(`/admin/members/${id}/staff`); load(); } catch (e) { setError(apiError(e)); }
   }
+  async function setWallet(id: number, current?: string | null) {
+    const addr = window.prompt("USDT withdrawal address (BEP20). Leave blank to clear:", current || "");
+    if (addr === null) return;
+    try { await api.post(`/admin/members/${id}/wallet-address`, { wallet_address: addr.trim() || null }); load(); }
+    catch (e) { setError(apiError(e)); }
+  }
   async function resetPw(id: number, username: string) {
     const pwd = window.prompt(`New password for ${username} (min 6, leave blank to auto-generate):`);
     if (pwd === null) return;
@@ -76,6 +82,7 @@ export default function AdminMembers() {
                   {m.is_staff && !m.is_admin && <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-300">STAFF</span>}
                   <div className="text-xs text-muted">{m.email}</div>
                   <div className="text-xs text-muted">📞 {m.phone || "—"}</div>
+                  <div className="text-xs text-muted truncate max-w-[200px]" title={m.wallet_address || ""}>💳 {m.wallet_address || "no address"}</div>
                 </td>
                 <td>{m.rank ? <RankBadge rank={m.rank.name} /> : "—"}</td>
                 <td><KycPill status={m.kyc_status} /></td>
@@ -90,6 +97,7 @@ export default function AdminMembers() {
                       <button onClick={() => freeze(m.id)} className="btn-ghost px-2 py-1 text-xs">{m.is_frozen ? "Unfreeze" : "Freeze"}</button>
                       <button onClick={() => adjust(m.id)} className="btn-ghost px-2 py-1 text-xs">Adjust</button>
                       <button onClick={() => resetPw(m.id, m.username)} className="btn-ghost px-2 py-1 text-xs">Reset PW</button>
+                      <button onClick={() => setWallet(m.id, m.wallet_address)} className="btn-ghost px-2 py-1 text-xs">Wallet</button>
                       {!m.is_admin && (
                         <button onClick={() => toggleStaff(m.id)} className={`px-2 py-1 text-xs rounded ${m.is_staff ? "bg-blue-500/20 text-blue-300" : "btn-ghost"}`}>
                           {m.is_staff ? "Staff ✓" : "Make Staff"}

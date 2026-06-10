@@ -117,6 +117,17 @@ class AdminMemberController extends Controller
         return response()->json(['message' => 'Contact details updated.', 'user' => $user]);
     }
 
+    /** Admin sets/changes a member's USDT (BEP20) withdrawal address. Admin only. */
+    public function updateWalletAddress(Request $request, User $user)
+    {
+        $data = $request->validate([
+            'wallet_address' => ['nullable', 'string', 'max:120'],
+        ]);
+        $user->update(['wallet_address' => $data['wallet_address'] ?? null]);
+        $this->audit->log($request, 'member.edit_wallet_address', $user, $data);
+        return response()->json(['message' => 'Withdrawal address updated.', 'user' => $user]);
+    }
+
     /** Grant/revoke limited staff access (KYC + edit profile). Admin only. */
     public function toggleStaff(Request $request, User $user)
     {

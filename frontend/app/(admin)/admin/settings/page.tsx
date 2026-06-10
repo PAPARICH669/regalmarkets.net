@@ -27,6 +27,7 @@ export default function AdminSettings() {
         withdrawal_window_end: String(s?.withdrawal_window_end ?? "12:00"),
         maintenance_start: String(s?.maintenance_start ?? "00:00"),
         maintenance_end: String(s?.maintenance_end ?? "07:00"),
+        login_tac_enabled: !!s?.login_tac_enabled,
       };
       const { data } = await api.put("/admin/settings", payload);
       setS(data.settings); setMsg("Settings saved.");
@@ -62,6 +63,14 @@ export default function AdminSettings() {
               value={String(s[key] ?? "")} onChange={(e) => field(key, e.target.value)} />
           </div>
         ))}
+        <div className="sm:col-span-2 border-t border-[var(--line)] pt-4">
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input type="checkbox" className="w-4 h-4 accent-[var(--gold)]"
+              checked={!!s.login_tac_enabled} onChange={(e) => setS((p) => ({ ...(p || {}), login_tac_enabled: e.target.checked }))} />
+            <span className="text-sm font-medium">Require email login code (TAC / 2FA)</span>
+          </label>
+          <p className="text-xs text-muted mt-1 ml-7">When on, every user &amp; admin must enter a 6-digit code emailed to them at login. Keep on for best security.</p>
+        </div>
         <div className="sm:col-span-2 text-xs text-muted">
           Sponsor %: {JSON.stringify(s.sponsor_bonus_percents)} · Matching %: {JSON.stringify(s.match_percents)}
         </div>

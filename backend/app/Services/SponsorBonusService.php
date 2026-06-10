@@ -27,7 +27,13 @@ class SponsorBonusService
             $percent = (float) $percents[$level];
             $level++;
 
-            if (! $node->is_frozen && $percent > 0) {
+            // Eligibility rule: a member with NO fund (never invested / total_invested = 0)
+            // only qualifies for the LEVEL 1 sponsor bonus. From level 2 onward they must
+            // have their own fund to earn. The chain still walks past them either way.
+            $hasFund    = bccomp((string) $node->total_invested, '0', 8) > 0;
+            $isEligible = ($level === 1) || $hasFund;
+
+            if ($isEligible && ! $node->is_frozen && $percent > 0) {
                 $bonus = bcdiv(bcmul((string) $amount, (string) $percent, 10), '100', 8);
                 if (bccomp($bonus, '0', 8) > 0) {
                     $this->wallets->credit(

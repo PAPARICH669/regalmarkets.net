@@ -72,10 +72,11 @@ export default function DepositPage() {
               <input className="input-field mt-1" value={txid} onChange={(e) => setTxid(e.target.value)} placeholder="On-chain TXID" />
             </div>
             <div>
-              <label className="text-sm text-muted">Payment proof (image)</label>
-              <input type="file" accept="image/*" className="input-field mt-1" onChange={(e) => setProof(e.target.files?.[0] || null)} />
+              <label className="text-sm text-muted">Payment proof (image) <span className="text-red-500">*</span></label>
+              <input type="file" accept="image/*" className="input-field mt-1" onChange={(e) => setProof(e.target.files?.[0] || null)} required />
+              <p className="text-xs text-muted mt-1">⚠️ A screenshot/photo of your payment is required to submit a deposit.</p>
             </div>
-            <button disabled={loading} className="btn-gold w-full py-2.5">{loading ? "Submitting…" : "Submit Deposit"}</button>
+            <button disabled={loading || !proof} className="btn-gold w-full py-2.5 disabled:opacity-50">{loading ? "Submitting…" : "Submit Deposit"}</button>
           </form>
         </div>
 

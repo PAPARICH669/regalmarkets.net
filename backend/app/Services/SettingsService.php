@@ -36,6 +36,7 @@ class SettingsService
             'maintenance_manual'     => [null, 'bool'], // admin override toggle, default false
             'deposit_address'        => ['regal.deposit_address', 'string'],
             'deposit_network'        => ['regal.deposit_network', 'string'],
+            'login_tac_enabled'      => [null, 'bool'], // email TAC (OTP) on login, default ON
         ];
     }
 

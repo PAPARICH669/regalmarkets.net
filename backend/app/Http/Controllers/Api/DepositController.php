@@ -23,13 +23,13 @@ class DepositController extends Controller
         $data = $request->validate([
             'amount' => ['required', 'numeric', "min:{$min}"],
             'txid'   => ['nullable', 'string', 'max:191'],
-            'proof'  => ['nullable', 'image', 'max:4096'],
+            'proof'  => ['required', 'image', 'max:4096'],
+        ], [
+            'proof.required' => 'A payment proof image is required for every deposit.',
+            'proof.image'    => 'The payment proof must be an image (JPG/PNG).',
         ]);
 
-        $proofPath = null;
-        if ($request->hasFile('proof')) {
-            $proofPath = $request->file('proof')->store('proofs', config('regal.proof_disk', 'local'));
-        }
+        $proofPath = $request->file('proof')->store('proofs', config('regal.proof_disk', 'local'));
 
         $deposit = $this->deposits->request($request->user(), $data['amount'], $data['txid'] ?? null, $proofPath);
 

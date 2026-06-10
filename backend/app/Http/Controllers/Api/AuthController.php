@@ -180,15 +180,111 @@ class AuthController extends Controller
             throw ValidationException::withMessages(['email' => 'Your account is frozen. Contact support.']);
         }
 
-        $user->update(['last_login_ip' => $request->ip(), 'last_login_at' => now()]);
+        // ----- Two-step login: email TAC (OTP) -----
+        // When enabled, a 6-digit code is emailed and the caller must confirm it
+        // via /login/verify-tac before a token is issued. If the email cannot be
+        // sent (mail outage / misconfig), we fall back to a normal login so nobody
+        // gets locked out.
+        if ((bool) app(\App\Services\SettingsService::class)->get('login_tac_enabled', true)) {
+            $code = (string) random_int(100000, 999999);
+            $user->update([
+                'login_tac_code'       => $code,
+                'login_tac_expires_at' => now()->addMinutes(10),
+            ]);
+            if ($this->sendTacEmail($user, $code)) {
+                return response()->json([
+                    'message'      => 'A 6-digit login code (TAC) has been sent to your email.',
+                    'tac_required' => true,
+                    'email'        => $user->email,
+                ]);
+            }
+            // Email unavailable -> clear the pending code and continue normal login.
+            $user->update(['login_tac_code' => null, 'login_tac_expires_at' => null]);
+            \Illuminate\Support\Facades\Log::warning("Login TAC email failed for {$user->email}; fell back to direct login.");
+        }
 
-        $token = $user->createToken('api')->plainTextToken;
+        return $this->issueLogin($user, $request);
+    }
+
+    /**
+     * Step 2 of TAC login: verify the emailed code and issue the API token.
+     */
+    public function verifyTac(Request $request)
+    {
+        $data = $request->validate([
+            'email' => ['required', 'email'],
+            'code'  => ['required', 'string'],
+        ]);
+
+        $user = User::where('email', $data['email'])->first();
+
+        $valid = $user
+            && $user->login_tac_code
+            && $user->login_tac_expires_at
+            && now()->lessThanOrEqualTo($user->login_tac_expires_at)
+            && hash_equals($user->login_tac_code, trim($data['code']));
+
+        if (! $valid) {
+            throw ValidationException::withMessages(['code' => 'Invalid or expired login code.']);
+        }
+
+        // Re-check gates that could have changed since password step.
+        if (! $user->is_admin && app(\App\Services\MaintenanceService::class)->isActive()) {
+            return response()->json([
+                'message'     => 'System is under maintenance. Login re-opens at the end of the window.',
+                'maintenance' => app(\App\Services\MaintenanceService::class)->status(),
+            ], 503);
+        }
+        if ($user->is_frozen) {
+            throw ValidationException::withMessages(['email' => 'Your account is frozen. Contact support.']);
+        }
+
+        $user->update(['login_tac_code' => null, 'login_tac_expires_at' => null]);
+
+        return $this->issueLogin($user, $request);
+    }
+
+    /** Re-send a fresh login TAC. */
+    public function resendTac(Request $request)
+    {
+        $data = $request->validate(['email' => ['required', 'email']]);
+        $user = User::where('email', $data['email'])->first();
+        if ($user) {
+            $code = (string) random_int(100000, 999999);
+            $user->update(['login_tac_code' => $code, 'login_tac_expires_at' => now()->addMinutes(10)]);
+            $this->sendTacEmail($user, $code);
+        }
+        return response()->json(['message' => 'If the account exists, a new login code has been sent.']);
+    }
+
+    /** Finalize a successful login: stamp last-login and mint the token. */
+    protected function issueLogin(User $user, Request $request)
+    {
+        $user->update(['last_login_ip' => $request->ip(), 'last_login_at' => now()]);
 
         return response()->json([
             'message' => 'Login successful.',
-            'token'   => $token,
+            'token'   => $user->createToken('api')->plainTextToken,
             'user'    => $this->userPayload($user->fresh(['rank', 'wallets'])),
         ]);
+    }
+
+    /** Email a login TAC. Returns true only if the mail provider accepted it. */
+    protected function sendTacEmail(User $user, string $code): bool
+    {
+        try {
+            $html = '<div style="font-family:Arial,sans-serif;background:#04102a;padding:32px;color:#eef3fc">'
+                . '<div style="max-width:520px;margin:auto;background:#0a1c40;border:1px solid rgba(201,162,39,.3);border-radius:14px;padding:28px">'
+                . '<h2 style="color:#e7c873;margin:0 0 8px">Regal Markets</h2>'
+                . '<p style="margin:0 0 16px;color:#9fb1d4">Your login verification code (TAC) is:</p>'
+                . '<p style="font-size:34px;font-weight:bold;letter-spacing:8px;color:#e7c873;margin:0 0 16px">' . $code . '</p>'
+                . '<p style="margin:0;color:#9fb1d4;font-size:12px">This code expires in 10 minutes. If you did not try to log in, change your password immediately.</p>'
+                . '</div></div>';
+            return app(\App\Services\MailService::class)->send($user->email, $user->username, 'Your Regal Markets login code (TAC)', $html);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Login TAC email failed: ' . $e->getMessage());
+            return false;
+        }
     }
 
     public function me(Request $request)

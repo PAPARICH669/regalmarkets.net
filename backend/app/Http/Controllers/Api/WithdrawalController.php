@@ -22,10 +22,19 @@ class WithdrawalController extends Controller
 
         $data = $request->validate([
             'amount'         => ['required', 'numeric', "min:{$min}"],
-            'wallet_address' => ['required', 'string', 'max:120'],
         ]);
 
-        $withdrawal = $this->withdrawals->request($request->user(), $data['amount'], $data['wallet_address']);
+        // The payout address is locked to the member's stored wallet_address,
+        // which only an admin can set/change (security: members cannot redirect
+        // their own withdrawals).
+        $address = trim((string) $request->user()->wallet_address);
+        if ($address === '') {
+            return response()->json([
+                'message' => 'No withdrawal address is set on your account yet. Please contact admin/support to set your USDT (BEP20) address.',
+            ], 422);
+        }
+
+        $withdrawal = $this->withdrawals->request($request->user(), $data['amount'], $address);
 
         app(\App\Services\TelegramService::class)->notify('🏧 New Withdrawal Request', [
             'User'    => '@' . $request->user()->username,

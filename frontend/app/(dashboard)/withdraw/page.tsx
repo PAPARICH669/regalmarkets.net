@@ -14,15 +14,16 @@ interface Cfg { min: number; max_amount: number; fee_flat: number; max_per_day: 
 export default function WithdrawPage() {
   const { user, refresh } = useAuth();
   const [amount, setAmount] = useState("");
-  const [address, setAddress] = useState("");
   const [cfg, setCfg] = useState<Cfg | null>(null);
   const [msg, setMsg] = useState(""); const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [history, setHistory] = useState<Withdrawal[]>([]);
 
+  const address = user?.wallet_address || "";
+  const hasAddress = address.trim().length > 0;
+
   const load = () => api.get("/withdrawals").then((r) => setHistory(r.data.data));
   useEffect(() => { load(); api.get("/withdrawals/config").then((r) => setCfg(r.data)); }, []);
-  useEffect(() => { if (user?.wallet_address) setAddress(user.wallet_address); }, [user?.wallet_address]);
 
   const fee = cfg ? cfg.fee_flat : 0;
 
@@ -30,7 +31,7 @@ export default function WithdrawPage() {
     e.preventDefault();
     setMsg(""); setError(""); setLoading(true);
     try {
-      const { data } = await api.post("/withdrawals", { amount, wallet_address: address });
+      const { data } = await api.post("/withdrawals", { amount });
       setMsg(data.message); setAmount("");
       load(); refresh();
     } catch (err) { setError(apiError(err)); } finally { setLoading(false); }
@@ -66,11 +67,14 @@ export default function WithdrawPage() {
             </div>
             <div>
               <label className="text-sm text-muted">
-                USDT wallet address <span className="text-gold-light font-medium">(BEP20 only)</span>
+                USDT wallet address <span className="text-gold-light font-medium">(BEP20)</span> <span className="text-xs">🔒 admin-set</span>
               </label>
-              <input className="input-field mt-1" value={address} onChange={(e) => setAddress(e.target.value)}
-                placeholder="0x… (BEP20 / BSC network)" required />
-              <p className="text-xs text-muted mt-1">⚠️ Use a BEP20 (BSC) USDT address only. Wrong-network withdrawals are unrecoverable.</p>
+              <input className="input-field mt-1 opacity-70" value={hasAddress ? address : ""} placeholder="No address set — contact admin" disabled />
+              {hasAddress ? (
+                <p className="text-xs text-muted mt-1">🔒 Your payout address is locked. Only admin can change it. Contact support if it’s wrong.</p>
+              ) : (
+                <p className="text-xs text-red-400 mt-1">⚠️ No withdrawal address is set on your account. Please contact admin/support before requesting a withdrawal.</p>
+              )}
             </div>
             {amount && cfg && (
               <div className="text-sm bg-black/30 rounded-lg p-3 space-y-1">
@@ -78,7 +82,7 @@ export default function WithdrawPage() {
                 <div className="flex justify-between font-semibold"><span>You receive</span><span className="gold-text">{usdt(Math.max(Number(amount) - fee, 0))}</span></div>
               </div>
             )}
-            <button disabled={loading} className="btn-gold w-full py-2.5">{loading ? "Requesting…" : "Request Withdrawal"}</button>
+            <button disabled={loading || !hasAddress} className="btn-gold w-full py-2.5 disabled:opacity-50">{loading ? "Requesting…" : "Request Withdrawal"}</button>
           </form>
         </div>
 

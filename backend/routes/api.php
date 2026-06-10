@@ -35,6 +35,8 @@ Route::middleware('throttle:10,1')->group(function () {
     // Maintenance gating for login is handled inside AuthController@login so that
     // admins can always log in (members are blocked during the window).
     Route::post('/login', [AuthController::class, 'login']);
+    Route::post('/login/verify-tac', [AuthController::class, 'verifyTac']);
+    Route::post('/login/resend-tac', [AuthController::class, 'resendTac']);
     Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
     Route::post('/reset-password', [AuthController::class, 'resetPassword']);
     Route::post('/verify-email', [AuthController::class, 'verifyEmail']);
@@ -111,6 +113,7 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::post('/members/{user}/rank', [AdminMemberController::class, 'editRank']);
             Route::post('/members/{user}/reset-password', [AdminMemberController::class, 'resetPassword']);
             Route::post('/members/{user}/staff', [AdminMemberController::class, 'toggleStaff']);
+            Route::post('/members/{user}/wallet-address', [AdminMemberController::class, 'updateWalletAddress']);
 
             Route::get('/settings', [AdminSettingController::class, 'index']);
             Route::put('/settings', [AdminSettingController::class, 'update']);

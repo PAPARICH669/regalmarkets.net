@@ -118,13 +118,13 @@ class MiscController extends Controller
 
     public function updateProfile(Request $request)
     {
-        // Members may edit nickname, heir details and their BEP20 wallet address.
-        // Email and phone are NOT editable here (admin-only).
+        // Members may edit nickname and heir details only.
+        // Email, phone and the USDT withdrawal address are NOT editable here
+        // (admin-only) — the wallet address is locked for payout security.
         $data = $request->validate([
             'nickname'       => ['nullable', 'string', 'max:30'],
             'heir_name'      => ['nullable', 'string', 'max:120'],
             'heir_phone'     => ['nullable', 'string', 'max:30'],
-            'wallet_address' => ['nullable', 'string', 'max:120'],
         ]);
         $request->user()->update($data);
         return response()->json(['message' => 'Profile updated.']);

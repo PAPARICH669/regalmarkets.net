@@ -141,6 +141,11 @@ class BonusEngineTest extends TestCase
         $l1 = $this->makeUser('l1', $l2, 'USER');
         $member = $this->makeUser('depositor', $l1, 'USER');
 
+        // All uplines have their own fund -> eligible for every level.
+        foreach ([$l1, $l2, $l3, $l4, $l5] as $u) {
+            $u->update(['total_invested' => 100]);
+        }
+
         app(SponsorBonusService::class)->distribute($member, 100);
 
         // [7,4,2,1,1]% of 100
@@ -149,6 +154,41 @@ class BonusEngineTest extends TestCase
         $this->assertEquals('2.00000000', $l3->walletE->refresh()->balance);
         $this->assertEquals('1.00000000', $l4->walletE->refresh()->balance);
         $this->assertEquals('1.00000000', $l5->walletE->refresh()->balance);
+    }
+
+    /** @test */
+    public function sponsor_bonus_no_fund_upline_earns_level_1_only()
+    {
+        // No upline has invested anything (total_invested = 0).
+        $l3 = $this->makeUser('nf3', null, 'USER');
+        $l2 = $this->makeUser('nf2', $l3, 'USER');
+        $l1 = $this->makeUser('nf1', $l2, 'USER');
+        $member = $this->makeUser('nfdep', $l1, 'USER');
+
+        app(SponsorBonusService::class)->distribute($member, 100);
+
+        // Level 1 pays even without fund (7%); levels 2+ require fund -> nothing.
+        $this->assertEquals('7.00000000', $l1->walletE->refresh()->balance);
+        $this->assertEquals('0.00000000', $l2->walletE->refresh()->balance);
+        $this->assertEquals('0.00000000', $l3->walletE->refresh()->balance);
+    }
+
+    /** @test */
+    public function sponsor_bonus_skips_only_the_unfunded_upline()
+    {
+        // l1 funded, l2 NOT funded, l3 funded -> l2 skipped (lvl2), l3 still paid (lvl3).
+        $l3 = $this->makeUser('mx3', null, 'USER');
+        $l2 = $this->makeUser('mx2', $l3, 'USER');
+        $l1 = $this->makeUser('mx1', $l2, 'USER');
+        $member = $this->makeUser('mxdep', $l1, 'USER');
+        $l1->update(['total_invested' => 50]);
+        $l3->update(['total_invested' => 50]);
+
+        app(SponsorBonusService::class)->distribute($member, 100);
+
+        $this->assertEquals('7.00000000', $l1->walletE->refresh()->balance); // lvl1
+        $this->assertEquals('0.00000000', $l2->walletE->refresh()->balance); // lvl2, no fund
+        $this->assertEquals('2.00000000', $l3->walletE->refresh()->balance); // lvl3, funded
     }
 
     /** @test */

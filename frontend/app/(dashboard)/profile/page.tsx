@@ -16,7 +16,7 @@ export default function ProfilePage() {
   const { user, refresh } = useAuth();
 
   // ----- Profile (nickname, beneficiary, wallet) -----
-  const [form, setForm] = useState({ nickname: "", heir_name: "", heir_phone: "", wallet_address: "" });
+  const [form, setForm] = useState({ nickname: "", heir_name: "", heir_phone: "" });
   const [pMsg, setPMsg] = useState(""); const [pErr, setPErr] = useState(""); const [pLoad, setPLoad] = useState(false);
 
   // ----- Password -----
@@ -32,7 +32,6 @@ export default function ProfilePage() {
       nickname: user.nickname || user.username || "",
       heir_name: user.heir_name || "",
       heir_phone: user.heir_phone || "",
-      wallet_address: user.wallet_address || "",
     });
   }, [user]);
 
@@ -102,9 +101,9 @@ export default function ProfilePage() {
           </div>
 
           <div className="border-t border-[var(--line)] pt-4">
-            <label className="text-sm text-muted flex items-center gap-2"><Wallet size={15} className="text-gold-light" /> USDT Withdrawal Address <span className="text-red-500">*</span> <span className="text-gold-light text-xs">(BEP20 only)</span></label>
-            <input className="input-field mt-1" value={form.wallet_address} onChange={(e) => setForm({ ...form, wallet_address: e.target.value })} placeholder="0x… (BEP20 / BSC)" />
-            <p className="text-xs text-muted mt-1">Required for withdrawal.</p>
+            <label className="text-sm text-muted flex items-center gap-2"><Wallet size={15} className="text-gold-light" /> USDT Withdrawal Address <span className="text-xs">(admin only)</span> <span className="text-gold-light text-xs">(BEP20)</span></label>
+            <input className="input-field mt-1 opacity-60" value={user?.wallet_address || "—"} disabled />
+            <p className="text-xs text-muted mt-1">🔒 For security, your withdrawal address can only be set or changed by admin. Contact admin/support to update it.</p>
           </div>
 
           <button disabled={pLoad} className="btn-gold px-6 py-2.5">{pLoad ? "Saving…" : "Save Profile"}</button>
