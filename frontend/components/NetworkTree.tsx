@@ -14,10 +14,17 @@ export interface TreeNode {
   children: TreeNode[];
 }
 
+// Rank name -> logo file in /public/ranks (user/fan/senior/team-leader/group-leader .jpg).
+function rankSlug(rank?: string) {
+  return (rank || "USER").toLowerCase().replace(/\s+/g, "-");
+}
+
 function Node({ node, root = false }: { node: TreeNode; root?: boolean }) {
   const [open, setOpen] = useState(root || node.depth < 1);
+  const [imgOk, setImgOk] = useState(true);
   const color = RANK_COLORS[node.rank] || "#9b9bac";
   const hasChildren = node.children?.length > 0;
+  const logo = `/ranks/${rankSlug(node.rank)}.jpg`;
 
   return (
     <div className="ml-2">
@@ -28,12 +35,24 @@ function Node({ node, root = false }: { node: TreeNode; root?: boolean }) {
         >
           {hasChildren ? (open ? <ChevronDown size={15} /> : <ChevronRight size={15} />) : null}
         </button>
-        <span
-          className="grid place-items-center w-7 h-7 rounded-full text-black text-xs"
-          style={{ background: color }}
-        >
-          <UserIcon size={14} />
-        </span>
+        {imgOk ? (
+          // Rank logo — changes automatically with the member's rank.
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={logo}
+            alt={`${node.rank} rank`}
+            onError={() => setImgOk(false)}
+            className="w-7 h-7 rounded-full object-cover border shrink-0"
+            style={{ borderColor: `${color}66` }}
+          />
+        ) : (
+          <span
+            className="grid place-items-center w-7 h-7 rounded-full text-black text-xs shrink-0"
+            style={{ background: color }}
+          >
+            <UserIcon size={14} />
+          </span>
+        )}
         <span className="font-medium">{node.username}</span>
         <span className="text-xs px-2 py-0.5 rounded-full" style={{ color, background: `${color}1a` }}>
           {node.rank}

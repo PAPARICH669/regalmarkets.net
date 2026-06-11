@@ -28,17 +28,22 @@ class RankService
         $ranksByLevel = Rank::orderBy('level')->get()->keyBy('level');
         $ranksByName  = Rank::all()->keyBy('name');
 
-        // Lightweight in-memory snapshot
-        $users = User::members()->get(['id', 'sponsor_id', 'total_fund', 'rank_id']);
+        // Lightweight in-memory snapshot.
+        // Rank eligibility is measured by TOTAL_INVESTED (lifetime capital the
+        // member has funded into packages). We deliberately do NOT use total_fund
+        // here: total_fund only counts approved *deposits* and drops back to 0 when
+        // a 200% package completes, which would wrongly strip qualified members
+        // (and misses admin-credited / funded capital). total_invested never drops.
+        $users = User::members()->get(['id', 'sponsor_id', 'total_invested', 'rank_id']);
 
         $level    = [];   // userId => current rank level (default 1)
-        $fund     = [];
+        $fund     = [];   // userId => total_invested (the rank-qualifying amount)
         $children = [];   // sponsorId => [childIds]
         $rankIdToLevel = $ranksByName->mapWithKeys(fn ($r) => [$r->id => $r->level])->toArray();
 
         foreach ($users as $u) {
             $level[$u->id] = $u->rank_id ? ($rankIdToLevel[$u->rank_id] ?? 1) : 1;
-            $fund[$u->id]  = (float) $u->total_fund;
+            $fund[$u->id]  = (float) $u->total_invested;
             $children[$u->sponsor_id][] = $u->id;
         }
 

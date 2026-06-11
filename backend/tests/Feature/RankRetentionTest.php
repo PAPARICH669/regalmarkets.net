@@ -23,13 +23,13 @@ class RankRetentionTest extends TestCase
     protected function makeUser(string $username, ?User $sponsor, float $fund): User
     {
         $u = User::create([
-            'username'      => $username,
-            'email'         => "$username@test.com",
-            'password'      => bcrypt('password'),
-            'sponsor_id'    => $sponsor?->id,
-            'rank_id'       => Rank::byName('USER')->id,
-            'referral_code' => strtoupper($username),
-            'total_fund'    => $fund,
+            'username'       => $username,
+            'email'          => "$username@test.com",
+            'password'       => bcrypt('password'),
+            'sponsor_id'     => $sponsor?->id,
+            'rank_id'        => Rank::byName('USER')->id,
+            'referral_code'  => strtoupper($username),
+            'total_invested' => $fund, // rank eligibility is measured by total_invested
         ]);
         Wallet::create(['user_id' => $u->id, 'type' => 'A', 'balance' => 0]);
         Wallet::create(['user_id' => $u->id, 'type' => 'E', 'balance' => 0]);
@@ -50,10 +50,10 @@ class RankRetentionTest extends TestCase
 
         // Simulate "200% ROI done / downline habis": requirements effectively drop
         // (e.g. a direct no longer counts). Rank must NOT be demoted.
-        $d1->update(['total_fund' => 0]);
-        $d2->update(['total_fund' => 0]);
-        $d3->update(['total_fund' => 0]);
-        $leader->update(['total_fund' => 0]);
+        $d1->update(['total_invested' => 0]);
+        $d2->update(['total_invested' => 0]);
+        $d3->update(['total_invested' => 0]);
+        $leader->update(['total_invested' => 0]);
 
         app(RankService::class)->updateAll();
         $this->assertEquals('FAN', $leader->fresh()->rankName(), 'rank must be retained once achieved');
