@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import Logo from "@/components/Logo";
 import IdleLogout from "@/components/IdleLogout";
+import api from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 
 // `staff: true` items are visible to limited staff users; the rest are admin-only.
@@ -34,7 +35,24 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   const isStaffOnly = !!user && !user.is_admin && !!user.is_staff;
 
+  // Pending counts for the notification badges (verify + approvals).
+  const [counts, setCounts] = useState({ deposits: 0, withdrawals: 0, kyc: 0 });
+  const countFor = (href: string) =>
+    href === "/admin/deposits" ? counts.deposits
+    : href === "/admin/withdrawals" ? counts.withdrawals
+    : href === "/admin/kyc" ? counts.kyc
+    : 0;
+
   useEffect(() => { bootstrap(); }, [bootstrap]);
+  useEffect(() => {
+    if (!user || (!user.is_admin && !user.is_staff)) return;
+    let alive = true;
+    const fetchCounts = () =>
+      api.get("/admin/pending-counts").then((r) => { if (alive) setCounts(r.data); }).catch(() => {});
+    fetchCounts();
+    const id = setInterval(fetchCounts, 45000); // refresh every 45s
+    return () => { alive = false; clearInterval(id); };
+  }, [user, pathname]);
   useEffect(() => {
     if (hydrated && !loading) {
       if (!user) router.replace("/login");
@@ -59,10 +77,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           {navItems.map((item) => {
             const active = pathname === item.href;
             const Icon = item.icon;
+            const count = countFor(item.href);
             return (
               <Link key={item.href} href={item.href} onClick={() => setOpen(false)}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition ${active ? "gold-gradient text-black font-semibold" : "text-muted hover:bg-white/5 hover:text-gold-light"}`}>
-                <Icon size={18} /> {item.label}
+                <Icon size={18} /> <span className="flex-1">{item.label}</span>
+                {count > 0 && (
+                  <span className={`min-w-[20px] h-5 px-1.5 grid place-items-center rounded-full text-[11px] font-bold ${active ? "bg-black/25 text-black" : "bg-red-500 text-white"}`}>
+                    {count}
+                  </span>
+                )}
               </Link>
             );
           })}

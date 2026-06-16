@@ -33,6 +33,16 @@ class AdminMemberController extends Controller
         return $q->paginate(20);
     }
 
+    /** Pending counts for the admin/staff notification badges (verify + approvals). */
+    public function pendingCounts()
+    {
+        return response()->json([
+            'deposits'    => \App\Models\Deposit::where('status', 'pending')->count(),
+            'withdrawals' => \App\Models\Withdrawal::where('status', 'pending')->count(),
+            'kyc'         => User::where('kyc_status', 'pending')->count(),
+        ]);
+    }
+
     public function show(User $user)
     {
         $user->load('rank', 'wallets', 'sponsor:id,username');

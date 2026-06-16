@@ -87,6 +87,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // ---- Admin & Staff ------------------------------------------------------
     Route::middleware('staff')->prefix('admin')->group(function () {
         // Shared by admin + staff: member lookup, edit profile, KYC review.
+        Route::get('/pending-counts', [AdminMemberController::class, 'pendingCounts']);
         Route::get('/members', [AdminMemberController::class, 'index']);
         Route::get('/members/{user}', [AdminMemberController::class, 'show']);
         Route::post('/members/{user}/contact', [AdminMemberController::class, 'editContact']);
