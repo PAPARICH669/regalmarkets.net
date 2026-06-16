@@ -28,6 +28,7 @@ export default function AdminSettings() {
         maintenance_start: String(s?.maintenance_start ?? "00:00"),
         maintenance_end: String(s?.maintenance_end ?? "07:00"),
         login_tac_enabled: !!s?.login_tac_enabled,
+        total_deposit_adjustment: Number(s?.total_deposit_adjustment ?? 0),
       };
       const { data } = await api.put("/admin/settings", payload);
       setS(data.settings); setMsg("Settings saved.");
@@ -48,6 +49,7 @@ export default function AdminSettings() {
     ["max_withdrawal_daily", "Max per Withdrawal", "number"],
     ["maintenance_start", "Maintenance Start (HH:MM)", "text"],
     ["maintenance_end", "Maintenance End (HH:MM)", "text"],
+    ["total_deposit_adjustment", "Total Deposit Deduction (USDT)", "number"],
   ];
 
   return (

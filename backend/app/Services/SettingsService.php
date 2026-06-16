@@ -37,6 +37,7 @@ class SettingsService
             'deposit_address'        => ['regal.deposit_address', 'string'],
             'deposit_network'        => ['regal.deposit_network', 'string'],
             'login_tac_enabled'      => [null, 'bool'], // email TAC (OTP) on login, default ON
+            'total_deposit_adjustment' => [null, 'number'], // USDT deducted from the admin dashboard Total Deposit
         ];
     }
 

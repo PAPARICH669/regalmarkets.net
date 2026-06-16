@@ -36,6 +36,7 @@ class AdminSettingController extends Controller
             'maintenance_start'      => ['nullable', 'string'],
             'maintenance_end'        => ['nullable', 'string'],
             'login_tac_enabled'      => ['nullable', 'boolean'],
+            'total_deposit_adjustment' => ['nullable', 'numeric', 'min:0'],
         ]);
 
         foreach ($data as $key => $value) {

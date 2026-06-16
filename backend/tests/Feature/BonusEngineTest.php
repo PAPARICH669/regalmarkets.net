@@ -192,6 +192,37 @@ class BonusEngineTest extends TestCase
     }
 
     /** @test */
+    public function dummy_account_pays_no_sponsor_bonus_to_real_uplines()
+    {
+        $realUp = $this->makeUser('realup', null, 'USER');
+        $realUp->update(['total_invested' => 100]);
+        $dummy = $this->makeUser('dummyfunder', $realUp, 'USER');
+        $dummy->update(['is_dummy' => true]);
+
+        app(SponsorBonusService::class)->distribute($dummy, 100);
+
+        // Dummy funder must not pay its real upline.
+        $this->assertEquals('0.00000000', $realUp->walletE->refresh()->balance);
+    }
+
+    /** @test */
+    public function dummy_account_pays_no_matching_bonus_to_real_uplines()
+    {
+        $realUp = $this->makeUser('mrealup', null, 'GROUP LEADER');
+        $dummy  = $this->makeUser('mdummy', $realUp, 'USER');
+        $dummy->update(['is_dummy' => true]);
+
+        $roiLog = RoiLog::create([
+            'investment_package_id' => $this->stubPackage($dummy),
+            'user_id' => $dummy->id, 'amount' => 100, 'roi_date' => now()->toDateString(),
+        ]);
+        app(MatchingBonusService::class)->distributeForRoi($roiLog);
+
+        // Dummy earner must not pay its real upline.
+        $this->assertEquals('0.00000000', $realUp->walletE->refresh()->balance);
+    }
+
+    /** @test */
     public function roi_caps_at_200_percent_and_completes()
     {
         $user = $this->makeUser('investor', null, 'USER');

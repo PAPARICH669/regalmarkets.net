@@ -33,7 +33,11 @@ class SponsorBonusService
             $hasFund    = bccomp((string) $node->total_invested, '0', 8) > 0;
             $isEligible = ($level === 1) || $hasFund;
 
-            if ($isEligible && ! $node->is_frozen && $percent > 0) {
+            // Dummy accounts (e.g. GoldenLine network) never pay sponsor bonus to a
+            // REAL (non-dummy) upline. Bonuses between dummies still flow normally.
+            $dummyToReal = $member->is_dummy && ! $node->is_dummy;
+
+            if ($isEligible && ! $node->is_frozen && $percent > 0 && ! $dummyToReal) {
                 $bonus = bcdiv(bcmul((string) $amount, (string) $percent, 10), '100', 8);
                 if (bccomp($bonus, '0', 8) > 0) {
                     $this->wallets->credit(

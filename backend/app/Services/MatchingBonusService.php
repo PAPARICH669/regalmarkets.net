@@ -82,6 +82,11 @@ class MatchingBonusService
         if ($percent <= 0) {
             return;
         }
+        // Dummy accounts (e.g. GoldenLine network) never pay matching bonus to a
+        // REAL (non-dummy) upline. Bonuses between dummies still flow normally.
+        if ($earner->is_dummy && ! $node->is_dummy) {
+            return;
+        }
         $amount = bcdiv(bcmul((string) $roiAmount, (string) $percent, 10), '100', 8);
         if (bccomp($amount, '0', 8) <= 0) {
             return;
