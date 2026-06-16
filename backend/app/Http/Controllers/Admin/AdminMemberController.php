@@ -41,6 +41,7 @@ class AdminMemberController extends Controller
             'withdrawals'     => \App\Models\Withdrawal::where('status', 'pending')->count(),
             'kyc'             => User::where('kyc_status', 'pending')->count(),
             'change_requests' => \App\Models\AccountChangeRequest::where('status', 'pending')->count(),
+            'sponsor_rewards' => \App\Models\SponsorReward::where('status', 'pending')->count(),
         ]);
     }
 

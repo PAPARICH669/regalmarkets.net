@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\AdminMaintenanceController;
 use App\Http\Controllers\Admin\AdminMemberController;
 use App\Http\Controllers\Admin\AdminReportController;
 use App\Http\Controllers\Admin\AdminSettingController;
+use App\Http\Controllers\Admin\AdminSponsorRewardController;
 use App\Http\Controllers\Admin\AdminWithdrawalController;
 use App\Http\Controllers\Api\AccountChangeController;
 use App\Http\Controllers\Api\AuthController;
@@ -125,6 +126,10 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::post('/members/{user}/reset-password', [AdminMemberController::class, 'resetPassword']);
             Route::post('/members/{user}/staff', [AdminMemberController::class, 'toggleStaff']);
             Route::post('/members/{user}/wallet-address', [AdminMemberController::class, 'updateWalletAddress']);
+
+            Route::get('/sponsor-rewards', [AdminSponsorRewardController::class, 'index']);
+            Route::post('/sponsor-rewards/generate', [AdminSponsorRewardController::class, 'generate']);
+            Route::post('/sponsor-rewards/{sponsorReward}/settle', [AdminSponsorRewardController::class, 'settle']);
 
             Route::get('/settings', [AdminSettingController::class, 'index']);
             Route::put('/settings', [AdminSettingController::class, 'update']);

@@ -25,6 +25,10 @@ class Kernel extends ConsoleKernel
         $schedule->command('roi:run')->dailyAt('07:01')->timezone($tz)->withoutOverlapping();
         $schedule->command('maintenance:sync')->dailyAt('07:01')->timezone($tz);
         $schedule->command('rank:update')->dailyAt('07:10')->timezone($tz)->withoutOverlapping();
+
+        // On the 1st of each month, generate the previous month's Top-5 Sponsor
+        // reward list (pending admin settlement / notification).
+        $schedule->command('rewards:top-sponsors')->monthlyOn(1, '07:15')->timezone($tz)->withoutOverlapping();
     }
 
     /**

@@ -64,6 +64,10 @@ return [
         'GROUP LEADER' => 15,
     ],
 
+    // Monthly Top-5 Sponsor reward (USDT) by leaderboard position. Index 0 => position 1.
+    // Ranked by NEW invest brought in by direct downlines during the month.
+    'top_sponsor_rewards' => [50, 20, 15, 10, 5],
+
     // Rank requirements. "produce_rank N" => N DIRECT (level-1) referrals whose rank
     // is at least that rank. (documented in docs/BUSINESS_LOGIC.md).
     'ranks' => [

@@ -125,6 +125,23 @@ class MailService
         return $this->send($toEmail, $toName, 'Deposit approved — Regal Markets', $this->shell('Deposit Approved', $inner));
     }
 
+    /** Monthly Top-5 Sponsor reward — congratulations + amount. */
+    public function sendSponsorReward(string $toEmail, ?string $toName, int $position, string $amount, string $period): bool
+    {
+        $name   = $toName ?: 'there';
+        $medal  = [1 => '🥇', 2 => '🥈', 3 => '🥉', 4 => '🏅', 5 => '🏅'][$position] ?? '🏅';
+        $amt    = rtrim(rtrim(number_format((float) $amount, 8, '.', ''), '0'), '.');
+        $inner  = <<<HTML
+        <p style="margin:0 0 14px;color:#9fb1d4">Hi {$name},</p>
+        <p style="margin:0 0 14px">🎉 <b>Congratulations!</b> You placed <b style="color:#e7c873">{$medal} Top {$position}</b> on the Sponsor leaderboard for <b>{$period}</b>.</p>
+        <p style="margin:0 0 14px">Your reward of <b style="color:#e7c873;font-size:18px">{$amt} USDT</b> has been credited to your <b>E-WALLET</b>.</p>
+        <p style="margin:0 0 14px;color:#9fb1d4">Thank you for building your team. Keep climbing — and see you on next month's board! 🚀</p>
+        <p style="margin:0;color:#9fb1d4">— The Regal Markets Team</p>
+        HTML;
+
+        return $this->send($toEmail, $toName, "🎉 You earned a Top {$position} Sponsor reward — Regal Markets", $this->shell('Top Sponsor Reward', $inner));
+    }
+
     /** KYC rejected notification (with admin reason). */
     public function sendKycRejected(string $toEmail, ?string $toName, ?string $reason): bool
     {
