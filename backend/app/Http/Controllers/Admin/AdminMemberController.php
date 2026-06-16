@@ -37,10 +37,67 @@ class AdminMemberController extends Controller
     public function pendingCounts()
     {
         return response()->json([
-            'deposits'    => \App\Models\Deposit::where('status', 'pending')->count(),
-            'withdrawals' => \App\Models\Withdrawal::where('status', 'pending')->count(),
-            'kyc'         => User::where('kyc_status', 'pending')->count(),
+            'deposits'        => \App\Models\Deposit::where('status', 'pending')->count(),
+            'withdrawals'     => \App\Models\Withdrawal::where('status', 'pending')->count(),
+            'kyc'             => User::where('kyc_status', 'pending')->count(),
+            'change_requests' => \App\Models\AccountChangeRequest::where('status', 'pending')->count(),
         ]);
+    }
+
+    /** Pending member-initiated email / wallet-address change requests. */
+    public function changeRequests()
+    {
+        return \App\Models\AccountChangeRequest::with('user:id,username,email')
+            ->where('status', 'pending')->latest()->get();
+    }
+
+    /** Approve a change request and apply it to the member. */
+    public function approveChange(Request $request, \App\Models\AccountChangeRequest $changeRequest)
+    {
+        if ($changeRequest->status !== 'pending') {
+            return response()->json(['message' => 'This request was already processed.'], 422);
+        }
+        $user = $changeRequest->user;
+        if (! $user) {
+            return response()->json(['message' => 'Member not found.'], 404);
+        }
+
+        if ($changeRequest->field === 'email') {
+            $exists = User::where('email', $changeRequest->new_value)->where('id', '!=', $user->id)->exists();
+            if ($exists) {
+                return response()->json(['message' => 'That email is already in use by another member.'], 422);
+            }
+            $user->update(['email' => $changeRequest->new_value]);
+        } else { // wallet_address
+            $user->update(['wallet_address' => $changeRequest->new_value]);
+        }
+
+        $changeRequest->update([
+            'status'       => 'approved',
+            'processed_by' => $request->user()->id,
+            'processed_at' => now(),
+        ]);
+        $this->audit->log($request, 'change_request.approve', $user, ['field' => $changeRequest->field]);
+
+        return response()->json(['message' => 'Change approved and applied.']);
+    }
+
+    /** Reject a change request. */
+    public function rejectChange(Request $request, \App\Models\AccountChangeRequest $changeRequest)
+    {
+        if ($changeRequest->status !== 'pending') {
+            return response()->json(['message' => 'This request was already processed.'], 422);
+        }
+        $data = $request->validate(['note' => ['nullable', 'string', 'max:255']]);
+        $changeRequest->update([
+            'status'       => 'rejected',
+            'processed_by' => $request->user()->id,
+            'processed_at' => now(),
+            'note'         => $data['note'] ?? null,
+        ]);
+        $this->audit->log($request, 'change_request.reject', $changeRequest->user, ['field' => $changeRequest->field]);
+
+        return response()->json(['message' => 'Change request rejected.']);
     }
 
     public function show(User $user)

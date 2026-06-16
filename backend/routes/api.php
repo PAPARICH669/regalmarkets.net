@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\AdminMemberController;
 use App\Http\Controllers\Admin\AdminReportController;
 use App\Http\Controllers\Admin\AdminSettingController;
 use App\Http\Controllers\Admin\AdminWithdrawalController;
+use App\Http\Controllers\Api\AccountChangeController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\DepositController;
@@ -51,6 +52,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/profile/password', [MiscController::class, 'changePassword']);
     Route::post('/kyc', [MiscController::class, 'submitKyc']);
 
+    // Member-initiated email / wallet-address change requests (TAC + admin approval).
+    Route::get('/account-changes', [AccountChangeController::class, 'index']);
+    Route::post('/account-changes', [AccountChangeController::class, 'store']);
+    Route::post('/account-changes/verify-tac', [AccountChangeController::class, 'verifyTac']);
+    Route::post('/account-changes/resend-tac', [AccountChangeController::class, 'resendTac']);
+
     Route::get('/dashboard', [DashboardController::class, 'index']);
     Route::get('/wallet-transactions', [MiscController::class, 'walletTransactions']);
 
@@ -88,6 +95,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware('staff')->prefix('admin')->group(function () {
         // Shared by admin + staff: member lookup, edit profile, KYC review.
         Route::get('/pending-counts', [AdminMemberController::class, 'pendingCounts']);
+        Route::get('/change-requests', [AdminMemberController::class, 'changeRequests']);
+        Route::post('/change-requests/{changeRequest}/approve', [AdminMemberController::class, 'approveChange']);
+        Route::post('/change-requests/{changeRequest}/reject', [AdminMemberController::class, 'rejectChange']);
         Route::get('/members', [AdminMemberController::class, 'index']);
         Route::get('/members/{user}', [AdminMemberController::class, 'show']);
         Route::post('/members/{user}/contact', [AdminMemberController::class, 'editContact']);

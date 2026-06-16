@@ -27,6 +27,10 @@ export default function ProfilePage() {
   const [kyc, setKyc] = useState<{ id_type: string; id_number: string; document: File | null }>({ id_type: "ic", id_number: "", document: null });
   const [kMsg, setKMsg] = useState(""); const [kErr, setKErr] = useState(""); const [kLoad, setKLoad] = useState(false);
 
+  // ----- Email / wallet change requests -----
+  const [requests, setRequests] = useState<ChangeReq[]>([]);
+  const loadRequests = () => api.get("/account-changes").then((r) => setRequests(r.data)).catch(() => {});
+
   useEffect(() => {
     if (user) setForm({
       nickname: user.nickname || user.username || "",
@@ -34,6 +38,8 @@ export default function ProfilePage() {
       heir_phone: user.heir_phone || "",
     });
   }, [user]);
+
+  useEffect(() => { loadRequests(); }, []);
 
   async function saveProfile(e: React.FormEvent) {
     e.preventDefault(); setPMsg(""); setPErr(""); setPLoad(true);
@@ -84,7 +90,7 @@ export default function ProfilePage() {
               <input className="input-field mt-1 opacity-60" value={user?.phone || "—"} disabled />
             </div>
           </div>
-          <p className="text-xs text-muted">To change your email or phone, contact admin/support.</p>
+          <p className="text-xs text-muted">To change your <b>email</b> or <b>wallet address</b>, use the <b className="text-gold-light">Email &amp; Wallet Change</b> section below (TAC + admin approval required). Phone changes: contact admin/support.</p>
 
           <div className="border-t border-[var(--line)] pt-4">
             <p className="text-sm font-medium flex items-center gap-2 mb-3"><Users size={16} className="text-gold-light" /> Beneficiary (Pewaris)</p>
@@ -103,11 +109,36 @@ export default function ProfilePage() {
           <div className="border-t border-[var(--line)] pt-4">
             <label className="text-sm text-muted flex items-center gap-2"><Wallet size={15} className="text-gold-light" /> USDT Withdrawal Address <span className="text-xs">(admin only)</span> <span className="text-gold-light text-xs">(BEP20)</span></label>
             <input className="input-field mt-1 opacity-60" value={user?.wallet_address || "—"} disabled />
-            <p className="text-xs text-muted mt-1">🔒 For security, your withdrawal address can only be set or changed by admin. Contact admin/support to update it.</p>
+            <p className="text-xs text-muted mt-1">🔒 To change this, use the <b className="text-gold-light">Email &amp; Wallet Change</b> section below.</p>
           </div>
 
           <button disabled={pLoad} className="btn-gold px-6 py-2.5">{pLoad ? "Saving…" : "Save Profile"}</button>
         </form>
+      </div>
+
+      {/* Email / wallet change requests */}
+      <div className="glass p-6">
+        <h3 className="font-semibold flex items-center gap-2"><Wallet size={18} className="text-gold-light" /> Email &amp; Wallet Change</h3>
+        <p className="text-sm text-muted mt-1">Each change needs a 6-digit code (TAC) sent to your <b>current email</b>, then admin/staff approval before it takes effect.</p>
+
+        <div className="mt-5 grid sm:grid-cols-2 gap-5">
+          <ChangeRequestForm field="email" label="New Email" current={user?.email || "—"} placeholder="you@email.com" inputType="email" onDone={loadRequests} />
+          <ChangeRequestForm field="wallet_address" label="New USDT Address (BEP20)" current={user?.wallet_address || "—"} placeholder="0x… (BEP20 / BSC)" onDone={loadRequests} />
+        </div>
+
+        {requests.length > 0 && (
+          <div className="mt-6 border-t border-[var(--line)] pt-4">
+            <p className="text-sm font-medium mb-2">Your recent requests</p>
+            <div className="space-y-2">
+              {requests.map((r) => (
+                <div key={r.id} className="flex items-center justify-between gap-3 text-sm bg-black/30 rounded-lg px-3 py-2">
+                  <span className="text-muted">{r.field === "email" ? "Email" : "Wallet"} → <span className="text-foreground break-all">{r.new_value}</span></span>
+                  <CRStatus status={r.status} />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* KYC */}
@@ -177,6 +208,85 @@ export default function ProfilePage() {
           <button disabled={pwLoad} className="btn-gold px-6 py-2.5">{pwLoad ? "Saving…" : "Change Password"}</button>
         </form>
       </div>
+    </div>
+  );
+}
+
+interface ChangeReq { id: number; field: string; new_value: string; status: string; }
+
+function CRStatus({ status }: { status: string }) {
+  const map: Record<string, string> = {
+    pending_tac: "bg-white/10 text-muted",
+    pending: "bg-yellow-500/15 text-yellow-400",
+    approved: "bg-green-500/15 text-green-400",
+    rejected: "bg-red-500/15 text-red-400",
+  };
+  const label: Record<string, string> = {
+    pending_tac: "Awaiting code",
+    pending: "Pending approval",
+    approved: "Approved",
+    rejected: "Rejected",
+  };
+  return <span className={`shrink-0 text-xs px-2 py-0.5 rounded-full ${map[status] || "bg-white/10 text-muted"}`}>{label[status] || status}</span>;
+}
+
+function ChangeRequestForm({
+  field, label, current, placeholder, inputType = "text", onDone,
+}: {
+  field: "email" | "wallet_address";
+  label: string;
+  current: string;
+  placeholder: string;
+  inputType?: string;
+  onDone?: () => void;
+}) {
+  const [step, setStep] = useState<"idle" | "tac">("idle");
+  const [newValue, setNewValue] = useState("");
+  const [reqId, setReqId] = useState<number | null>(null);
+  const [code, setCode] = useState("");
+  const [msg, setMsg] = useState(""); const [err, setErr] = useState(""); const [loading, setLoading] = useState(false);
+
+  async function submitNew(e: React.FormEvent) {
+    e.preventDefault(); setMsg(""); setErr(""); setLoading(true);
+    try {
+      const { data } = await api.post("/account-changes", { field, new_value: newValue });
+      setReqId(data.request_id); setStep("tac"); setMsg(data.message);
+    } catch (e) { setErr(apiError(e)); } finally { setLoading(false); }
+  }
+  async function confirmTac(e: React.FormEvent) {
+    e.preventDefault(); setMsg(""); setErr(""); setLoading(true);
+    try {
+      const { data } = await api.post("/account-changes/verify-tac", { request_id: reqId, code });
+      setMsg(data.message); setStep("idle"); setNewValue(""); setCode(""); setReqId(null);
+      onDone?.();
+    } catch (e) { setErr(apiError(e)); } finally { setLoading(false); }
+  }
+  async function resend() {
+    setErr(""); try { const { data } = await api.post("/account-changes/resend-tac", { request_id: reqId }); setMsg(data.message); } catch (e) { setErr(apiError(e)); }
+  }
+
+  return (
+    <div className="bg-black/20 rounded-xl p-4 border border-[var(--line)]">
+      <label className="text-sm font-medium">{label}</label>
+      <p className="text-xs text-muted mt-0.5 mb-2 break-all">Current: {current}</p>
+      {msg && <div className="mb-2 text-xs text-green-400 bg-green-500/10 border border-green-500/30 rounded-lg px-3 py-2">{msg}</div>}
+      {err && <div className="mb-2 text-xs text-red-400 bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">{err}</div>}
+
+      {step === "idle" ? (
+        <form onSubmit={submitNew} className="space-y-2">
+          <input type={inputType} className="input-field" placeholder={placeholder} value={newValue} onChange={(e) => setNewValue(e.target.value)} required />
+          <button disabled={loading || !newValue} className="btn-gold w-full py-2 text-sm disabled:opacity-50">{loading ? "Sending…" : "Request change → send code"}</button>
+        </form>
+      ) : (
+        <form onSubmit={confirmTac} className="space-y-2">
+          <input inputMode="numeric" maxLength={6} className="input-field text-center tracking-[0.4em] font-mono" placeholder="······" value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))} required />
+          <div className="flex gap-2">
+            <button disabled={loading || code.length < 6} className="btn-gold flex-1 py-2 text-sm disabled:opacity-50">{loading ? "Confirming…" : "Confirm"}</button>
+            <button type="button" onClick={resend} className="btn-ghost px-3 py-2 text-xs">Resend</button>
+            <button type="button" onClick={() => { setStep("idle"); setCode(""); setMsg(""); setErr(""); }} className="btn-ghost px-3 py-2 text-xs">Cancel</button>
+          </div>
+        </form>
+      )}
     </div>
   );
 }

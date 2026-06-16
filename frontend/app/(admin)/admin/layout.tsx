@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   LayoutDashboard, ArrowDownToLine, ArrowUpFromLine, Users, Settings,
-  Megaphone, Wrench, Layers, FileText, LogOut, Menu, ShieldCheck, TrendingUp,
+  Megaphone, Wrench, Layers, FileText, LogOut, Menu, ShieldCheck, TrendingUp, UserCog,
 } from "lucide-react";
 import Logo from "@/components/Logo";
 import IdleLogout from "@/components/IdleLogout";
@@ -19,6 +19,7 @@ const NAV = [
   { href: "/admin/withdrawals", label: "Withdrawals", icon: ArrowUpFromLine },
   { href: "/admin/members", label: "Members", icon: Users, staff: true },
   { href: "/admin/kyc", label: "KYC", icon: ShieldCheck, staff: true },
+  { href: "/admin/change-requests", label: "Change Requests", icon: UserCog, staff: true },
   { href: "/admin/roi", label: "Daily Commission", icon: TrendingUp },
   { href: "/admin/logs", label: "Bonus Logs", icon: Layers },
   { href: "/admin/settings", label: "Settings", icon: Settings },
@@ -36,11 +37,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const isStaffOnly = !!user && !user.is_admin && !!user.is_staff;
 
   // Pending counts for the notification badges (verify + approvals).
-  const [counts, setCounts] = useState({ deposits: 0, withdrawals: 0, kyc: 0 });
+  const [counts, setCounts] = useState({ deposits: 0, withdrawals: 0, kyc: 0, change_requests: 0 });
   const countFor = (href: string) =>
     href === "/admin/deposits" ? counts.deposits
     : href === "/admin/withdrawals" ? counts.withdrawals
     : href === "/admin/kyc" ? counts.kyc
+    : href === "/admin/change-requests" ? counts.change_requests
     : 0;
 
   useEffect(() => { bootstrap(); }, [bootstrap]);
