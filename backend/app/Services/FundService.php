@@ -24,7 +24,9 @@ class FundService
 
     public function fund(User $user, $amount): InvestmentPackage
     {
-        $min = (float) $this->settings->get('min_deposit');
+        // Members may fund any amount they hold in A-WALLET, from 1 USDT up
+        // (so the full deposited value can be activated).
+        $min = 1.0;
         if ((float) $amount < $min) {
             throw ValidationException::withMessages(['amount' => "Minimum fund is {$min} USDT."]);
         }

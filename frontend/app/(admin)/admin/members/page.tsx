@@ -9,7 +9,8 @@ import RankBadge from "@/components/RankBadge";
 interface Member {
   id: number; username: string; email: string; phone?: string; kyc_status?: string;
   total_fund: string; total_invested: string; wallet_address?: string | null;
-  is_frozen: boolean; is_staff?: boolean; is_admin?: boolean; referrals_count: number; rank?: { id: number; name: string };
+  is_frozen: boolean; is_staff?: boolean; is_admin?: boolean; is_ld?: boolean; referrals_count: number;
+  rank?: { id: number; name: string }; sponsor?: { id: number; username: string } | null;
 }
 interface Rank { id: number; name: string; }
 
@@ -30,10 +31,10 @@ export default function AdminMembers() {
     try { await api.post(`/admin/members/${id}/freeze`); load(); } catch (e) { setError(apiError(e)); }
   }
   async function adjust(id: number) {
-    const type = window.prompt("Wallet (A or E):", "E"); if (!type) return;
+    const type = window.prompt("Wallet — A (capital), E (earnings), or L (LD WALLET):", "A"); if (!type) return;
     const direction = window.prompt("credit or debit:", "credit"); if (!direction) return;
     const amount = window.prompt("Amount:"); if (!amount) return;
-    try { await api.post(`/admin/members/${id}/adjust-wallet`, { type, direction, amount }); load(); }
+    try { await api.post(`/admin/members/${id}/adjust-wallet`, { type: type.trim().toUpperCase(), direction, amount }); load(); }
     catch (e) { setError(apiError(e)); }
   }
   async function setRank(id: number, rank_id: number) {
@@ -47,6 +48,9 @@ export default function AdminMembers() {
   }
   async function toggleStaff(id: number) {
     try { await api.post(`/admin/members/${id}/staff`); load(); } catch (e) { setError(apiError(e)); }
+  }
+  async function toggleLd(id: number) {
+    try { await api.post(`/admin/members/${id}/ld`); load(); } catch (e) { setError(apiError(e)); }
   }
   async function setWallet(id: number, current?: string | null) {
     const addr = window.prompt("USDT withdrawal address (BEP20). Leave blank to clear:", current || "");
@@ -80,8 +84,10 @@ export default function AdminMembers() {
                   {m.username}
                   {m.is_admin && <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-gold-light/15 text-gold-light">ADMIN</span>}
                   {m.is_staff && !m.is_admin && <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-300">STAFF</span>}
+                  {m.is_ld && <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-gold-light/15 text-gold-light">LD</span>}
                   <div className="text-xs text-muted">{m.email}</div>
                   <div className="text-xs text-muted">📞 {m.phone || "—"}</div>
+                  <div className="text-xs text-muted">👤 Sponsor: {m.sponsor ? `@${m.sponsor.username}` : "—"}</div>
                   <div className="text-xs text-muted truncate max-w-[200px]" title={m.wallet_address || ""}>💳 {m.wallet_address || "no address"}</div>
                 </td>
                 <td>{m.rank ? <RankBadge rank={m.rank.name} /> : "—"}</td>
@@ -101,6 +107,11 @@ export default function AdminMembers() {
                       {!m.is_admin && (
                         <button onClick={() => toggleStaff(m.id)} className={`px-2 py-1 text-xs rounded ${m.is_staff ? "bg-blue-500/20 text-blue-300" : "btn-ghost"}`}>
                           {m.is_staff ? "Staff ✓" : "Make Staff"}
+                        </button>
+                      )}
+                      {!m.is_admin && (
+                        <button onClick={() => toggleLd(m.id)} className={`px-2 py-1 text-xs rounded ${m.is_ld ? "bg-gold-light/20 text-gold-light" : "btn-ghost"}`}>
+                          {m.is_ld ? "✓ LD" : "LD"}
                         </button>
                       )}
                       <select className="bg-[var(--surface)] border border-[var(--line)] rounded px-1 py-1 text-xs"

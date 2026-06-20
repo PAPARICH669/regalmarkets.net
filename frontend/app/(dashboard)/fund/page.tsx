@@ -51,7 +51,7 @@ export default function FundPage() {
           {error && <div className="mt-4 text-sm text-red-400 bg-red-500/10 border border-red-500/30 rounded-lg px-4 py-3">{error}</div>}
 
           <form onSubmit={submit} className="mt-5 space-y-4">
-            <input type="number" step="0.01" min="10" className="input-field" placeholder="Amount (USDT)" value={amount} onChange={(e) => setAmount(e.target.value)} required />
+            <input type="number" step="0.01" min="1" className="input-field" placeholder="Amount (USDT) · min 1" value={amount} onChange={(e) => setAmount(e.target.value)} required />
             {amount && (
               <div className="text-sm bg-black/30 rounded-lg p-3 flex justify-between">
                 <span className="text-muted">Total commission (200%)</span>

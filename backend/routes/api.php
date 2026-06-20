@@ -14,6 +14,7 @@ use App\Http\Controllers\Api\AccountChangeController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\DepositController;
+use App\Http\Controllers\Api\LdController;
 use App\Http\Controllers\Api\LogController;
 use App\Http\Controllers\Api\MiscController;
 use App\Http\Controllers\Api\FundController;
@@ -58,6 +59,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/account-changes', [AccountChangeController::class, 'store']);
     Route::post('/account-changes/verify-tac', [AccountChangeController::class, 'verifyTac']);
     Route::post('/account-changes/resend-tac', [AccountChangeController::class, 'resendTac']);
+
+    // LD (Leader-Distributor) credit transfers — LD WALLET -> member A-WALLET, TAC-gated. is_ld only.
+    Route::post('/ld/transfer/init', [LdController::class, 'init']);
+    Route::post('/ld/transfer/confirm', [LdController::class, 'confirm']);
+    Route::get('/ld/wallet-history', [LdController::class, 'walletHistory']);
 
     Route::get('/dashboard', [DashboardController::class, 'index']);
     Route::get('/wallet-transactions', [MiscController::class, 'walletTransactions']);
@@ -125,7 +131,9 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::post('/members/{user}/rank', [AdminMemberController::class, 'editRank']);
             Route::post('/members/{user}/reset-password', [AdminMemberController::class, 'resetPassword']);
             Route::post('/members/{user}/staff', [AdminMemberController::class, 'toggleStaff']);
+            Route::post('/members/{user}/ld', [AdminMemberController::class, 'toggleLd']);
             Route::post('/members/{user}/wallet-address', [AdminMemberController::class, 'updateWalletAddress']);
+            Route::get('/wallet-adjustments', [AdminMemberController::class, 'walletAdjustments']);
 
             Route::get('/sponsor-rewards', [AdminSponsorRewardController::class, 'index']);
             Route::post('/sponsor-rewards/generate', [AdminSponsorRewardController::class, 'generate']);

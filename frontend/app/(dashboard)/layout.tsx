@@ -4,15 +4,17 @@ import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-  LayoutDashboard, Repeat, Network, LogOut, Menu, X, Wallet, UserCog,
+  LayoutDashboard, Repeat, Network, LogOut, Menu, X, Wallet, UserCog, ArrowLeftRight,
 } from "lucide-react";
 import Logo from "@/components/Logo";
 import IdleLogout from "@/components/IdleLogout";
 import { useAuth } from "@/lib/auth";
 
+// `ld: true` items show only for LD (Leader-Distributor) members.
 const NAV = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/fund", label: "Fund", icon: Repeat },
+  { href: "/transfer", label: "Transfer", icon: ArrowLeftRight, ld: true },
   { href: "/network", label: "Team Network", icon: Network },
   { href: "/profile", label: "Profile & Security", icon: UserCog },
 ];
@@ -51,7 +53,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <Logo size="sm" />
         </div>
         <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
-          {NAV.map((item) => {
+          {NAV.filter((item) => !item.ld || user.is_ld).map((item) => {
             const active = pathname === item.href;
             const Icon = item.icon;
             return (

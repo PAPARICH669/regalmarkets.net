@@ -21,7 +21,7 @@ class AdminMemberController extends Controller
 
     public function index(Request $request)
     {
-        $q = User::with('rank:id,name,level')->withCount('referrals')->latest();
+        $q = User::with(['rank:id,name,level', 'sponsor:id,username'])->withCount('referrals')->latest();
         if ($search = $request->query('search')) {
             $q->where(fn ($w) => $w->where('username', 'like', "%$search%")
                 ->orWhere('email', 'like', "%$search%")
@@ -121,7 +121,7 @@ class AdminMemberController extends Controller
     public function adjustWallet(Request $request, User $user)
     {
         $data = $request->validate([
-            'type'      => ['required', 'in:A,E'],
+            'type'      => ['required', 'in:A,E,L'],
             'direction' => ['required', 'in:credit,debit'],
             'amount'    => ['required', 'numeric', 'min:0.00000001'],
             'note'      => ['nullable', 'string', 'max:255'],
@@ -208,6 +208,29 @@ class AdminMemberController extends Controller
             'message' => $user->is_staff ? 'Staff access granted.' : 'Staff access revoked.',
             'user'    => $user,
         ]);
+    }
+
+    /** Grant/revoke LD (Leader-Distributor) role. Revoking returns them to a normal member. Admin only. */
+    public function toggleLd(Request $request, User $user)
+    {
+        if ($user->is_admin) {
+            return response()->json(['message' => 'Cannot make an admin an LD.'], 422);
+        }
+        $user->update(['is_ld' => ! $user->is_ld]);
+        $this->audit->log($request, 'member.toggle_ld', $user, ['is_ld' => $user->is_ld]);
+        return response()->json([
+            'message' => $user->is_ld ? 'LD role granted.' : 'LD role revoked.',
+            'user'    => $user,
+        ]);
+    }
+
+    /** History of admin wallet adjustments (credit/debit) — id, amount, wallet, note. */
+    public function walletAdjustments()
+    {
+        return \App\Models\WalletTransaction::where('type', 'admin_adjust')
+            ->with('user:id,username')
+            ->latest()->take(100)
+            ->get(['id', 'user_id', 'wallet_type', 'direction', 'amount', 'note', 'created_at']);
     }
 
     /** List KYC submissions (default pending). */

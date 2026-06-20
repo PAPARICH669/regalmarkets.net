@@ -372,11 +372,13 @@ class AuthController extends Controller
             'email_verified' => (bool) $user->email_verified_at,
             'is_admin'       => $user->is_admin,
             'is_staff'       => $user->is_staff,
+            'is_ld'          => $user->is_ld,
             'is_frozen'      => $user->is_frozen,
             'total_invested' => (float) $user->total_invested,
             'total_fund'     => (float) $user->total_fund,
             'wallet_a'       => (float) $user->walletBalance('A'),
             'wallet_e'       => (float) $user->walletBalance('E'),
+            'wallet_l'       => (float) $user->walletBalance('L'),
             'two_factor_enabled' => $user->two_factor_enabled,
             'created_at'     => $user->created_at?->toIso8601String(),
         ];

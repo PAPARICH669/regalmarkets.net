@@ -22,11 +22,13 @@ export interface AuthUser {
   email_verified?: boolean;
   is_admin: boolean;
   is_staff?: boolean;
+  is_ld?: boolean;
   is_frozen: boolean;
   total_invested: number;
   total_fund: number;
   wallet_a: number;
   wallet_e: number;
+  wallet_l?: number;
   two_factor_enabled: boolean;
   created_at?: string | null;
 }

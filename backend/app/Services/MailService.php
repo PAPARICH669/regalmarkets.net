@@ -142,6 +142,20 @@ class MailService
         return $this->send($toEmail, $toName, "🎉 You earned a Top {$position} Sponsor reward — Regal Markets", $this->shell('Top Sponsor Reward', $inner));
     }
 
+    /** TAC to confirm an LD WALLET transfer. */
+    public function sendLdTransferTac(string $toEmail, ?string $toName, string $code, string $recipient, string $amount): bool
+    {
+        $name = $toName ?: 'there';
+        $inner = <<<HTML
+        <p style="margin:0 0 14px;color:#9fb1d4">Hi {$name},</p>
+        <p style="margin:0 0 14px">You are transferring <b style="color:#e7c873">{$amount} USDT</b> from your LD WALLET to <b>{$recipient}</b>. Your confirmation code (TAC) is:</p>
+        <p style="font-size:34px;font-weight:bold;letter-spacing:8px;color:#e7c873;margin:0 0 16px">{$code}</p>
+        <p style="margin:0;color:#9fb1d4;font-size:12px">This code expires in 10 minutes. If this wasn't you, do not enter it and change your password.</p>
+        HTML;
+
+        return $this->send($toEmail, $toName, 'Confirm your LD transfer (TAC) — Regal Markets', $this->shell('LD Transfer Code', $inner));
+    }
+
     /** KYC rejected notification (with admin reason). */
     public function sendKycRejected(string $toEmail, ?string $toName, ?string $reason): bool
     {
