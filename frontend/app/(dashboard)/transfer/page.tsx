@@ -11,7 +11,7 @@ interface Hist { id: number; direction: string; amount: string; note: string | n
 export default function TransferPage() {
   const { user, refresh } = useAuth();
   const [step, setStep] = useState<"idle" | "tac">("idle");
-  const [memberId, setMemberId] = useState("");
+  const [username, setUsername] = useState("");
   const [amount, setAmount] = useState("");
   const [recipient, setRecipient] = useState<{ id: number; username: string; name: string } | null>(null);
   const [code, setCode] = useState("");
@@ -30,16 +30,16 @@ export default function TransferPage() {
     try {
       const amt = parseFloat(amount);
       if (!amt || amt < 1) { setErr("Minimum transfer is 1 USDT."); setLoading(false); return; }
-      const { data } = await api.post("/ld/transfer/init", { member_id: Number(memberId), amount: amt });
+      const { data } = await api.post("/ld/transfer/init", { username: username.trim(), amount: amt });
       setRecipient(data.recipient); setCode(""); setStep("tac"); setMsg(data.message);
-    } catch (e) { setErr(apiError(e, "Member ID not found.")); } finally { setLoading(false); }
+    } catch (e) { setErr(apiError(e, "Username not found.")); } finally { setLoading(false); }
   }
 
   async function confirmTransfer() {
     setErr(""); setMsg(""); setLoading(true);
     try {
       const { data } = await api.post("/ld/transfer/confirm", { code });
-      setMsg(data.message); setStep("idle"); setMemberId(""); setAmount(""); setCode(""); setRecipient(null);
+      setMsg(data.message); setStep("idle"); setUsername(""); setAmount(""); setCode(""); setRecipient(null);
       refresh(); loadHistory();
     } catch (e) { setErr(apiError(e)); } finally { setLoading(false); }
   }
@@ -63,8 +63,8 @@ export default function TransferPage() {
           {step === "idle" ? (
             <form onSubmit={startTransfer} className="mt-5 space-y-4">
               <div>
-                <label className="text-sm text-muted">ID ahli</label>
-                <input type="number" className="input-field mt-1" value={memberId} onChange={(e) => setMemberId(e.target.value)} placeholder="cth: 24" required />
+                <label className="text-sm text-muted">Username ahli</label>
+                <input type="text" className="input-field mt-1" value={username} onChange={(e) => setUsername(e.target.value)} placeholder="cth: KOMANDO" required />
               </div>
               <div>
                 <label className="text-sm text-muted">Jumlah (USDT)</label>

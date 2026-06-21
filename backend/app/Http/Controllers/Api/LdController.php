@@ -33,14 +33,14 @@ class LdController extends Controller
     {
         $this->ensureLd($request);
         $data = $request->validate([
-            'member_id' => ['required', 'integer', 'exists:users,id'],
-            'amount'    => ['required', 'numeric', 'min:1'],
-        ]);
+            'username' => ['required', 'string', 'exists:users,username'],
+            'amount'   => ['required', 'numeric', 'min:1'],
+        ], [], ['username' => 'username']);
 
         $ld     = $request->user();
-        $target = User::find($data['member_id']);
+        $target = User::where('username', $data['username'])->first();
         if ($target->id === $ld->id) {
-            throw ValidationException::withMessages(['member_id' => 'You cannot transfer to yourself.']);
+            throw ValidationException::withMessages(['username' => 'You cannot transfer to yourself.']);
         }
 
         $amount = number_format((float) $data['amount'], 8, '.', '');
