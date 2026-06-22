@@ -9,7 +9,7 @@ import RankBadge from "@/components/RankBadge";
 interface Member {
   id: number; username: string; email: string; phone?: string; kyc_status?: string;
   total_fund: string; total_invested: string; wallet_address?: string | null;
-  is_frozen: boolean; is_staff?: boolean; is_admin?: boolean; is_ld?: boolean; referrals_count: number;
+  is_frozen: boolean; is_staff?: boolean; is_admin?: boolean; is_ld?: boolean; can_kyc?: boolean; can_cr?: boolean; referrals_count: number;
   rank?: { id: number; name: string }; sponsor?: { id: number; username: string } | null;
 }
 interface Rank { id: number; name: string; }
@@ -46,8 +46,11 @@ export default function AdminMembers() {
     try { await api.post(`/admin/members/${id}/contact`, { email: newEmail, phone: newPhone }); load(); }
     catch (e) { setError(apiError(e)); }
   }
-  async function toggleStaff(id: number) {
-    try { await api.post(`/admin/members/${id}/staff`); load(); } catch (e) { setError(apiError(e)); }
+  async function toggleCanKyc(id: number) {
+    try { await api.post(`/admin/members/${id}/can-kyc`); load(); } catch (e) { setError(apiError(e)); }
+  }
+  async function toggleCanCr(id: number) {
+    try { await api.post(`/admin/members/${id}/can-cr`); load(); } catch (e) { setError(apiError(e)); }
   }
   async function toggleLd(id: number) {
     try { await api.post(`/admin/members/${id}/ld`); load(); } catch (e) { setError(apiError(e)); }
@@ -83,7 +86,8 @@ export default function AdminMembers() {
                 <td className="px-4 py-3">
                   {m.username}
                   {m.is_admin && <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-gold-light/15 text-gold-light">ADMIN</span>}
-                  {m.is_staff && !m.is_admin && <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-300">STAFF</span>}
+                  {m.can_kyc && <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-300">KYC</span>}
+                  {m.can_cr && <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-purple-500/15 text-purple-300">CR</span>}
                   {m.is_ld && <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-gold-light/15 text-gold-light">LD</span>}
                   <div className="text-xs text-muted">{m.email}</div>
                   <div className="text-xs text-muted">📞 {m.phone || "—"}</div>
@@ -105,8 +109,13 @@ export default function AdminMembers() {
                       <button onClick={() => resetPw(m.id, m.username)} className="btn-ghost px-2 py-1 text-xs">Reset PW</button>
                       <button onClick={() => setWallet(m.id, m.wallet_address)} className="btn-ghost px-2 py-1 text-xs">Wallet</button>
                       {!m.is_admin && (
-                        <button onClick={() => toggleStaff(m.id)} className={`px-2 py-1 text-xs rounded ${m.is_staff ? "bg-blue-500/20 text-blue-300" : "btn-ghost"}`}>
-                          {m.is_staff ? "Staff ✓" : "Make Staff"}
+                        <button onClick={() => toggleCanKyc(m.id)} className={`px-2 py-1 text-xs rounded ${m.can_kyc ? "bg-blue-500/20 text-blue-300" : "btn-ghost"}`}>
+                          {m.can_kyc ? "✓ KYC" : "KYC"}
+                        </button>
+                      )}
+                      {!m.is_admin && (
+                        <button onClick={() => toggleCanCr(m.id)} className={`px-2 py-1 text-xs rounded ${m.can_cr ? "bg-purple-500/20 text-purple-300" : "btn-ghost"}`}>
+                          {m.can_cr ? "✓ Change Req" : "Change Req"}
                         </button>
                       )}
                       {!m.is_admin && (

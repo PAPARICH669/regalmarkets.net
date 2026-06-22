@@ -98,9 +98,22 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/fund', [FundController::class, 'store']);
     });
 
-    // ---- Admin & Staff ------------------------------------------------------
-    Route::middleware('staff')->prefix('admin')->group(function () {
-        // Shared by admin + staff: member lookup, edit profile, KYC review.
+    // ---- Member-area STAFF DUTIES (assigned per member: KYC / Change Request) ----
+    // Staff are full members; these live in the member area, gated per-permission.
+    Route::middleware('perm:can_kyc')->group(function () {
+        Route::get('/staff/kyc', [AdminMemberController::class, 'kycList']);
+        Route::get('/staff/members/{user}/kyc-document', [AdminMemberController::class, 'kycDocument']);
+        Route::post('/staff/members/{user}/kyc/verify', [AdminMemberController::class, 'verifyKyc']);
+        Route::post('/staff/members/{user}/kyc/reject', [AdminMemberController::class, 'rejectKyc']);
+    });
+    Route::middleware('perm:can_cr')->group(function () {
+        Route::get('/staff/change-requests', [AdminMemberController::class, 'changeRequests']);
+        Route::post('/staff/change-requests/{changeRequest}/approve', [AdminMemberController::class, 'approveChange']);
+        Route::post('/staff/change-requests/{changeRequest}/reject', [AdminMemberController::class, 'rejectChange']);
+    });
+
+    // ---- Admin only ---------------------------------------------------------
+    Route::middleware('admin')->prefix('admin')->group(function () {
         Route::get('/pending-counts', [AdminMemberController::class, 'pendingCounts']);
         Route::get('/change-requests', [AdminMemberController::class, 'changeRequests']);
         Route::post('/change-requests/{changeRequest}/approve', [AdminMemberController::class, 'approveChange']);
@@ -131,6 +144,8 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::post('/members/{user}/rank', [AdminMemberController::class, 'editRank']);
             Route::post('/members/{user}/reset-password', [AdminMemberController::class, 'resetPassword']);
             Route::post('/members/{user}/staff', [AdminMemberController::class, 'toggleStaff']);
+            Route::post('/members/{user}/can-kyc', [AdminMemberController::class, 'toggleCanKyc']);
+            Route::post('/members/{user}/can-cr', [AdminMemberController::class, 'toggleCanCr']);
             Route::post('/members/{user}/ld', [AdminMemberController::class, 'toggleLd']);
             Route::post('/members/{user}/wallet-address', [AdminMemberController::class, 'updateWalletAddress']);
             Route::get('/wallet-adjustments', [AdminMemberController::class, 'walletAdjustments']);

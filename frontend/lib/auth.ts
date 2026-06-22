@@ -22,6 +22,8 @@ export interface AuthUser {
   email_verified?: boolean;
   is_admin: boolean;
   is_staff?: boolean;
+  can_kyc?: boolean;
+  can_cr?: boolean;
   is_ld?: boolean;
   is_frozen: boolean;
   total_invested: number;

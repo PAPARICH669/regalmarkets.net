@@ -22,7 +22,7 @@ class User extends Authenticatable
         'id_type', 'id_number', 'kyc_document_path', 'kyc_document_hash', 'kyc_status', 'kyc_note',
         'kyc_verified_at', 'kyc_verified_by', 'email_verification_code', 'email_verified_at',
         'login_tac_code', 'login_tac_expires_at',
-        'is_admin', 'is_staff', 'is_frozen', 'exclude_from_stats', 'is_dummy', 'is_ld', 'two_factor_secret', 'two_factor_enabled',
+        'is_admin', 'is_staff', 'can_kyc', 'can_cr', 'is_frozen', 'exclude_from_stats', 'is_dummy', 'is_ld', 'two_factor_secret', 'two_factor_enabled',
         'ld_tac_code', 'ld_tac_expires_at', 'ld_tac_member_id', 'ld_tac_amount',
         'last_login_ip', 'last_login_at',
     ];
@@ -38,6 +38,8 @@ class User extends Authenticatable
         'last_login_at'      => 'datetime',
         'is_admin'           => 'boolean',
         'is_staff'           => 'boolean',
+        'can_kyc'            => 'boolean',
+        'can_cr'             => 'boolean',
         'is_frozen'          => 'boolean',
         'exclude_from_stats' => 'boolean',
         'is_dummy'           => 'boolean',

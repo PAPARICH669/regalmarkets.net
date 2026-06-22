@@ -372,6 +372,8 @@ class AuthController extends Controller
             'email_verified' => (bool) $user->email_verified_at,
             'is_admin'       => $user->is_admin,
             'is_staff'       => $user->is_staff,
+            'can_kyc'        => $user->can_kyc,
+            'can_cr'         => $user->can_cr,
             'is_ld'          => $user->is_ld,
             'is_frozen'      => $user->is_frozen,
             'total_invested' => (float) $user->total_invested,

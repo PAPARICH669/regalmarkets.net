@@ -36,8 +36,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const { user, loading, hydrated, bootstrap, logout } = useAuth();
   const [open, setOpen] = useState(false);
 
-  const isStaffOnly = !!user && !user.is_admin && !!user.is_staff;
-
   // Pending counts for the notification badges (verify + approvals).
   const [counts, setCounts] = useState({ deposits: 0, withdrawals: 0, kyc: 0, change_requests: 0, sponsor_rewards: 0 });
   const countFor = (href: string) =>
@@ -50,7 +48,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   useEffect(() => { bootstrap(); }, [bootstrap]);
   useEffect(() => {
-    if (!user || (!user.is_admin && !user.is_staff)) return;
+    if (!user || !user.is_admin) return;
     let alive = true;
     const fetchCounts = () =>
       api.get("/admin/pending-counts").then((r) => { if (alive) setCounts(r.data); }).catch(() => {});
@@ -61,14 +59,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   useEffect(() => {
     if (hydrated && !loading) {
       if (!user) router.replace("/login");
-      else if (!user.is_admin && !user.is_staff) router.replace("/dashboard");
+      else if (!user.is_admin) router.replace("/dashboard");
     }
   }, [hydrated, loading, user, router]);
 
   if (!hydrated || loading) return <div className="min-h-screen grid place-items-center text-muted">Loading…</div>;
-  if (!user || (!user.is_admin && !user.is_staff)) return null;
+  if (!user || !user.is_admin) return null;
 
-  const navItems = isStaffOnly ? NAV.filter((n) => n.staff) : NAV;
+  const navItems = NAV;
 
   return (
     <div className="min-h-screen flex">
@@ -77,7 +75,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <div className="h-16 flex items-center px-5 border-b border-[var(--line)] gap-2">
           <Logo size="sm" />
         </div>
-        <div className="px-5 py-2 text-xs uppercase tracking-wider text-gold-light flex items-center gap-1"><ShieldCheck size={13} /> {isStaffOnly ? "Staff" : "Admin"}</div>
+        <div className="px-5 py-2 text-xs uppercase tracking-wider text-gold-light flex items-center gap-1"><ShieldCheck size={13} /> Admin</div>
         <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
           {navItems.map((item) => {
             const active = pathname === item.href;
@@ -107,7 +105,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <div className="flex-1 min-w-0">
         <header className="h-16 border-b border-[var(--line)] flex items-center justify-between px-5 sticky top-0 bg-[rgba(4,16,42,0.85)] backdrop-blur-md z-30">
           <button className="lg:hidden btn-ghost p-2" onClick={() => setOpen(true)}><Menu size={18} /></button>
-          <span className="ml-auto text-sm text-muted">{user.username} · {isStaffOnly ? "Staff" : "Administrator"}</span>
+          <span className="ml-auto text-sm text-muted">{user.username} · Administrator</span>
         </header>
         <div className="p-5 max-w-7xl mx-auto">{children}</div>
       </div>

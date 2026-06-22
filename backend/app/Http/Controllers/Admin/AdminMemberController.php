@@ -210,6 +210,32 @@ class AdminMemberController extends Controller
         ]);
     }
 
+    /** Assign/remove the KYC duty. The member stays a full member. Admin only. */
+    public function toggleCanKyc(Request $request, User $user)
+    {
+        if ($user->is_admin) {
+            return response()->json(['message' => 'Cannot assign a duty to an admin.'], 422);
+        }
+        $user->can_kyc  = ! $user->can_kyc;
+        $user->is_staff = $user->can_kyc || $user->can_cr;
+        $user->save();
+        $this->audit->log($request, 'member.toggle_can_kyc', $user, ['can_kyc' => $user->can_kyc]);
+        return response()->json(['message' => $user->can_kyc ? 'KYC duty assigned.' : 'KYC duty removed.', 'user' => $user]);
+    }
+
+    /** Assign/remove the Change Request duty. The member stays a full member. Admin only. */
+    public function toggleCanCr(Request $request, User $user)
+    {
+        if ($user->is_admin) {
+            return response()->json(['message' => 'Cannot assign a duty to an admin.'], 422);
+        }
+        $user->can_cr   = ! $user->can_cr;
+        $user->is_staff = $user->can_kyc || $user->can_cr;
+        $user->save();
+        $this->audit->log($request, 'member.toggle_can_cr', $user, ['can_cr' => $user->can_cr]);
+        return response()->json(['message' => $user->can_cr ? 'Change Request duty assigned.' : 'Change Request duty removed.', 'user' => $user]);
+    }
+
     /** Grant/revoke LD (Leader-Distributor) role. Revoking returns them to a normal member. Admin only. */
     public function toggleLd(Request $request, User $user)
     {
