@@ -47,4 +47,15 @@ class Handler extends ExceptionHandler
             //
         });
     }
+
+    /**
+     * Always return a clean 401 JSON for unauthenticated requests. This is an
+     * API-only backend with no web `login` route, so we must never fall back to
+     * the framework's default `redirect()->guest(route('login'))` (which throws
+     * "Route [login] not defined" -> 500 on non-JSON requests).
+     */
+    protected function unauthenticated($request, \Illuminate\Auth\AuthenticationException $exception)
+    {
+        return response()->json(['message' => 'Unauthenticated.'], 401);
+    }
 }
