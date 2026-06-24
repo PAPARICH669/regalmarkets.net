@@ -116,10 +116,10 @@ export default function LandingLoginPage() {
       {/* Background logo watermark */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src="/logo.png"
+        src="/logo-watermark.png"
         alt=""
         aria-hidden="true"
-        className="pointer-events-none select-none fixed inset-0 m-auto w-[min(70vw,640px)] max-w-none opacity-[0.08] z-0"
+        className="pointer-events-none select-none fixed inset-0 m-auto w-[min(70vw,640px)] max-w-none opacity-[0.15] z-0"
       />
       <div className="w-full max-w-md mx-auto px-5 relative z-10">
       <div className="flex justify-center mb-8">
