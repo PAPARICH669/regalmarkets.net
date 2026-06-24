@@ -41,6 +41,7 @@ class Kernel extends HttpKernel
         'api' => [
             // \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
             'throttle:api',
+            \App\Http\Middleware\EnforceIdleTimeout::class,
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
         ],
     ];
@@ -71,5 +72,27 @@ class Kernel extends HttpKernel
         'not.frozen'   => \App\Http\Middleware\EnsureNotFrozen::class,
         'maintenance'  => \App\Http\Middleware\MaintenanceWindow::class,
         'kyc'          => \App\Http\Middleware\EnsureKycVerified::class,
+    ];
+
+    /**
+     * The priority-sorted list of middleware.
+     *
+     * Forces EnforceIdleTimeout to run BEFORE the authentication middleware so it
+     * reads the token's previous `last_used_at` (before Sanctum refreshes it to now).
+     *
+     * @var string[]
+     */
+    protected $middlewarePriority = [
+        \Illuminate\Foundation\Http\Middleware\HandlePrecognitiveRequests::class,
+        \Illuminate\Cookie\Middleware\EncryptCookies::class,
+        \Illuminate\Session\Middleware\StartSession::class,
+        \Illuminate\View\Middleware\ShareErrorsFromSession::class,
+        \App\Http\Middleware\EnforceIdleTimeout::class,
+        \Illuminate\Contracts\Auth\Middleware\AuthenticatesRequests::class,
+        \Illuminate\Routing\Middleware\ThrottleRequests::class,
+        \Illuminate\Routing\Middleware\ThrottleRequestsWithRedis::class,
+        \Illuminate\Contracts\Session\Middleware\AuthenticatesSessions::class,
+        \Illuminate\Routing\Middleware\SubstituteBindings::class,
+        \Illuminate\Auth\Middleware\Authorize::class,
     ];
 }
