@@ -77,7 +77,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         src="/logo-watermark.png"
         alt=""
         aria-hidden="true"
-        className="pointer-events-none select-none fixed inset-0 m-auto w-[min(70vw,640px)] max-w-none opacity-[0.15] z-0"
+        className="pointer-events-none select-none fixed inset-0 m-auto w-[min(70vw,640px)] max-w-none opacity-[0.10] z-20"
       />
       <aside className={`fixed lg:static z-50 w-64 h-screen lg:min-h-screen bg-[var(--surface)] border-r border-[var(--line)] flex flex-col transition-transform ${open ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}`}>
         <div className="h-16 flex items-center px-5 border-b border-[var(--line)] gap-2">
