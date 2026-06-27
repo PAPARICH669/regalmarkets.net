@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import Logo from "@/components/Logo";
 import IdleLogout from "@/components/IdleLogout";
+import MarketTicker from "@/components/MarketTicker";
 import { useAuth } from "@/lib/auth";
 
 // Conditional items: `ld` (LD members), `kyc`/`cr` (assigned staff duties).
@@ -81,6 +82,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       {/* Main */}
       <div className="flex-1 min-w-0 relative z-10">
+        <MarketTicker />
         <header className="h-16 border-b border-[var(--line)] flex items-center justify-between px-5 sticky top-0 bg-[rgba(4,16,42,0.85)] backdrop-blur-md z-30">
           <button className="lg:hidden btn-ghost p-2" onClick={() => setOpen(true)}><Menu size={18} /></button>
         </header>
