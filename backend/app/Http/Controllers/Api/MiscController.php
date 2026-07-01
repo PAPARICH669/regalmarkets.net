@@ -20,18 +20,31 @@ class MiscController extends Controller
     }
 
     /**
-     * Top 5 SPONSOR leaderboard — ranks members by the TOTAL INVEST of their
-     * DIRECT (level-1) sponsored members. Computed live (cached briefly).
+     * Top 5 SPONSOR leaderboard — ranks members by the NEW INVEST their DIRECT
+     * (level-1) downlines funded DURING THE CURRENT MONTH (package activations).
+     * Resets at the start of each month, matching the monthly Top-5 reward
+     * (rewards:top-sponsors / SponsorRewardService). Computed live (cached briefly).
      */
     public function leaderboard()
     {
-        $payload = \Illuminate\Support\Facades\Cache::remember('leaderboard.directinvest', 300, function () {
-            $sponsorOf = \App\Models\User::pluck('sponsor_id', 'id');
-            $investOf  = \App\Models\User::pluck('total_invested', 'id');
+        $tz  = config('app.timezone');
+        $key = 'leaderboard.monthinvest.' . now($tz)->format('Y-m');
 
-            // Sum each member's total invest into their DIRECT sponsor's score.
+        $payload = \Illuminate\Support\Facades\Cache::remember($key, 300, function () use ($tz) {
+            $start = now($tz)->startOfMonth();
+            $end   = now($tz)->endOfMonth();
+
+            // New invest per member THIS month (from package activations).
+            $investByUser = \App\Models\InvestmentPackage::whereBetween('activated_at', [$start, $end])
+                ->selectRaw('user_id, SUM(principal) as inv')
+                ->groupBy('user_id')
+                ->pluck('inv', 'user_id');
+
+            $sponsorOf = \App\Models\User::pluck('sponsor_id', 'id');
+
+            // Attribute each member's monthly invest to their DIRECT sponsor.
             $group = [];
-            foreach ($investOf as $uid => $inv) {
+            foreach ($investByUser as $uid => $inv) {
                 $sponsor = (int) ($sponsorOf[$uid] ?? 0);
                 if ($sponsor && (float) $inv > 0) {
                     $group[$sponsor] = ($group[$sponsor] ?? 0) + (float) $inv;
