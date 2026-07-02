@@ -8,6 +8,7 @@ import StatCard from "@/components/StatCard";
 import RankCard from "@/components/RankCard";
 import Leaderboard from "@/components/Leaderboard";
 import WelcomeFeed from "@/components/WelcomeFeed";
+import MonthlyProfitChart from "@/components/MonthlyProfitChart";
 import api from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { usdt } from "@/lib/format";
@@ -68,6 +69,9 @@ export default function DashboardPage() {
         <StatCard label="Sponsor Bonus" value={usdt(d.totals.sponsor_bonus)} icon={<Gift size={18} />} href="/reports?tab=sponsor" />
         <StatCard label="Matching Bonus" value={usdt(d.totals.matching_bonus)} icon={<Layers size={18} />} href="/reports?tab=matching" />
       </div>
+
+      {/* Monthly profit bar chart — above Top 5 Sponsors */}
+      <MonthlyProfitChart />
 
       {/* Leaderboard + welcome feed */}
       <div className="grid lg:grid-cols-2 gap-6">

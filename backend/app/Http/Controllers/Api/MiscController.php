@@ -78,6 +78,42 @@ class MiscController extends Controller
         return response()->json($payload);
     }
 
+    /**
+     * Monthly profit series for the member dashboard bar chart. Each month's
+     * profit % = daily ROI rate × the number of distinct days ROI was distributed
+     * that month. Starts Jun 2026; the current month grows daily as ROI runs.
+     */
+    public function monthlyProfit()
+    {
+        $tz  = config('app.timezone');
+        $key = 'dashboard.monthlyprofit.' . now($tz)->format('Y-m');
+
+        $payload = \Illuminate\Support\Facades\Cache::remember($key, 300, function () use ($tz) {
+            $rate = (float) app(SettingsService::class)->get('roi_daily_percent', 0.5);
+
+            $daysByMonth = \App\Models\RoiLog::selectRaw("DATE_FORMAT(roi_date, '%Y-%m') as ym, COUNT(DISTINCT roi_date) as days")
+                ->groupBy('ym')->pluck('days', 'ym');
+
+            $start = \Carbon\Carbon::createFromFormat('Y-m', '2026-06', $tz)->startOfMonth();
+            $now   = now($tz)->startOfMonth();
+            $curYm = $now->format('Y-m');
+
+            $months = [];
+            for ($m = $start->copy(); $m->lessThanOrEqualTo($now); $m->addMonthNoOverflow()) {
+                $ym   = $m->format('Y-m');
+                $days = (int) ($daysByMonth[$ym] ?? 0);
+                $months[] = [
+                    'label'   => $m->format('M y'),
+                    'value'   => round($days * $rate, 2),
+                    'current' => $ym === $curYm,
+                ];
+            }
+            return ['months' => $months];
+        });
+
+        return response()->json($payload);
+    }
+
     public function announcements()
     {
         return Announcement::active()->latest('published_at')->take(20)->get();
