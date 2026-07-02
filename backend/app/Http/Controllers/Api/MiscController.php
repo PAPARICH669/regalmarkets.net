@@ -94,18 +94,21 @@ class MiscController extends Controller
             $daysByMonth = \App\Models\RoiLog::selectRaw("DATE_FORMAT(roi_date, '%Y-%m') as ym, COUNT(DISTINCT roi_date) as days")
                 ->groupBy('ym')->pluck('days', 'ym');
 
+            // Fixed range: Jun 2026 → Dec 2026. Future months show as empty bars.
             $start = \Carbon\Carbon::createFromFormat('Y-m', '2026-06', $tz)->startOfMonth();
+            $end   = \Carbon\Carbon::createFromFormat('Y-m', '2026-12', $tz)->startOfMonth();
             $now   = now($tz)->startOfMonth();
             $curYm = $now->format('Y-m');
 
             $months = [];
-            for ($m = $start->copy(); $m->lessThanOrEqualTo($now); $m->addMonthNoOverflow()) {
+            for ($m = $start->copy(); $m->lessThanOrEqualTo($end); $m->addMonthNoOverflow()) {
                 $ym   = $m->format('Y-m');
                 $days = (int) ($daysByMonth[$ym] ?? 0);
                 $months[] = [
                     'label'   => $m->format('M y'),
                     'value'   => round($days * $rate, 2),
                     'current' => $ym === $curYm,
+                    'future'  => $m->greaterThan($now),
                 ];
             }
             return ['months' => $months];

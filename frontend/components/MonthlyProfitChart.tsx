@@ -7,6 +7,7 @@ interface M {
   label: string;
   value: number;
   current: boolean;
+  future?: boolean;
 }
 
 /**
@@ -36,26 +37,32 @@ export default function MonthlyProfitChart() {
         <span className="text-xs text-green-400 flex items-center gap-1 whitespace-nowrap">▲ Passive earnings</span>
       </div>
 
-      <div className="mt-5 flex items-end gap-2 sm:gap-3 overflow-x-auto" style={{ height: 180 }}>
+      <div className="mt-5 flex items-end gap-2 sm:gap-3" style={{ height: 180 }}>
         {months.map((m) => {
-          const h = m.value > 0 ? Math.max((m.value / max) * 135, 5) : 0;
+          const h = m.value > 0 ? Math.max((m.value / max) * 135, 5) : m.future ? 6 : 0;
+          const bg = m.future
+            ? "rgba(255,255,255,0.06)"
+            : m.current
+            ? "linear-gradient(180deg,#f2d98a,#c9a227)"
+            : "linear-gradient(180deg,#e7c873,#c9a227)";
           return (
-            <div key={m.label} className="flex-1 min-w-[34px] flex flex-col items-center justify-end h-full gap-1.5">
+            <div key={m.label} className="flex-1 min-w-0 flex flex-col items-center justify-end h-full gap-1.5">
               <span className="text-[10px] text-gold-light whitespace-nowrap">{m.value > 0 ? `${m.value.toFixed(1)}%` : ""}</span>
               <div
                 className="w-full rounded-t-md transition-all"
-                style={{
-                  height: `${h}px`,
-                  background: m.current
-                    ? "linear-gradient(180deg,#f2d98a,#c9a227)"
-                    : "linear-gradient(180deg,#e7c873,#c9a227)",
-                }}
-                title={`${m.label}: ${m.value.toFixed(1)}%${m.current ? " (current)" : ""}`}
+                style={{ height: `${h}px`, background: bg }}
+                title={m.future ? `${m.label}: belum bermula` : `${m.label}: ${m.value.toFixed(1)}%${m.current ? " (current)" : ""}`}
               />
-              <span className="text-[10px] text-muted whitespace-nowrap">{m.label}</span>
+              <span className={`text-[10px] whitespace-nowrap ${m.future ? "text-muted/50" : "text-muted"}`}>{m.label}</span>
             </div>
           );
         })}
+      </div>
+
+      <div className="mt-3 flex items-center gap-4 flex-wrap text-[10px] text-muted">
+        <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm" style={{ background: "#e7c873" }} /> Selesai</span>
+        <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm" style={{ background: "#f2d98a" }} /> Bulan semasa</span>
+        <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm" style={{ background: "rgba(255,255,255,0.12)" }} /> Belum bermula</span>
       </div>
     </div>
   );
