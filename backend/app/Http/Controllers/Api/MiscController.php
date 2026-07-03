@@ -89,10 +89,20 @@ class MiscController extends Controller
         $key = 'dashboard.monthlyprofit.' . now($tz)->format('Y-m');
 
         $payload = \Illuminate\Support\Facades\Cache::remember($key, 300, function () use ($tz) {
-            $rate = (float) app(SettingsService::class)->get('roi_daily_percent', 0.5);
-
-            $daysByMonth = \App\Models\RoiLog::selectRaw("DATE_FORMAT(roi_date, '%Y-%m') as ym, COUNT(DISTINCT roi_date) as days")
-                ->groupBy('ym')->pluck('days', 'ym');
+            // Actual profit % per month = SUM of the REAL daily rates that were paid
+            // (each day's rate = roi amount / package principal), NOT days × current
+            // rate — the admin can change the daily rate over time, so past months must
+            // reflect what was actually distributed, not today's rate.
+            $pctByMonth = collect(\Illuminate\Support\Facades\DB::select(
+                "SELECT DATE_FORMAT(d.roi_date, '%Y-%m') AS ym, SUM(d.daily_rate) AS pct
+                 FROM (
+                     SELECT r.roi_date, AVG(r.amount / NULLIF(p.principal, 0)) * 100 AS daily_rate
+                     FROM roi_logs r
+                     JOIN investment_packages p ON p.id = r.investment_package_id
+                     GROUP BY r.roi_date
+                 ) d
+                 GROUP BY DATE_FORMAT(d.roi_date, '%Y-%m')"
+            ))->pluck('pct', 'ym');
 
             // Fixed range: Jun 2026 → Dec 2026. Future months show as empty bars.
             $start = \Carbon\Carbon::createFromFormat('Y-m', '2026-06', $tz)->startOfMonth();
@@ -103,9 +113,8 @@ class MiscController extends Controller
             $months = [];
             $total  = 0.0;
             for ($m = $start->copy(); $m->lessThanOrEqualTo($end); $m->addMonthNoOverflow()) {
-                $ym   = $m->format('Y-m');
-                $days = (int) ($daysByMonth[$ym] ?? 0);
-                $val  = round($days * $rate, 2);
+                $ym  = $m->format('Y-m');
+                $val = round((float) ($pctByMonth[$ym] ?? 0), 2);
                 $total += $val;
                 $months[] = [
                     'label'   => $m->format('M y'),
