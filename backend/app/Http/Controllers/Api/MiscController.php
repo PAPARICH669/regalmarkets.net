@@ -101,17 +101,22 @@ class MiscController extends Controller
             $curYm = $now->format('Y-m');
 
             $months = [];
+            $total  = 0.0;
             for ($m = $start->copy(); $m->lessThanOrEqualTo($end); $m->addMonthNoOverflow()) {
                 $ym   = $m->format('Y-m');
                 $days = (int) ($daysByMonth[$ym] ?? 0);
+                $val  = round($days * $rate, 2);
+                $total += $val;
                 $months[] = [
                     'label'   => $m->format('M y'),
-                    'value'   => round($days * $rate, 2),
+                    'value'   => $val,
                     'current' => $ym === $curYm,
                     'future'  => $m->greaterThan($now),
                 ];
             }
-            return ['months' => $months];
+
+            // Platform-wide total profit % paid since inception — identical for every member.
+            return ['months' => $months, 'total' => round($total, 2), 'since' => 'Jun 2026'];
         });
 
         return response()->json($payload);

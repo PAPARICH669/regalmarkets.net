@@ -18,9 +18,15 @@ interface M {
  */
 export default function MonthlyProfitChart() {
   const [months, setMonths] = useState<M[]>([]);
+  const [total, setTotal] = useState(0);
+  const [since, setSince] = useState("Jun 2026");
 
   useEffect(() => {
-    api.get("/monthly-profit").then((r) => setMonths(r.data.months || [])).catch(() => {});
+    api.get("/monthly-profit").then((r) => {
+      setMonths(r.data.months || []);
+      setTotal(r.data.total ?? 0);
+      setSince(r.data.since ?? "Jun 2026");
+    }).catch(() => {});
   }, []);
 
   if (months.length === 0) return null;
@@ -34,7 +40,10 @@ export default function MonthlyProfitChart() {
           <h3 className="font-semibold text-foreground">Monthly Profit — Regal Markets</h3>
           <p className="text-xs text-muted mt-0.5">Each bar = that month&apos;s total profit (%) · since Jun 2026</p>
         </div>
-        <span className="text-xs text-green-400 flex items-center gap-1 whitespace-nowrap">▲ Passive earnings</span>
+        <div className="text-right">
+          <p className="text-[11px] text-muted whitespace-nowrap">Total profit since {since}</p>
+          <p className="text-xl font-bold gold-text leading-tight">{total.toFixed(1)}%</p>
+        </div>
       </div>
 
       <div className="mt-5 flex items-end gap-2 sm:gap-3" style={{ height: 180 }}>
