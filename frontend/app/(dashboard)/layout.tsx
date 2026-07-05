@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-  LayoutDashboard, Repeat, Network, LogOut, Menu, X, Wallet, UserCog, ArrowLeftRight, ShieldCheck, UserCheck,
+  LayoutDashboard, Repeat, Network, LogOut, Menu, X, Wallet, UserCog, ArrowLeftRight, ShieldCheck, UserCheck, History,
 } from "lucide-react";
 import Logo from "@/components/Logo";
 import IdleLogout from "@/components/IdleLogout";
@@ -14,8 +14,9 @@ import { useAuth } from "@/lib/auth";
 
 // Conditional items: `ld` (LD members), `kyc`/`cr` (assigned staff duties).
 const NAV = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, mobileHide: true },
   { href: "/fund", label: "Fund", icon: Repeat },
+  { href: "/activity", label: "Activity", icon: History },
   { href: "/transfer", label: "Transfer", icon: ArrowLeftRight, ld: true },
   { href: "/kyc-review", label: "KYC", icon: ShieldCheck, kyc: true },
   { href: "/change-requests", label: "Change Requests", icon: UserCheck, cr: true },
@@ -62,7 +63,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             const Icon = item.icon;
             return (
               <Link key={item.href} href={item.href} onClick={() => setOpen(false)}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition ${active ? "gold-gradient text-black font-semibold" : "text-muted hover:bg-white/5 hover:text-gold-light"}`}>
+                className={`${item.mobileHide ? "hidden lg:flex" : "flex"} items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition ${active ? "gold-gradient text-black font-semibold" : "text-muted hover:bg-white/5 hover:text-gold-light"}`}>
                 <Icon size={18} /> {item.label}
               </Link>
             );
