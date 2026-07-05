@@ -23,7 +23,7 @@ export default function BottomNav() {
   const [refLink, setRefLink] = useState("");
 
   useEffect(() => {
-    if (user) setRefLink(`${window.location.origin}/register?ref=${user.referral_code || user.username}`);
+    if (user) setRefLink(`${window.location.origin}/register?ref=${user.username}`);
   }, [user]);
 
   if (!user) return null;
