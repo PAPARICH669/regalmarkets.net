@@ -11,20 +11,26 @@ interface Deposit { id: number; amount: string; txid: string | null; status: str
 export default function DepositPage() {
   const [amount, setAmount] = useState("");
   const [txid, setTxid] = useState("");
+  const [txHash, setTxHash] = useState("");
   const [proof, setProof] = useState<File | null>(null);
   const [msg, setMsg] = useState(""); const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [history, setHistory] = useState<Deposit[]>([]);
   const [addr, setAddr] = useState<{ address: string; network: string }>({ address: "", network: "BEP20 (BSC)" });
+  const [auto, setAuto] = useState(false);
   const [copied, setCopied] = useState(false);
 
   const load = () => api.get("/deposits").then((r) => setHistory(r.data.data));
   useEffect(() => {
     load();
-    api.get("/public-settings").then((r) => setAddr({ address: r.data.deposit_address, network: r.data.deposit_network }));
+    api.get("/public-settings").then((r) => {
+      setAddr({ address: r.data.deposit_address, network: r.data.deposit_network });
+      setAuto(!!r.data.deposit_auto_verify);
+    });
   }, []);
 
-  async function submit(e: React.FormEvent) {
+  // Manual: amount + proof + optional txid. Admin approves.
+  async function submitManual(e: React.FormEvent) {
     e.preventDefault();
     setMsg(""); setError(""); setLoading(true);
     try {
@@ -34,6 +40,17 @@ export default function DepositPage() {
       if (proof) fd.append("proof", proof);
       const { data } = await api.post("/deposits", fd, { headers: { "Content-Type": "multipart/form-data" } });
       setMsg(data.message); setAmount(""); setTxid(""); setProof(null);
+      load();
+    } catch (err) { setError(apiError(err)); } finally { setLoading(false); }
+  }
+
+  // Auto (Cadangan A): just the TX hash — amount read from chain, auto-credited.
+  async function submitAuto(e: React.FormEvent) {
+    e.preventDefault();
+    setMsg(""); setError(""); setLoading(true);
+    try {
+      const { data } = await api.post("/deposits", { tx_hash: txHash.trim() });
+      setMsg(data.message); setTxHash("");
       load();
     } catch (err) { setError(apiError(err)); } finally { setLoading(false); }
   }
@@ -57,27 +74,40 @@ export default function DepositPage() {
               <button type="button" onClick={() => { navigator.clipboard.writeText(addr.address); setCopied(true); setTimeout(() => setCopied(false), 1500); }}
                 className="btn-ghost p-2 shrink-0" title="Copy address">{copied ? <Check size={15} className="text-green-400" /> : <Copy size={15} />}</button>
             </div>
-            <p className="text-xs text-muted mt-2">⚠️ Send <b>USDT on {addr.network}</b> only. After sending, submit the amount + TXID below for approval.</p>
+            <p className="text-xs text-muted mt-2">⚠️ Send <b>USDT on {addr.network}</b> only. {auto ? "After sending, paste your transaction hash below — it credits automatically." : "After sending, submit the amount + TXID below for approval."}</p>
           </div>
 
           {msg && <div className="mt-4 text-sm text-green-400 bg-green-500/10 border border-green-500/30 rounded-lg px-4 py-3">{msg}</div>}
           {error && <div className="mt-4 text-sm text-red-400 bg-red-500/10 border border-red-500/30 rounded-lg px-4 py-3">{error}</div>}
-          <form onSubmit={submit} className="mt-5 space-y-4">
-            <div>
-              <label className="text-sm text-muted">Amount (USDT)</label>
-              <input type="number" step="0.01" min="10" className="input-field mt-1" value={amount} onChange={(e) => setAmount(e.target.value)} required />
-            </div>
-            <div>
-              <label className="text-sm text-muted">Transaction Hash / TXID</label>
-              <input className="input-field mt-1" value={txid} onChange={(e) => setTxid(e.target.value)} placeholder="On-chain TXID" />
-            </div>
-            <div>
-              <label className="text-sm text-muted">Payment proof (image) <span className="text-red-500">*</span></label>
-              <input type="file" accept="image/*" className="input-field mt-1" onChange={(e) => setProof(e.target.files?.[0] || null)} required />
-              <p className="text-xs text-muted mt-1">⚠️ A screenshot/photo of your payment is required to submit a deposit.</p>
-            </div>
-            <button disabled={loading || !proof} className="btn-gold w-full py-2.5 disabled:opacity-50">{loading ? "Submitting…" : "Submit Deposit"}</button>
-          </form>
+
+          {auto ? (
+            <form onSubmit={submitAuto} className="mt-5 space-y-4">
+              <div>
+                <label className="text-sm text-muted">Transaction Hash (TXID) <span className="text-red-500">*</span></label>
+                <input className="input-field mt-1 font-mono text-sm" value={txHash} onChange={(e) => setTxHash(e.target.value)}
+                  placeholder="0x…" required />
+                <p className="text-xs text-muted mt-1">Paste the transaction hash from your wallet or exchange after sending. We read the amount from the blockchain — no need to type it, no screenshot needed.</p>
+              </div>
+              <button disabled={loading || !txHash.trim()} className="btn-gold w-full py-2.5 disabled:opacity-50">{loading ? "Verifying…" : "Verify & Credit"}</button>
+            </form>
+          ) : (
+            <form onSubmit={submitManual} className="mt-5 space-y-4">
+              <div>
+                <label className="text-sm text-muted">Amount (USDT)</label>
+                <input type="number" step="0.01" min="10" className="input-field mt-1" value={amount} onChange={(e) => setAmount(e.target.value)} required />
+              </div>
+              <div>
+                <label className="text-sm text-muted">Transaction Hash / TXID</label>
+                <input className="input-field mt-1" value={txid} onChange={(e) => setTxid(e.target.value)} placeholder="On-chain TXID" />
+              </div>
+              <div>
+                <label className="text-sm text-muted">Payment proof (image) <span className="text-red-500">*</span></label>
+                <input type="file" accept="image/*" className="input-field mt-1" onChange={(e) => setProof(e.target.files?.[0] || null)} required />
+                <p className="text-xs text-muted mt-1">⚠️ A screenshot/photo of your payment is required to submit a deposit.</p>
+              </div>
+              <button disabled={loading || !proof} className="btn-gold w-full py-2.5 disabled:opacity-50">{loading ? "Submitting…" : "Submit Deposit"}</button>
+            </form>
+          )}
         </div>
 
         <div className="glass p-6">

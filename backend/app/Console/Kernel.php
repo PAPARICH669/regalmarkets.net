@@ -29,6 +29,10 @@ class Kernel extends ConsoleKernel
         // On the 1st of each month, generate the previous month's Top-5 Sponsor
         // reward list (pending admin settlement / notification).
         $schedule->command('rewards:top-sponsors')->monthlyOn(1, '07:15')->timezone($tz)->withoutOverlapping();
+
+        // Auto-deposit (Cadangan A): finish off deposits awaiting confirmations.
+        // No-op when auto-deposit is disabled, so it is safe to always schedule.
+        $schedule->command('deposits:verify-pending')->everyThreeMinutes()->withoutOverlapping();
     }
 
     /**

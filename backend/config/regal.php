@@ -89,6 +89,21 @@ return [
     'deposit_address' => env('DEPOSIT_ADDRESS', '0x98513096683485c204b2C88b0D8Ae8c524C7646b'),
     'deposit_network' => 'BEP20 (BSC)',
 
+    // Auto-deposit (Cadangan A): verify each deposit on-chain by TX hash and
+    // credit automatically. Kept OFF by default — turns on only when
+    // DEPOSIT_AUTO_VERIFY=true AND an API key is set. When off, deposits stay
+    // fully manual (amount + proof + admin approval), exactly as before.
+    'deposit' => [
+        'auto_verify'       => env('DEPOSIT_AUTO_VERIFY', false),
+        'api_url'           => env('BSC_API_URL', 'https://api.etherscan.io/v2/api'),
+        'chain_id'          => (int) env('BSC_CHAIN_ID', 56),                 // 56 = BNB Smart Chain
+        'api_key'           => env('BSCSCAN_API_KEY', ''),                    // free key from etherscan.io/bscscan.com
+        'usdt_contract'     => env('USDT_BEP20_CONTRACT', '0x55d398326f99059fF775485246999027B3197955'),
+        'min_confirmations' => (int) env('DEPOSIT_MIN_CONFIRMATIONS', 15),
+        'recency_days'      => (int) env('DEPOSIT_RECENCY_DAYS', 7),          // older TX → manual review
+        'review_from_reuse' => (int) env('DEPOSIT_REVIEW_FROM_REUSE', 3),     // same sender on ≥N other accounts → review
+    ],
+
     // Where uploaded payment proofs are stored (private disk, served via controller).
     'proof_disk' => 'local',
 ];

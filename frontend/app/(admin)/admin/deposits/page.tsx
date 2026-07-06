@@ -5,7 +5,7 @@ import api, { apiError } from "@/lib/api";
 import { usdt, shortDate } from "@/lib/format";
 import StatusPill from "@/components/StatusPill";
 
-interface Deposit { id: number; amount: string; txid: string | null; status: string; created_at: string; user?: { username: string; email: string }; }
+interface Deposit { id: number; amount: string; txid: string | null; tx_hash: string | null; from_address: string | null; confirmations: number; status: string; note: string | null; created_at: string; user?: { username: string; email: string }; }
 
 export default function AdminDeposits() {
   const [items, setItems] = useState<Deposit[]>([]);
@@ -28,23 +28,32 @@ export default function AdminDeposits() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <h1 className="text-2xl font-bold">Deposits</h1>
         <select className="input-field w-auto" value={filter} onChange={(e) => setFilter(e.target.value)}>
-          <option value="">All</option><option value="pending">Pending</option><option value="approved">Approved</option><option value="rejected">Rejected</option>
+          <option value="">All</option><option value="pending">Pending</option><option value="review">Needs review</option><option value="verifying">Verifying</option><option value="approved">Approved</option><option value="rejected">Rejected</option>
         </select>
       </div>
       {error && <div className="text-sm text-red-400 bg-red-500/10 border border-red-500/30 rounded-lg px-4 py-3">{error}</div>}
       <div className="glass overflow-x-auto">
         <table className="w-full text-sm">
-          <thead className="bg-white/5 text-gold-light text-left"><tr><th className="px-4 py-3">Member</th><th>Amount</th><th>TXID</th><th>Status</th><th>Date</th><th>Action</th></tr></thead>
+          <thead className="bg-white/5 text-gold-light text-left"><tr><th className="px-4 py-3">Member</th><th>Amount</th><th>On-chain</th><th>Status</th><th>Date</th><th>Action</th></tr></thead>
           <tbody>
-            {items.map((d) => (
+            {items.map((d) => {
+              const hash = d.tx_hash || d.txid;
+              const actionable = d.status === "pending" || d.status === "review" || d.status === "verifying";
+              return (
               <tr key={d.id} className="border-t border-[var(--line)]">
                 <td className="px-4 py-3">{d.user?.username}<div className="text-xs text-muted">{d.user?.email}</div></td>
-                <td>{usdt(d.amount)}</td>
-                <td className="text-xs text-muted truncate max-w-[140px]">{d.txid || "—"}</td>
-                <td><StatusPill status={d.status} /></td>
+                <td>{Number(d.amount) > 0 ? usdt(d.amount) : "—"}</td>
+                <td className="text-xs text-muted max-w-[180px]">
+                  {hash
+                    ? <a href={`https://bscscan.com/tx/${hash}`} target="_blank" rel="noreferrer" className="text-gold-light hover:underline break-all">{hash.slice(0, 10)}…{hash.slice(-6)}</a>
+                    : "—"}
+                  {d.from_address && <div className="truncate">from {d.from_address.slice(0, 8)}…</div>}
+                  {(d.status === "verifying" || d.status === "review") && <div>{d.confirmations} conf.</div>}
+                </td>
+                <td><StatusPill status={d.status} />{d.note && <div className="text-[11px] text-muted mt-0.5 max-w-[160px]">{d.note}</div>}</td>
                 <td className="text-xs text-muted">{shortDate(d.created_at)}</td>
                 <td>
-                  {d.status === "pending" ? (
+                  {actionable ? (
                     <div className="flex gap-2">
                       <button onClick={() => act(d.id, "approve")} className="btn-gold px-3 py-1 text-xs">Approve</button>
                       <button onClick={() => act(d.id, "reject")} className="btn-ghost px-3 py-1 text-xs text-red-400">Reject</button>
@@ -52,7 +61,7 @@ export default function AdminDeposits() {
                   ) : <span className="text-xs text-muted">—</span>}
                 </td>
               </tr>
-            ))}
+            );})}
             {items.length === 0 && <tr><td colSpan={6} className="py-6 text-center text-muted">No deposits.</td></tr>}
           </tbody>
         </table>

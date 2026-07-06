@@ -36,32 +36,63 @@ class DepositService
             return $deposit;
         }
 
-        DB::transaction(function () use ($deposit, $admin) {
-            $deposit->update([
-                'status'      => 'approved',
-                'approved_by' => $admin->id,
-                'approved_at' => now(),
-            ]);
+        $this->credit($deposit, ['approved_by' => $admin->id]);
+        return $deposit->refresh();
+    }
 
-            $user = $deposit->user;
+    /**
+     * Auto-deposit (Cadangan A): credit a deposit that was verified on-chain,
+     * with the SYSTEM as the actor (no admin). Called by DepositController /
+     * the verify-pending scheduler once confirmations are sufficient.
+     */
+    public function confirmAuto(Deposit $deposit): Deposit
+    {
+        if ($deposit->status === 'approved') {
+            return $deposit;
+        }
+
+        $this->credit($deposit, ['approved_by' => null, 'verified_at' => now()]);
+        return $deposit->refresh();
+    }
+
+    /**
+     * Shared crediting path: A-WALLET credit + total_fund + rank refresh, inside
+     * one transaction. Guarded so a deposit is credited at most once.
+     */
+    protected function credit(Deposit $deposit, array $extra = []): void
+    {
+        DB::transaction(function () use ($deposit, $extra) {
+            // Re-read under lock to prevent a double-credit race (admin + scheduler).
+            $fresh = Deposit::whereKey($deposit->id)->lockForUpdate()->first();
+            if (! $fresh || $fresh->status === 'approved') {
+                return;
+            }
+
+            $fresh->update(array_merge([
+                'status'      => 'approved',
+                'approved_at' => now(),
+            ], $extra));
+
+            $user = $fresh->user;
 
             // 1. Deposit lands in A-WALLET (capital). It stays here until the
             //    member clicks "Fund" to lock it into a 200% package.
-            $this->wallets->credit($user, 'A', $deposit->amount, 'deposit', $deposit, [], 'Deposit approved');
+            $this->wallets->credit($user, 'A', $fresh->amount, 'deposit', $fresh, [], 'Deposit approved');
 
             // 2. Fund aggregate (drives rank)
-            $user->increment('total_fund', $deposit->amount);
+            $user->increment('total_fund', $fresh->amount);
+
+            $deposit->setRawAttributes($fresh->getAttributes());
         });
 
         // 3. Re-evaluate ranks across the network (total_fund changed)
         $this->ranks->updateAll();
-
-        return $deposit->refresh();
     }
 
     public function reject(Deposit $deposit, User $admin, ?string $note = null): Deposit
     {
-        if ($deposit->status === 'pending') {
+        // Reject any not-yet-credited state (manual pending, or auto verifying/review).
+        if (in_array($deposit->status, ['pending', 'verifying', 'review'], true)) {
             $deposit->update([
                 'status'      => 'rejected',
                 'approved_by' => $admin->id,

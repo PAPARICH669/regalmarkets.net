@@ -1,6 +1,8 @@
 export default function StatusPill({ status }: { status: string }) {
   const map: Record<string, string> = {
     pending: "bg-yellow-500/15 text-yellow-400",
+    verifying: "bg-blue-500/15 text-blue-400",
+    review: "bg-orange-500/15 text-orange-400",
     approved: "bg-green-500/15 text-green-400",
     rejected: "bg-red-500/15 text-red-400",
   };

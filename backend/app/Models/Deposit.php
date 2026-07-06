@@ -10,8 +10,10 @@ class Deposit extends Model
     protected $guarded = [];
 
     protected $casts = [
-        'amount'      => 'decimal:8',
-        'approved_at' => 'datetime',
+        'amount'        => 'decimal:8',
+        'approved_at'   => 'datetime',
+        'verified_at'   => 'datetime',
+        'confirmations' => 'integer',
     ];
 
     public function user(): BelongsTo
