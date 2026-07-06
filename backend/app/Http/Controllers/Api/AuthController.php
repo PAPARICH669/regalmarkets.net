@@ -358,6 +358,7 @@ class AuthController extends Controller
             'nickname'       => $user->nickname ?: $user->username,
             'email'          => $user->email,
             'phone'          => $user->phone,
+            'country'        => $user->country,
             'rank'           => $user->rankName(),
             'rank_level'     => $user->rank?->level ?? 1,
             'referral_code'  => $user->referral_code,

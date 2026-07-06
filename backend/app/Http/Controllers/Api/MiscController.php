@@ -14,6 +14,13 @@ use Illuminate\Http\Request;
 
 class MiscController extends Controller
 {
+    /** The 30 countries Regal Markets accepts for KYC (ISO-3166 alpha-2). */
+    public const KYC_COUNTRIES = [
+        'MY', 'SG', 'ID', 'TH', 'PH', 'VN', 'BN', 'KH', 'MM', 'LA',
+        'AU', 'BD', 'CA', 'CN', 'FR', 'DE', 'HK', 'IN', 'JP', 'NP',
+        'NZ', 'PK', 'SA', 'KR', 'LK', 'TW', 'AE', 'GB', 'US',
+    ];
+
     public function ranks()
     {
         return Rank::orderBy('level')->get();
@@ -204,36 +211,68 @@ class MiscController extends Controller
         }
 
         $data = $request->validate([
-            'id_type'   => ['required', 'in:ic,passport,license'],
+            'kyc_country' => ['required', 'string', 'size:2', \Illuminate\Validation\Rule::in(self::KYC_COUNTRIES)],
+            'id_type'     => ['required', 'in:ic,passport,license'],
             // id_number must be unique across users (no duplicate IC/passport/license).
-            'id_number' => ['required', 'string', 'max:60', \Illuminate\Validation\Rule::unique('users', 'id_number')->ignore($user->id)],
-            'document'  => ['required', 'file', 'mimes:jpg,jpeg,png,webp,heic,heif,pdf', 'max:8192'],
+            'id_number'   => ['required', 'string', 'max:60', \Illuminate\Validation\Rule::unique('users', 'id_number')->ignore($user->id)],
+            'document'    => ['required', 'file', 'mimes:jpg,jpeg,png,webp,heic,heif,pdf', 'max:8192'],
+            // Plain selfie of the member's face (image only) — staff face-check vs the ID photo.
+            'selfie'      => ['required', 'file', 'mimes:jpg,jpeg,png,webp,heic,heif', 'max:8192'],
         ]);
 
-        // Reject a document file that another account has already used (anti-duplicate).
-        $hash = hash_file('sha256', $request->file('document')->getRealPath());
-        $dupe = \App\Models\User::where('kyc_document_hash', $hash)
-            ->where('id', '!=', $user->id)
-            ->exists();
-        if ($dupe) {
+        $country = strtoupper($data['kyc_country']);
+
+        // AUTO-REJECT: the ID number must match the real format for its country/type.
+        $formatError = \App\Services\KycIdValidator::validate($country, $data['id_type'], $data['id_number']);
+        if ($formatError !== null) {
+            throw \Illuminate\Validation\ValidationException::withMessages(['id_number' => $formatError]);
+        }
+
+        // AUTO-REJECT duplicates: reject a document OR selfie already used by another account.
+        $docHash    = hash_file('sha256', $request->file('document')->getRealPath());
+        $selfieHash = hash_file('sha256', $request->file('selfie')->getRealPath());
+
+        if (\App\Models\User::where('kyc_document_hash', $docHash)->where('id', '!=', $user->id)->exists()) {
             throw \Illuminate\Validation\ValidationException::withMessages([
                 'document' => 'This document has already been used by another account.',
             ]);
         }
+        if (\App\Models\User::where('kyc_selfie_hash', $selfieHash)->where('id', '!=', $user->id)->exists()) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'selfie' => 'This selfie has already been used by another account.',
+            ]);
+        }
 
-        $path = $request->file('document')->store('kyc', config('regal.proof_disk', 'local'));
+        $disk = config('regal.proof_disk', 'local');
+        $docPath    = $request->file('document')->store('kyc', $disk);
+        $selfiePath = $request->file('selfie')->store('kyc', $disk);
+
+        // Stamp "REGAL MARKETS · @user · date" over both images so a leaked copy
+        // can never be reused as a genuine document elsewhere. (PDFs are skipped.)
+        $label = "REGAL MARKETS\n@{$user->username}\n" . now()->format('Y-m-d');
+        foreach ([$docPath, $selfiePath] as $stored) {
+            try {
+                \App\Services\ImageWatermark::stamp(\Illuminate\Support\Facades\Storage::disk($disk)->path($stored), $label);
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning('KYC watermark skipped: ' . $e->getMessage());
+            }
+        }
 
         $user->update([
+            'kyc_country'       => $country,
             'id_type'           => $data['id_type'],
             'id_number'         => $data['id_number'],
-            'kyc_document_path' => $path,
-            'kyc_document_hash' => $hash,
+            'kyc_document_path' => $docPath,
+            'kyc_document_hash' => $docHash,
+            'kyc_selfie_path'   => $selfiePath,
+            'kyc_selfie_hash'   => $selfieHash,
             'kyc_status'        => 'pending',
             'kyc_note'          => null,
         ]);
 
         app(\App\Services\TelegramService::class)->notify('🪪 KYC Submitted', [
             'User'    => '@' . $user->username,
+            'Country' => $country,
             'ID Type' => strtoupper($data['id_type']),
             'ID No'   => $data['id_number'],
         ]);

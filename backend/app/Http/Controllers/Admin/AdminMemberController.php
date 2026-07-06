@@ -264,7 +264,7 @@ class AdminMemberController extends Controller
     {
         $status = $request->query('status', 'pending');
         return User::where('kyc_status', $status)
-            ->select('id', 'username', 'name', 'email', 'phone', 'id_type', 'id_number', 'kyc_status', 'kyc_document_path', 'kyc_note', 'updated_at')
+            ->select('id', 'username', 'name', 'email', 'phone', 'kyc_country', 'id_type', 'id_number', 'kyc_status', 'kyc_document_path', 'kyc_selfie_path', 'kyc_note', 'updated_at')
             ->latest('updated_at')->paginate(20);
     }
 
@@ -312,5 +312,14 @@ class AdminMemberController extends Controller
         $disk = \Illuminate\Support\Facades\Storage::disk(config('regal.proof_disk', 'local'));
         abort_unless($disk->exists($user->kyc_document_path), 404);
         return $disk->response($user->kyc_document_path);
+    }
+
+    /** Stream a member's KYC selfie for the manual face-check (admin only). */
+    public function kycSelfie(User $user)
+    {
+        abort_unless($user->kyc_selfie_path, 404);
+        $disk = \Illuminate\Support\Facades\Storage::disk(config('regal.proof_disk', 'local'));
+        abort_unless($disk->exists($user->kyc_selfie_path), 404);
+        return $disk->response($user->kyc_selfie_path);
     }
 }

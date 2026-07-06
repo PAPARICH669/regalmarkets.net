@@ -8,6 +8,7 @@ export interface AuthUser {
   nickname?: string;
   email: string;
   phone?: string | null;
+  country?: string | null;
   rank: string;
   rank_level: number;
   referral_code: string;

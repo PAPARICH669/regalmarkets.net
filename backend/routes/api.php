@@ -104,6 +104,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware('perm:can_kyc')->group(function () {
         Route::get('/staff/kyc', [AdminMemberController::class, 'kycList']);
         Route::get('/staff/members/{user}/kyc-document', [AdminMemberController::class, 'kycDocument']);
+        Route::get('/staff/members/{user}/kyc-selfie', [AdminMemberController::class, 'kycSelfie']);
         Route::post('/staff/members/{user}/kyc/verify', [AdminMemberController::class, 'verifyKyc']);
         Route::post('/staff/members/{user}/kyc/reject', [AdminMemberController::class, 'rejectKyc']);
     });
@@ -124,6 +125,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/members/{user}/contact', [AdminMemberController::class, 'editContact']);
         Route::get('/kyc', [AdminMemberController::class, 'kycList']);
         Route::get('/members/{user}/kyc-document', [AdminMemberController::class, 'kycDocument']);
+        Route::get('/members/{user}/kyc-selfie', [AdminMemberController::class, 'kycSelfie']);
         Route::post('/members/{user}/kyc/verify', [AdminMemberController::class, 'verifyKyc']);
         Route::post('/members/{user}/kyc/reject', [AdminMemberController::class, 'rejectKyc']);
 

@@ -4,11 +4,12 @@ import { useCallback, useEffect, useState } from "react";
 import api, { apiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { shortDate } from "@/lib/format";
+import { flagEmoji } from "@/lib/countries";
 
 interface Kyc {
   id: number; username: string; name: string; email: string; phone: string;
-  id_type: string; id_number: string; kyc_status: string; kyc_note: string | null;
-  kyc_document_path: string | null; updated_at: string;
+  kyc_country: string | null; id_type: string; id_number: string; kyc_status: string; kyc_note: string | null;
+  kyc_document_path: string | null; kyc_selfie_path: string | null; updated_at: string;
 }
 
 export default function StaffKycPage() {
@@ -26,10 +27,10 @@ export default function StaffKycPage() {
     return <div className="glass p-6 text-muted">You are not assigned to KYC.</div>;
   }
 
-  async function viewDoc(id: number) {
+  async function viewImage(id: number, kind: "kyc-document" | "kyc-selfie") {
     const win = window.open("", "_blank");
     try {
-      const res = await api.get(`/staff/members/${id}/kyc-document`, { responseType: "blob" });
+      const res = await api.get(`/staff/members/${id}/${kind}`, { responseType: "blob" });
       const url = window.URL.createObjectURL(res.data);
       if (win) win.location.href = url;
       else { const a = document.createElement("a"); a.href = url; a.target = "_blank"; a.click(); }
@@ -59,19 +60,25 @@ export default function StaffKycPage() {
       <div className="glass overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-white/5 text-gold-light text-left">
-            <tr><th className="px-4 py-3">Member</th><th>ID Type</th><th>ID Number</th><th>Submitted</th><th>Document</th><th>Action</th></tr>
+            <tr><th className="px-4 py-3">Member</th><th>Country</th><th>ID Type</th><th>ID Number</th><th>Submitted</th><th>ID / Selfie</th><th>Action</th></tr>
           </thead>
           <tbody>
             {items.map((k) => (
               <tr key={k.id} className="border-t border-[var(--line)]">
                 <td className="px-4 py-3">{k.name || k.username}<div className="text-xs text-muted">@{k.username} · {k.email}</div><div className="text-xs text-muted">📞 {k.phone || "—"}</div></td>
+                <td className="whitespace-nowrap">{k.kyc_country ? `${flagEmoji(k.kyc_country)} ${k.kyc_country}` : "—"}</td>
                 <td className="capitalize">{k.id_type}</td>
                 <td className="font-mono text-xs">{k.id_number}</td>
                 <td className="text-xs text-muted">{shortDate(k.updated_at)}</td>
                 <td>
-                  {k.kyc_document_path
-                    ? <button onClick={() => viewDoc(k.id)} className="btn-ghost px-3 py-1 text-xs">View ID</button>
-                    : <span className="text-xs text-muted">No document</span>}
+                  <div className="flex flex-col gap-1">
+                    {k.kyc_document_path
+                      ? <button onClick={() => viewImage(k.id, "kyc-document")} className="btn-ghost px-3 py-1 text-xs">View ID</button>
+                      : <span className="text-xs text-muted">No ID</span>}
+                    {k.kyc_selfie_path
+                      ? <button onClick={() => viewImage(k.id, "kyc-selfie")} className="btn-ghost px-3 py-1 text-xs">View Selfie</button>
+                      : <span className="text-xs text-muted">No selfie</span>}
+                  </div>
                 </td>
                 <td>
                   {k.kyc_status !== "verified" ? (
@@ -83,7 +90,7 @@ export default function StaffKycPage() {
                 </td>
               </tr>
             ))}
-            {items.length === 0 && <tr><td colSpan={6} className="py-6 text-center text-muted">No {filter} KYC submissions.</td></tr>}
+            {items.length === 0 && <tr><td colSpan={7} className="py-6 text-center text-muted">No {filter} KYC submissions.</td></tr>}
           </tbody>
         </table>
       </div>

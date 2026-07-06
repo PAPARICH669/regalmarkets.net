@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { KeyRound, Wallet, UserCog, ShieldCheck, Users } from "lucide-react";
 import api, { apiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { COUNTRIES, idFormatHint } from "@/lib/countries";
 
 const KYC_BADGE: Record<string, string> = {
   unsubmitted: "bg-white/10 text-muted",
@@ -24,7 +25,8 @@ export default function ProfilePage() {
   const [pwMsg, setPwMsg] = useState(""); const [pwErr, setPwErr] = useState(""); const [pwLoad, setPwLoad] = useState(false);
 
   // ----- KYC -----
-  const [kyc, setKyc] = useState<{ id_type: string; id_number: string; document: File | null }>({ id_type: "ic", id_number: "", document: null });
+  const [kyc, setKyc] = useState<{ kyc_country: string; id_type: string; id_number: string; document: File | null; selfie: File | null }>(
+    { kyc_country: "MY", id_type: "ic", id_number: "", document: null, selfie: null });
   const [kMsg, setKMsg] = useState(""); const [kErr, setKErr] = useState(""); const [kLoad, setKLoad] = useState(false);
 
   // ----- Email / wallet change requests -----
@@ -32,11 +34,16 @@ export default function ProfilePage() {
   const loadRequests = () => api.get("/account-changes").then((r) => setRequests(r.data)).catch(() => {});
 
   useEffect(() => {
-    if (user) setForm({
-      nickname: user.nickname || user.username || "",
-      heir_name: user.heir_name || "",
-      heir_phone: user.heir_phone || "",
-    });
+    if (user) {
+      setForm({
+        nickname: user.nickname || user.username || "",
+        heir_name: user.heir_name || "",
+        heir_phone: user.heir_phone || "",
+      });
+      // Pre-select the member's registered country if it is one we accept.
+      const iso = (user.country || "").toUpperCase();
+      if (COUNTRIES.some((c) => c.iso === iso)) setKyc((k) => ({ ...k, kyc_country: iso }));
+    }
   }, [user]);
 
   useEffect(() => { loadRequests(); }, []);
@@ -57,8 +64,10 @@ export default function ProfilePage() {
     e.preventDefault(); setKMsg(""); setKErr(""); setKLoad(true);
     try {
       const fd = new FormData();
+      fd.append("kyc_country", kyc.kyc_country);
       fd.append("id_type", kyc.id_type); fd.append("id_number", kyc.id_number);
       if (kyc.document) fd.append("document", kyc.document);
+      if (kyc.selfie) fd.append("selfie", kyc.selfie);
       const { data } = await api.post("/kyc", fd, { headers: { "Content-Type": "multipart/form-data" } });
       setKMsg(data.message); refresh();
     } catch (err) { setKErr(apiError(err)); } finally { setKLoad(false); }
@@ -163,6 +172,14 @@ export default function ProfilePage() {
             <form onSubmit={submitKyc} className="mt-4 space-y-4">
               <div className="grid sm:grid-cols-2 gap-4">
                 <div>
+                  <label className="text-sm text-muted">Country of ID <span className="text-red-500">*</span></label>
+                  <select className="input-field mt-1" value={kyc.kyc_country} onChange={(e) => setKyc({ ...kyc, kyc_country: e.target.value })}>
+                    {COUNTRIES.map((c) => (
+                      <option key={c.iso} value={c.iso}>{c.flag} {c.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
                   <label className="text-sm text-muted">ID type <span className="text-red-500">*</span></label>
                   <select className="input-field mt-1" value={kyc.id_type} onChange={(e) => setKyc({ ...kyc, id_type: e.target.value })}>
                     <option value="ic">National ID Card (IC)</option>
@@ -170,14 +187,24 @@ export default function ProfilePage() {
                     <option value="license">Driving License</option>
                   </select>
                 </div>
-                <div>
-                  <label className="text-sm text-muted">ID number <span className="text-red-500">*</span></label>
-                  <input className="input-field mt-1" value={kyc.id_number} onChange={(e) => setKyc({ ...kyc, id_number: e.target.value })} required />
-                </div>
               </div>
               <div>
-                <label className="text-sm text-muted">Upload document <span className="text-red-500">*</span> <span className="text-xs">(valid &amp; not expired · image or PDF, max 8MB)</span></label>
+                <label className="text-sm text-muted">ID number <span className="text-red-500">*</span></label>
+                <input className="input-field mt-1" value={kyc.id_number} onChange={(e) => setKyc({ ...kyc, id_number: e.target.value })} required />
+                <p className="text-xs text-muted mt-1">
+                  {kyc.id_type === "passport" ? "Passport — 5–12 letters/digits"
+                    : kyc.id_type === "license" ? "Driving licence number as printed"
+                    : idFormatHint(kyc.kyc_country)}
+                </p>
+              </div>
+              <div>
+                <label className="text-sm text-muted">Upload ID document <span className="text-red-500">*</span> <span className="text-xs">(valid &amp; not expired · image or PDF, max 8MB)</span></label>
                 <input type="file" accept="image/*,.pdf,.heic,.heif" className="input-field mt-1" onChange={(e) => setKyc({ ...kyc, document: e.target.files?.[0] || null })} required />
+              </div>
+              <div>
+                <label className="text-sm text-muted">Upload selfie <span className="text-red-500">*</span> <span className="text-xs">(a clear photo of your face · image, max 8MB)</span></label>
+                <input type="file" accept="image/*,.heic,.heif" capture="user" className="input-field mt-1" onChange={(e) => setKyc({ ...kyc, selfie: e.target.files?.[0] || null })} required />
+                <p className="text-xs text-muted mt-1">Our team compares your selfie with the photo on your ID. Both images are stamped with a Regal Markets watermark for your protection.</p>
               </div>
               <button disabled={kLoad} className="btn-gold px-6 py-2.5">{kLoad ? "Submitting…" : "Submit KYC"}</button>
             </form>

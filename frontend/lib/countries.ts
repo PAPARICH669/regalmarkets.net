@@ -10,6 +10,25 @@ export function flagEmoji(iso?: string | null): string {
   return String.fromCodePoint(0x1f1e6 + (cc.charCodeAt(0) - 65), 0x1f1e6 + (cc.charCodeAt(1) - 65));
 }
 
+/**
+ * Friendly hint for the expected NATIONAL-ID format by country (mirrors the
+ * server-side KycIdValidator). Passport/licence are handled by the caller.
+ */
+export function idFormatHint(iso: string): string {
+  switch ((iso || "").toUpperCase()) {
+    case "MY": return "MyKad — 12 digits (e.g. 900101-01-5123)";
+    case "SG": return "NRIC/FIN — letter + 7 digits + letter (e.g. S1234567D)";
+    case "ID": return "NIK — 16 digits";
+    case "TH": return "Thai ID — 13 digits";
+    case "IN": return "Aadhaar — 12 digits";
+    case "PK": return "CNIC — 13 digits";
+    case "VN": return "CCCD — 9–12 digits";
+    case "BD": return "NID — 10, 13, or 17 digits";
+    case "PH": return "PhilSys / ID — 9–16 digits";
+    default:   return "Enter your national ID number exactly as printed on the card";
+  }
+}
+
 export const COUNTRIES: Country[] = [
   { name: "Malaysia", iso: "MY", dial: "+60", flag: "🇲🇾" },
   { name: "Singapore", iso: "SG", dial: "+65", flag: "🇸🇬" },
