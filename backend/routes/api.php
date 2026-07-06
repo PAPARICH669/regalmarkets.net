@@ -177,6 +177,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
             Route::get('/reports/deposits-monthly', [AdminReportController::class, 'depositsMonthly']);
             Route::get('/reports/group-deposits', [AdminReportController::class, 'groupDeposits']);
+            Route::get('/reports/group-deposits-view', [AdminReportController::class, 'groupDepositsView']);
             Route::get('/reports/{type}', [AdminReportController::class, 'export']);
         });
     });

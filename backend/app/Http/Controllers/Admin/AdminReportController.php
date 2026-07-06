@@ -139,6 +139,65 @@ class AdminReportController extends Controller
         }, $filename, ['Content-Type' => 'text/csv']);
     }
 
+    /**
+     * JSON for the printable group-deposit view: each direct downline of the
+     * parent is a group, with its deposit broken into form / admin adjust / LD
+     * per month, plus an all-time total. Dummy accounts left out.
+     */
+    public function groupDepositsView(Request $request)
+    {
+        $parent = User::whereRaw('LOWER(username) = ?', [strtolower(trim((string) $request->query('parent', '')))])->first();
+        abort_unless($parent, 404, 'Parent member not found.');
+
+        $dummy   = User::where('is_dummy', true)->orWhere('exclude_from_stats', true)->pluck('id')->all();
+        $leaders = User::where('sponsor_id', $parent->id)->orderBy('created_at')->get(['id', 'username']);
+
+        $allMonths = [];
+        $groups = [];
+        foreach ($leaders as $leader) {
+            $ids = array_values(array_diff($this->downlineIds($leader->id), $dummy));
+            $bd  = $this->groupMonthlyBreakdown($ids);
+            foreach (array_keys($bd) as $ym) { $allMonths[$ym] = true; }
+            $tot = ['form' => 0.0, 'adjust' => 0.0, 'ld' => 0.0, 'total' => 0.0];
+            foreach ($bd as $m) { $tot['form'] += $m['form']; $tot['adjust'] += $m['adjust']; $tot['ld'] += $m['ld']; $tot['total'] += $m['total']; }
+            $groups[] = ['leader' => $leader->username, 'members' => count($ids), 'monthly' => $bd, 'total' => $tot];
+        }
+        ksort($allMonths);
+
+        return response()->json([
+            'parent'       => $parent->username,
+            'months'       => array_keys($allMonths),
+            'groups'       => $groups,
+            'generated_at' => now()->format('Y-m-d H:i'),
+        ]);
+    }
+
+    /** Per-month form/adjust/ld/total breakdown for a set of users. */
+    protected function groupMonthlyBreakdown(array $ids): array
+    {
+        if (! $ids) return [];
+        $off = '+08:00';
+        $out = [];
+        $ensure = function (string $ym) use (&$out) {
+            if (! isset($out[$ym])) $out[$ym] = ['form' => 0.0, 'adjust' => 0.0, 'ld' => 0.0, 'total' => 0.0];
+        };
+
+        foreach (DB::table('deposits')->where('status', 'approved')->whereIn('user_id', $ids)
+            ->selectRaw("DATE_FORMAT(CONVERT_TZ(COALESCE(approved_at, created_at), '+00:00', ?), '%Y-%m') ym, COALESCE(SUM(amount),0) s", [$off])
+            ->groupBy('ym')->get() as $r) { $ensure($r->ym); $out[$r->ym]['form'] = (float) $r->s; }
+
+        $map = ['admin_adjust' => 'adjust', 'ld_transfer' => 'ld'];
+        foreach ($map as $type => $key) {
+            foreach (DB::table('wallet_transactions')->where('type', $type)->where('direction', 'credit')->where('wallet_type', 'A')->whereIn('user_id', $ids)
+                ->selectRaw("DATE_FORMAT(CONVERT_TZ(created_at, '+00:00', ?), '%Y-%m') ym, COALESCE(SUM(amount),0) s", [$off])
+                ->groupBy('ym')->get() as $r) { $ensure($r->ym); $out[$r->ym][$key] = (float) $r->s; }
+        }
+
+        foreach ($out as $ym => $m) { $out[$ym]['total'] = $m['form'] + $m['adjust'] + $m['ld']; }
+        ksort($out);
+        return $out;
+    }
+
     /** All user ids in a member's group: the member + their entire downline. */
     protected function downlineIds(int $rootId): array
     {
