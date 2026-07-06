@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Download, CalendarRange } from "lucide-react";
+import { Download, CalendarRange, Users } from "lucide-react";
 import Link from "next/link";
 import api, { apiError } from "@/lib/api";
 
@@ -14,6 +14,7 @@ const REPORTS = [
 export default function AdminReports() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState("");
+  const [parent, setParent] = useState("");
 
   async function download(type: string) {
     setError(""); setBusy(type);
@@ -22,6 +23,19 @@ export default function AdminReports() {
       const url = window.URL.createObjectURL(new Blob([res.data]));
       const a = document.createElement("a");
       a.href = url; a.download = `regal_${type}.csv`; a.click();
+      window.URL.revokeObjectURL(url);
+    } catch (err) { setError(apiError(err)); } finally { setBusy(""); }
+  }
+
+  async function downloadGroup() {
+    const p = parent.trim();
+    if (!p) { setError("Masukkan username parent (cth. KOMANDO)."); return; }
+    setError(""); setBusy("group");
+    try {
+      const res = await api.get(`/admin/reports/group-deposits`, { params: { parent: p }, responseType: "blob" });
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const a = document.createElement("a");
+      a.href = url; a.download = `regal_group_deposits_${p}.csv`; a.click();
       window.URL.revokeObjectURL(url);
     } catch (err) { setError(apiError(err)); } finally { setBusy(""); }
   }
@@ -39,6 +53,26 @@ export default function AdminReports() {
             <p className="text-xs text-muted mt-1">Deposit per bulan (borang + adjust admin + LD) — untuk print / semak.</p>
           </div>
         </Link>
+      </div>
+
+      <div>
+        <p className="text-muted text-sm mb-3">Group deposit per bulan — download CSV.</p>
+        <div className="glass p-6">
+          <div className="flex items-center gap-3 mb-3">
+            <span className="grid place-items-center w-11 h-11 rounded-xl gold-gradient text-black shrink-0"><Users size={18} /></span>
+            <div>
+              <p className="font-semibold">Group Deposit Report</p>
+              <p className="text-xs text-muted mt-1">Masukkan username parent → setiap group direct di bawahnya, deposit setiap bulan.</p>
+            </div>
+          </div>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <input className="input-field flex-1" placeholder="Username parent (cth. KOMANDO)" value={parent}
+              onChange={(e) => setParent(e.target.value)} onKeyDown={(e) => e.key === "Enter" && downloadGroup()} />
+            <button onClick={downloadGroup} disabled={busy === "group"} className="btn-gold px-5 py-2.5 flex items-center justify-center gap-2 shrink-0">
+              <Download size={16} /> {busy === "group" ? "Preparing…" : "Download CSV"}
+            </button>
+          </div>
+        </div>
       </div>
 
       <div>

@@ -84,6 +84,100 @@ class AdminReportController extends Controller
         }, $filename, ['Content-Type' => 'text/csv']);
     }
 
+    /**
+     * Downloadable CSV: for a given PARENT member, each of its direct downlines
+     * is treated as a "group" (that leader + their whole downline). Shows each
+     * group's deposit (form + admin adjust + LD transfer) per month, so the
+     * admin can see which group deposits most each month. Dummy accounts left
+     * out. Sorted by group total, biggest first.
+     */
+    public function groupDeposits(Request $request): StreamedResponse
+    {
+        $parent = User::whereRaw('LOWER(username) = ?', [strtolower(trim((string) $request->query('parent', '')))])->first();
+        abort_unless($parent, 404, 'Parent member not found.');
+
+        $dummy   = User::where('is_dummy', true)->orWhere('exclude_from_stats', true)->pluck('id')->all();
+        $leaders = User::where('sponsor_id', $parent->id)->orderBy('created_at')->get(['id', 'username']);
+
+        $allMonths = [];
+        $data = [];
+        foreach ($leaders as $leader) {
+            $ids     = array_values(array_diff($this->downlineIds($leader->id), $dummy));
+            $monthly = $this->groupMonthlyTotals($ids);
+            foreach (array_keys($monthly) as $ym) { $allMonths[$ym] = true; }
+            $data[] = ['leader' => $leader->username, 'members' => count($ids), 'months' => $monthly, 'total' => array_sum($monthly)];
+        }
+        ksort($allMonths);
+        $months = array_keys($allMonths);
+        usort($data, fn ($a, $b) => $b['total'] <=> $a['total']);
+
+        $headers = array_merge(['Group Leader', 'Ahli'], $months, ['Jumlah (USDT)']);
+        $rows = [];
+        $colTotals = array_fill_keys($months, 0.0); $grand = 0.0; $totalMembers = 0;
+        foreach ($data as $d) {
+            $row = [$d['leader'], $d['members']];
+            foreach ($months as $ym) {
+                $v = (float) ($d['months'][$ym] ?? 0);
+                $row[] = number_format($v, 2, '.', '');
+                $colTotals[$ym] += $v;
+            }
+            $row[] = number_format($d['total'], 2, '.', '');
+            $rows[] = $row;
+            $grand += $d['total']; $totalMembers += $d['members'];
+        }
+        $totalRow = ['TOTAL', $totalMembers];
+        foreach ($months as $ym) { $totalRow[] = number_format($colTotals[$ym], 2, '.', ''); }
+        $totalRow[] = number_format($grand, 2, '.', '');
+        $rows[] = $totalRow;
+
+        $filename = 'regal_group_deposits_' . $parent->username . '_' . now()->format('Ymd') . '.csv';
+        return response()->streamDownload(function () use ($headers, $rows) {
+            $out = fopen('php://output', 'w');
+            fputcsv($out, $headers);
+            foreach ($rows as $r) { fputcsv($out, $r); }
+            fclose($out);
+        }, $filename, ['Content-Type' => 'text/csv']);
+    }
+
+    /** All user ids in a member's group: the member + their entire downline. */
+    protected function downlineIds(int $rootId): array
+    {
+        $all = [$rootId];
+        $frontier = [$rootId];
+        while ($frontier) {
+            $kids = User::whereIn('sponsor_id', $frontier)->pluck('id')->all();
+            $kids = array_values(array_diff($kids, $all));
+            if (! $kids) break;
+            $all = array_merge($all, $kids);
+            $frontier = $kids;
+        }
+        return $all;
+    }
+
+    /** Combined deposit total (form + admin adjust + LD transfer) per month for a set of users. */
+    protected function groupMonthlyTotals(array $ids): array
+    {
+        if (! $ids) return [];
+        $off = '+08:00';
+        $months = [];
+
+        $add = function ($rows) use (&$months) {
+            foreach ($rows as $r) { $months[$r->ym] = ($months[$r->ym] ?? 0) + (float) $r->s; }
+        };
+
+        $add(DB::table('deposits')->where('status', 'approved')->whereIn('user_id', $ids)
+            ->selectRaw("DATE_FORMAT(CONVERT_TZ(COALESCE(approved_at, created_at), '+00:00', ?), '%Y-%m') ym, COALESCE(SUM(amount),0) s", [$off])
+            ->groupBy('ym')->get());
+
+        foreach (['admin_adjust', 'ld_transfer'] as $type) {
+            $add(DB::table('wallet_transactions')->where('type', $type)->where('direction', 'credit')->where('wallet_type', 'A')->whereIn('user_id', $ids)
+                ->selectRaw("DATE_FORMAT(CONVERT_TZ(created_at, '+00:00', ?), '%Y-%m') ym, COALESCE(SUM(amount),0) s", [$off])
+                ->groupBy('ym')->get());
+        }
+        ksort($months);
+        return $months;
+    }
+
     protected function deposits(): array
     {
         $headers = ['ID', 'User', 'Amount', 'TXID', 'Status', 'Created', 'Approved'];
