@@ -87,6 +87,14 @@ export default function DepositPage() {
                 <input className="input-field mt-1 font-mono text-sm" value={txHash} onChange={(e) => setTxHash(e.target.value)}
                   placeholder="0x…" required />
                 <p className="text-xs text-muted mt-1">Paste the transaction hash from your wallet or exchange after sending. We read the amount from the blockchain — no need to type it, no screenshot needed.</p>
+                <details className="mt-2 text-xs text-muted">
+                  <summary className="cursor-pointer text-gold-light">How do I find my transaction hash?</summary>
+                  <ul className="mt-2 space-y-1 list-disc pl-4">
+                    <li><b>Binance:</b> Wallet → Transaction History → tap your USDT withdrawal → copy <b>TxID / Transaction ID</b>.</li>
+                    <li><b>Trust Wallet / MetaMask:</b> open the sent transaction → “View on BscScan” → copy the hash (the <code>0x…</code> in the page title or URL).</li>
+                    <li>It always starts with <code>0x</code> and is 66 characters long. Make sure the network is <b>BEP20 (BSC)</b>.</li>
+                  </ul>
+                </details>
               </div>
               <button disabled={loading || !txHash.trim()} className="btn-gold w-full py-2.5 disabled:opacity-50">{loading ? "Verifying…" : "Verify & Credit"}</button>
             </form>
