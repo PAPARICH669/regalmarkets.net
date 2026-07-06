@@ -32,6 +32,18 @@ class AccountChangeController extends Controller
             'new_value' => ['required', 'string', 'max:191'],
         ]);
 
+        // First-time wallet address (none set yet) is saved DIRECTLY — no TAC, no
+        // admin approval. Changing an EXISTING address still needs TAC + approval
+        // (protects the payout address from account-takeover).
+        if ($data['field'] === 'wallet_address' && trim((string) $user->wallet_address) === '') {
+            $addr = trim($data['new_value']);
+            if (! preg_match('/^0x[a-fA-F0-9]{40}$/', $addr)) {
+                throw ValidationException::withMessages(['new_value' => 'Enter a valid BEP20 address (0x…, 42 characters).']);
+            }
+            $user->update(['wallet_address' => $addr]);
+            return response()->json(['message' => 'Withdrawal address saved.', 'applied' => true], 200);
+        }
+
         if ($data['field'] === 'email') {
             $request->validate([
                 'new_value' => ['email', Rule::unique('users', 'email')->ignore($user->id)],

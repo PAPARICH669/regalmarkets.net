@@ -245,11 +245,18 @@ function ChangeRequestForm({
   const [reqId, setReqId] = useState<number | null>(null);
   const [code, setCode] = useState("");
   const [msg, setMsg] = useState(""); const [err, setErr] = useState(""); const [loading, setLoading] = useState(false);
+  const refresh = useAuth((s) => s.refresh);
+  const isFirstTime = field === "wallet_address" && (!current || current === "—");
 
   async function submitNew(e: React.FormEvent) {
     e.preventDefault(); setMsg(""); setErr(""); setLoading(true);
     try {
       const { data } = await api.post("/account-changes", { field, new_value: newValue });
+      if (data.applied) {
+        setMsg(data.message); setNewValue("");
+        await refresh?.(); onDone?.();
+        return;
+      }
       setReqId(data.request_id); setStep("tac"); setMsg(data.message);
     } catch (e) { setErr(apiError(e)); } finally { setLoading(false); }
   }
@@ -268,14 +275,20 @@ function ChangeRequestForm({
   return (
     <div className="bg-black/20 rounded-xl p-4 border border-[var(--line)]">
       <label className="text-sm font-medium">{label}</label>
-      <p className="text-xs text-muted mt-0.5 mb-2 break-all">Current: {current}</p>
+      <p className="text-xs text-muted mt-0.5 break-all">Current: {current}</p>
+      {field === "wallet_address" && (
+        <p className={`text-[11px] mb-2 ${isFirstTime ? "text-green-400" : "text-yellow-400"}`}>
+          {isFirstTime ? "First-time — saved instantly, no approval needed." : "Changing needs admin approval (security)."}
+        </p>
+      )}
+      {field === "email" && <div className="mb-1" />}
       {msg && <div className="mb-2 text-xs text-green-400 bg-green-500/10 border border-green-500/30 rounded-lg px-3 py-2">{msg}</div>}
       {err && <div className="mb-2 text-xs text-red-400 bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">{err}</div>}
 
       {step === "idle" ? (
         <form onSubmit={submitNew} className="space-y-2">
           <input type={inputType} className="input-field" placeholder={placeholder} value={newValue} onChange={(e) => setNewValue(e.target.value)} required />
-          <button disabled={loading || !newValue} className="btn-gold w-full py-2 text-sm disabled:opacity-50">{loading ? "Sending…" : "Request change → send code"}</button>
+          <button disabled={loading || !newValue} className="btn-gold w-full py-2 text-sm disabled:opacity-50">{loading ? "Saving…" : (isFirstTime ? "Save address" : "Request change → send code")}</button>
         </form>
       ) : (
         <form onSubmit={confirmTac} className="space-y-2">
