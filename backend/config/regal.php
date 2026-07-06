@@ -95,9 +95,10 @@ return [
     // fully manual (amount + proof + admin approval), exactly as before.
     'deposit' => [
         'auto_verify'       => env('DEPOSIT_AUTO_VERIFY', false),
-        'api_url'           => env('BSC_API_URL', 'https://api.etherscan.io/v2/api'),
-        'chain_id'          => (int) env('BSC_CHAIN_ID', 56),                 // 56 = BNB Smart Chain
-        'api_key'           => env('BSCSCAN_API_KEY', ''),                    // free key from etherscan.io/bscscan.com
+        // Public BSC JSON-RPC nodes (no API key). Comma-separated; tried in order
+        // with fallback, so one node being down does not stop verification.
+        'rpc_urls'          => array_values(array_filter(array_map('trim', explode(',', (string) env('BSC_RPC_URLS',
+                                'https://bsc-dataseed.binance.org/,https://bsc-dataseed1.defibit.io/,https://bsc.publicnode.com'))))),
         'usdt_contract'     => env('USDT_BEP20_CONTRACT', '0x55d398326f99059fF775485246999027B3197955'),
         'min_confirmations' => (int) env('DEPOSIT_MIN_CONFIRMATIONS', 15),
         'recency_days'      => (int) env('DEPOSIT_RECENCY_DAYS', 7),          // older TX → manual review

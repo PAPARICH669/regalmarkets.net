@@ -186,8 +186,8 @@ class MiscController extends Controller
             'match_percents'         => $settings->get('match_percents'),
             'deposit_address'        => $settings->get('deposit_address'),
             'deposit_network'        => $settings->get('deposit_network'),
-            // Auto-deposit is live only when enabled AND an API key is present.
-            'deposit_auto_verify'    => (bool) config('regal.deposit.auto_verify') && (bool) config('regal.deposit.api_key'),
+            // Auto-deposit is live when enabled (public BSC RPC needs no key).
+            'deposit_auto_verify'    => (bool) config('regal.deposit.auto_verify'),
         ]);
     }
 

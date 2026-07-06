@@ -7,11 +7,11 @@ use Illuminate\Support\Facades\Log;
 
 /**
  * Read-only BEP20 USDT deposit verification (Cadangan A). Given a transaction
- * hash, it fetches the REAL transaction receipt from an Etherscan-family API
- * (BscScan / Etherscan V2, chainid 56) and confirms it is a genuine USDT
- * transfer INTO our deposit address, returning the on-chain amount, sender, and
- * confirmation count. It holds NO private keys and never moves funds — it only
- * reads the chain, so a server compromise cannot touch deposits.
+ * hash, it fetches the REAL transaction receipt from a public BSC JSON-RPC node
+ * (no API key) and confirms it is a genuine USDT transfer INTO our deposit
+ * address, returning the on-chain amount, sender, and confirmation count. It
+ * holds NO private keys and never moves funds — it only reads the chain, so a
+ * server compromise cannot touch deposits.
  *
  * Result shape (verify()):
  *   found        bool   — the tx exists on-chain yet (false = not indexed / wrong hash)
@@ -30,7 +30,7 @@ class BscVerifier
 
     public function isConfigured(): bool
     {
-        return (bool) config('regal.deposit.api_key');
+        return count((array) config('regal.deposit.rpc_urls')) > 0;
     }
 
     public function verify(string $txHash): array
@@ -46,7 +46,7 @@ class BscVerifier
             return array_merge($base, ['error' => 'deposit_address_unset']);
         }
 
-        $receipt = $this->rpc('eth_getTransactionReceipt', ['txhash' => $txHash]);
+        $receipt = $this->rpc('eth_getTransactionReceipt', [$txHash]);
         if ($receipt === null) {
             return array_merge($base, ['error' => 'api_error']);
         }
@@ -88,33 +88,35 @@ class BscVerifier
     }
 
     /**
-     * Call an eth JSON-RPC proxy method through the API.
-     * Returns: the decoded `result` (array|string), false when the node returns
-     * an explicit null result (tx not found), or null on transport/API failure.
+     * Call an eth JSON-RPC method against the configured public BSC nodes,
+     * trying each in turn until one answers.
+     * Returns: the decoded `result` (array|string), false when a node returns an
+     * explicit null result (tx not found / not yet mined), or null when every
+     * endpoint failed (transport error / all down).
      */
     protected function rpc(string $method, array $params)
     {
-        try {
-            $resp = Http::timeout(12)->retry(2, 300)->get(config('regal.deposit.api_url'), array_merge([
-                'chainid' => config('regal.deposit.chain_id'),
-                'module'  => 'proxy',
-                'action'  => $method,
-                'apikey'  => config('regal.deposit.api_key'),
-            ], $params));
+        $payload = ['jsonrpc' => '2.0', 'id' => 1, 'method' => $method, 'params' => $params];
 
-            if (! $resp->ok()) return null;
-            $json = $resp->json();
+        foreach ((array) config('regal.deposit.rpc_urls') as $url) {
+            try {
+                $resp = Http::timeout(12)->acceptJson()->post($url, $payload);
+                if (! $resp->ok()) continue;
 
-            if (array_key_exists('result', $json)) {
-                return $json['result'] === null ? false : $json['result'];
+                $json = $resp->json();
+                if (isset($json['error'])) {
+                    Log::warning('BSC RPC node error', ['url' => $url, 'method' => $method, 'error' => $json['error']]);
+                    continue;
+                }
+                if (array_key_exists('result', $json)) {
+                    return $json['result'] === null ? false : $json['result'];
+                }
+            } catch (\Throwable $e) {
+                Log::warning('BSC RPC failed (' . $url . '): ' . $e->getMessage());
             }
-            // Rate-limit / error envelope
-            Log::warning('BscVerifier RPC unexpected response', ['method' => $method, 'body' => $resp->body()]);
-            return null;
-        } catch (\Throwable $e) {
-            Log::warning('BscVerifier RPC failed: ' . $e->getMessage());
-            return null;
         }
+
+        return null; // every endpoint failed
     }
 
     /** Big-integer hex → decimal string (values exceed PHP int range). */
