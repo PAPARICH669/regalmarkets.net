@@ -36,24 +36,31 @@ class ImageWatermark
             $tileW = max(220, $pt * 14);
             $tileH = max(110, $pt * 6);
 
+            // A transparent tile with the diagonal label (white, semi-opaque).
             $tile = tempnam(sys_get_temp_dir(), 'wmt') . '.png';
             if (self::run([
                 $convert, '-size', "{$tileW}x{$tileH}", 'xc:none',
-                '-gravity', 'center', '-fill', 'rgba(255,255,255,0.33)',
+                '-gravity', 'center', '-fill', 'rgba(255,255,255,0.38)',
                 '-pointsize', (string) $pt, '-annotate', '-30', $label, $tile,
             ]) === null) return false;
 
+            // Tile the label across the photo with -tile + -draw. NOTE: do NOT use
+            // the `tile:` coder here — it fills the transparent gaps with opaque
+            // black, which blacks out the whole photo. -draw preserves the photo
+            // and only paints the (semi-transparent) text over it.
             $out = tempnam(sys_get_temp_dir(), 'wmo') . '.' . ($ext ?: 'jpg');
             if (self::run([
                 $convert, $absPath,
-                '(', '-size', "{$w}x{$h}", "tile:{$tile}", ')',
-                '-gravity', 'center', '-compose', 'over', '-composite', $out,
+                '-tile', $tile,
+                '-draw', "rectangle 0,0 {$w},{$h}",
+                $out,
             ]) === null) return false;
 
             if (is_file($out) && filesize($out) > 0) {
-                rename($out, $absPath);
-                $out = null;
-                return true;
+                if (@rename($out, $absPath) || (@copy($out, $absPath) && @unlink($out))) {
+                    $out = null;
+                    return true;
+                }
             }
             return false;
         } catch (\Throwable $e) {
