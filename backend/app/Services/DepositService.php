@@ -52,7 +52,22 @@ class DepositService
         }
 
         $this->credit($deposit, ['approved_by' => null, 'verified_at' => now()]);
-        return $deposit->refresh();
+        $deposit->refresh();
+
+        // Notify the member their auto-deposit was credited (same email the admin
+        // approval sends). Failure must not block the credit.
+        if ($deposit->status === 'approved') {
+            try {
+                $u = $deposit->user;
+                app(\App\Services\MailService::class)->sendDepositApproved(
+                    $u->email, $u->name ?: $u->username, number_format((float) $deposit->amount, 2)
+                );
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning('Auto-deposit email failed: ' . $e->getMessage());
+            }
+        }
+
+        return $deposit;
     }
 
     /**
