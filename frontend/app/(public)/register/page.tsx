@@ -36,7 +36,7 @@ function RegisterForm() {
       // dashes, etc.) and drop any leading zeros so the same number can't be
       // re-registered just by typing it in a different format.
       const localDigits = form.phone.replace(/\D/g, "").replace(/^0+/, "");
-      const payload = { ...form, country, phone: `${dial}${localDigits}` };
+      const payload = { ...form, country, phone: localDigits ? `${dial}${localDigits}` : "" };
       await api.post("/register", payload);
       // Account created; verify email with the 6-digit code.
       router.push(`/verify-email?email=${encodeURIComponent(form.email)}`);
@@ -68,7 +68,7 @@ function RegisterForm() {
               onChange={(e) => setForm({ ...form, email: e.target.value })} required />
           </div>
           <div>
-            <label className="text-sm text-muted">Phone number <span className="text-red-500">*</span></label>
+            <label className="text-sm text-muted">Phone number <span className="text-xs">(optional)</span></label>
             <div className="mt-1 flex gap-2 w-full">
               <select
                 className="input-field"
@@ -82,7 +82,7 @@ function RegisterForm() {
                 ))}
               </select>
               <input type="tel" inputMode="numeric" className="input-field" style={{ flex: "1 1 0%", minWidth: 0 }}
-                value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="12 345 6789" required />
+                value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="12 345 6789" />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
