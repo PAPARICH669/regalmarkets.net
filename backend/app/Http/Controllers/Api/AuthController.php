@@ -19,12 +19,25 @@ class AuthController extends Controller
         $data = $request->validate([
             'username'       => ['required', 'string', 'min:3', 'max:30', 'alpha_dash', 'unique:users,username'],
             'email'          => ['required', 'email', 'unique:users,email'],
-            'phone'          => ['required', 'string', 'max:30', 'unique:users,phone'],
+            'phone'          => ['required', 'string', 'max:30'],
             'country'        => ['nullable', 'string', 'size:2'],
             'password'       => ['required', 'string', 'min:6', 'confirmed'],
             'referral_code'  => ['nullable', 'string', 'max:60'],
             'wallet_address' => ['nullable', 'string', 'max:120'],
         ]);
+
+        // Phone must be unique by its DIGITS, regardless of formatting — otherwise
+        // "+60 12-345 6789" and "60123456789" (the same number) both slip past a
+        // plain unique rule. Normalize to digits and compare against every stored
+        // number normalized the same way.
+        $phoneDigits = preg_replace('/\D/', '', $data['phone']);
+        if (strlen($phoneDigits) < 7) {
+            throw \Illuminate\Validation\ValidationException::withMessages(['phone' => 'Enter a valid phone number.']);
+        }
+        if (User::whereRaw("REGEXP_REPLACE(COALESCE(phone,''), '[^0-9]', '') = ?", [$phoneDigits])->exists()) {
+            throw \Illuminate\Validation\ValidationException::withMessages(['phone' => 'This phone number is already registered.']);
+        }
+        $data['phone'] = '+' . $phoneDigits; // store one canonical format
 
         // Resolve sponsor by USERNAME or referral code (the referral link uses the
         // sponsor's username so new members don't pick the wrong sponsor).

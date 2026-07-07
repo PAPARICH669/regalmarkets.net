@@ -32,8 +32,11 @@ function RegisterForm() {
     setError("");
     setLoading(true);
     try {
-      // Combine the selected country dial code with the local number.
-      const payload = { ...form, country, phone: `${dial}${form.phone.replace(/^0+/, "")}` };
+      // Combine the dial code with the local number — digits only (strip spaces,
+      // dashes, etc.) and drop any leading zeros so the same number can't be
+      // re-registered just by typing it in a different format.
+      const localDigits = form.phone.replace(/\D/g, "").replace(/^0+/, "");
+      const payload = { ...form, country, phone: `${dial}${localDigits}` };
       await api.post("/register", payload);
       // Account created; verify email with the 6-digit code.
       router.push(`/verify-email?email=${encodeURIComponent(form.email)}`);
