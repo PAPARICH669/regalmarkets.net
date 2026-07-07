@@ -202,8 +202,8 @@ export default function ProfilePage() {
                 <input type="file" accept="image/*,.pdf,.heic,.heif" className="input-field mt-1" onChange={(e) => setKyc({ ...kyc, document: e.target.files?.[0] || null })} required />
               </div>
               <div>
-                <label className="text-sm text-muted">Upload selfie <span className="text-red-500">*</span> <span className="text-xs">(a clear photo of your face · image, max 8MB)</span></label>
-                <input type="file" accept="image/*,.heic,.heif" capture="user" className="input-field mt-1" onChange={(e) => setKyc({ ...kyc, selfie: e.target.files?.[0] || null })} required />
+                <label className="text-sm text-muted">Upload selfie <span className="text-red-500">*</span> <span className="text-xs">(a clear photo of your face · take a photo or choose from gallery, max 8MB)</span></label>
+                <input type="file" accept="image/*,.heic,.heif" className="input-field mt-1" onChange={(e) => setKyc({ ...kyc, selfie: e.target.files?.[0] || null })} required />
                 <p className="text-xs text-muted mt-1">Our team compares your selfie with the photo on your ID. Both images are stamped with a Regal Markets watermark for your protection.</p>
               </div>
               <button disabled={kLoad} className="btn-gold px-6 py-2.5">{kLoad ? "Submitting…" : "Submit KYC"}</button>
