@@ -14,34 +14,57 @@ use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
+    /** ISO-3166 alpha-2 => international dial code (digits) for the accepted countries. */
+    private const DIAL = [
+        'MY' => '60', 'SG' => '65', 'ID' => '62', 'TH' => '66', 'PH' => '63', 'VN' => '84',
+        'BN' => '673', 'KH' => '855', 'MM' => '95', 'LA' => '856', 'AU' => '61', 'BD' => '880',
+        'CA' => '1', 'CN' => '86', 'FR' => '33', 'DE' => '49', 'HK' => '852', 'IN' => '91',
+        'JP' => '81', 'NP' => '977', 'NZ' => '64', 'PK' => '92', 'SA' => '966', 'KR' => '82',
+        'LK' => '94', 'TW' => '886', 'AE' => '971', 'GB' => '44', 'US' => '1',
+    ];
+
+    /**
+     * Canonical phone digits in E.164-ish form, so the SAME number written many
+     * ways collapses to one value: strip non-digits, drop the national leading
+     * zero, and prefix the country dial code when it is not already present.
+     *   MY + "012-345 6789" / "0123456789" / "60123456789" / "+60 12 345 6789"
+     *   → all become "60123456789".
+     */
+    private function canonicalPhone(?string $country, string $rawPhone): string
+    {
+        $digits = ltrim(preg_replace('/\D/', '', $rawPhone), '0');
+        $dial   = self::DIAL[strtoupper((string) $country)] ?? '';
+        if ($dial !== '' && $digits !== '' && ! str_starts_with($digits, $dial)) {
+            $digits = $dial . $digits;
+        }
+        return $digits;
+    }
+
     public function register(Request $request)
     {
         $data = $request->validate([
             'username'       => ['required', 'string', 'min:3', 'max:30', 'alpha_dash', 'unique:users,username'],
             'email'          => ['required', 'email', 'unique:users,email'],
-            'phone'          => ['nullable', 'string', 'max:30'],
+            'phone'          => ['required', 'string', 'max:30'],
             'country'        => ['nullable', 'string', 'size:2'],
             'password'       => ['required', 'string', 'min:6', 'confirmed'],
             'referral_code'  => ['nullable', 'string', 'max:60'],
             'wallet_address' => ['nullable', 'string', 'max:120'],
         ]);
 
-        // Phone is OPTIONAL. When given, it must be unique by its DIGITS regardless
-        // of formatting — otherwise "+60 12-345 6789" and "60123456789" (the same
-        // number) both slip past a plain unique rule. Normalize + compare against
-        // every stored number normalized the same way.
-        $phoneDigits = preg_replace('/\D/', '', (string) ($data['phone'] ?? ''));
-        if ($phoneDigits === '') {
-            $data['phone'] = null;
-        } else {
-            if (strlen($phoneDigits) < 7) {
-                throw \Illuminate\Validation\ValidationException::withMessages(['phone' => 'Enter a valid phone number.']);
-            }
-            if (User::whereRaw("REGEXP_REPLACE(COALESCE(phone,''), '[^0-9]', '') = ?", [$phoneDigits])->exists()) {
-                throw \Illuminate\Validation\ValidationException::withMessages(['phone' => 'This phone number is already registered.']);
-            }
-            $data['phone'] = '+' . $phoneDigits; // store one canonical format
+        // Phone is REQUIRED and must be unique per REAL number. Canonicalise using
+        // the country dial code so the same number in any format (with/without the
+        // country code, with/without the leading 0, with spaces/dashes) collapses
+        // to one value, then compare against every stored number canonicalised the
+        // same way (REGEXP_REPLACE strips formatting on the stored side).
+        $phoneDigits = $this->canonicalPhone($data['country'] ?? null, (string) $data['phone']);
+        if (strlen($phoneDigits) < 8) {
+            throw \Illuminate\Validation\ValidationException::withMessages(['phone' => 'Enter a valid phone number.']);
         }
+        if (User::whereRaw("REGEXP_REPLACE(COALESCE(phone,''), '[^0-9]', '') = ?", [$phoneDigits])->exists()) {
+            throw \Illuminate\Validation\ValidationException::withMessages(['phone' => 'This phone number is already registered.']);
+        }
+        $data['phone'] = '+' . $phoneDigits; // store one canonical format
 
         // Resolve sponsor by USERNAME or referral code (the referral link uses the
         // sponsor's username so new members don't pick the wrong sponsor).
