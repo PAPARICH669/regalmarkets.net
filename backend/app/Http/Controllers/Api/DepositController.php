@@ -82,17 +82,19 @@ class DepositController extends Controller
         $flag = $this->reviewReason($request->user()->id, $r);
         $confirmed = $r['confirmations'] >= (int) config('regal.deposit.min_confirmations');
 
-        $status = $flag ? 'review' : ($confirmed ? 'approved' : 'verifying');
+        // Persist as review (flagged) or verifying (to be credited). NOTE: never
+        // persist as 'approved' here — confirmAuto()/credit() short-circuit on an
+        // already-approved row (double-credit guard), so it must flip a
+        // verifying → approved itself, which is also what does the crediting.
+        $deposit = $this->persist($request, $hash, $r, $flag ? 'review' : 'verifying', $flag);
 
-        $deposit = $this->persist($request, $hash, $r, $status, $flag);
-
-        if ($status === 'approved') {
+        if ($flag) {
+            $this->notify($deposit, 'review: ' . $flag);
+            $msg = 'Deposit received (' . number_format((float) $deposit->amount, 2) . ' USDT). It needs a quick manual check.';
+        } elseif ($confirmed) {
             $deposit = $this->deposits->confirmAuto($deposit);
             $this->notify($deposit, 'auto-credited');
             $msg = 'Deposit of ' . number_format((float) $deposit->amount, 2) . ' USDT credited to your A-Wallet.';
-        } elseif ($status === 'review') {
-            $this->notify($deposit, 'review: ' . $flag);
-            $msg = 'Deposit received (' . number_format((float) $deposit->amount, 2) . ' USDT). It needs a quick manual check.';
         } else {
             $msg = 'Deposit found (' . number_format((float) $deposit->amount, 2) . ' USDT). Waiting for confirmations — it will credit automatically.';
         }
