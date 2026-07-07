@@ -181,7 +181,7 @@ class DepositController extends Controller
         $data = $request->validate([
             'amount' => ['required', 'numeric', "min:{$min}"],
             'txid'   => ['nullable', 'string', 'max:191'],
-            'proof'  => ['required', 'image', 'max:4096'],
+            'proof'  => ['required', 'image', 'max:20480'],
         ], [
             'proof.required' => 'A payment proof image is required for every deposit.',
             'proof.image'    => 'The payment proof must be an image (JPG/PNG).',

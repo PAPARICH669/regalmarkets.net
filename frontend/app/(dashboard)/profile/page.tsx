@@ -198,11 +198,11 @@ export default function ProfilePage() {
                 </p>
               </div>
               <div>
-                <label className="text-sm text-muted">Upload ID document <span className="text-red-500">*</span> <span className="text-xs">(valid &amp; not expired · image or PDF, max 8MB)</span></label>
+                <label className="text-sm text-muted">Upload ID document <span className="text-red-500">*</span> <span className="text-xs">(valid &amp; not expired · image or PDF, max 20MB)</span></label>
                 <input type="file" accept="image/*,.pdf,.heic,.heif" className="input-field mt-1" onChange={(e) => setKyc({ ...kyc, document: e.target.files?.[0] || null })} required />
               </div>
               <div>
-                <label className="text-sm text-muted">Upload selfie <span className="text-red-500">*</span> <span className="text-xs">(a clear photo of your face · take a photo or choose from gallery, max 8MB)</span></label>
+                <label className="text-sm text-muted">Upload selfie <span className="text-red-500">*</span> <span className="text-xs">(a clear photo of your face · take a photo or choose from gallery, max 20MB)</span></label>
                 <input type="file" accept="image/*,.heic,.heif" className="input-field mt-1" onChange={(e) => setKyc({ ...kyc, selfie: e.target.files?.[0] || null })} required />
                 <p className="text-xs text-muted mt-1">Our team compares your selfie with the photo on your ID. Both images are stamped with a Regal Markets watermark for your protection.</p>
               </div>

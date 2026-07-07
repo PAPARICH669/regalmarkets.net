@@ -217,9 +217,9 @@ class MiscController extends Controller
             'id_type'     => ['required', 'in:ic,passport,license'],
             // id_number must be unique across users (no duplicate IC/passport/license).
             'id_number'   => ['required', 'string', 'max:60', \Illuminate\Validation\Rule::unique('users', 'id_number')->ignore($user->id)],
-            'document'    => ['required', 'file', 'mimes:jpg,jpeg,png,webp,heic,heif,pdf', 'max:8192'],
+            'document'    => ['required', 'file', 'mimes:jpg,jpeg,png,webp,heic,heif,pdf', 'max:20480'],
             // Plain selfie of the member's face (image only) — staff face-check vs the ID photo.
-            'selfie'      => ['required', 'file', 'mimes:jpg,jpeg,png,webp,heic,heif', 'max:8192'],
+            'selfie'      => ['required', 'file', 'mimes:jpg,jpeg,png,webp,heic,heif', 'max:20480'],
         ]);
 
         $country = strtoupper($data['kyc_country']);
