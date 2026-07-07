@@ -52,17 +52,12 @@ class AuthController extends Controller
             'wallet_address' => ['nullable', 'string', 'max:120'],
         ]);
 
-        // Phone is REQUIRED and must be unique per REAL number. Canonicalise using
-        // the country dial code so the same number in any format (with/without the
-        // country code, with/without the leading 0, with spaces/dashes) collapses
-        // to one value, then compare against every stored number canonicalised the
-        // same way (REGEXP_REPLACE strips formatting on the stored side).
+        // Phone is REQUIRED but NOT unique — the same number may be used by more
+        // than one account (allowed on purpose). Still canonicalise it with the
+        // country dial code so it is stored in one consistent format.
         $phoneDigits = $this->canonicalPhone($data['country'] ?? null, (string) $data['phone']);
         if (strlen($phoneDigits) < 8) {
             throw \Illuminate\Validation\ValidationException::withMessages(['phone' => 'Enter a valid phone number.']);
-        }
-        if (User::whereRaw("REGEXP_REPLACE(COALESCE(phone,''), '[^0-9]', '') = ?", [$phoneDigits])->exists()) {
-            throw \Illuminate\Validation\ValidationException::withMessages(['phone' => 'This phone number is already registered.']);
         }
         $data['phone'] = '+' . $phoneDigits; // store one canonical format
 
