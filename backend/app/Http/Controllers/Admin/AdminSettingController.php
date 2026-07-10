@@ -37,6 +37,10 @@ class AdminSettingController extends Controller
             'maintenance_end'        => ['nullable', 'string'],
             'login_tac_enabled'      => ['nullable', 'boolean'],
             'total_deposit_adjustment' => ['nullable', 'numeric', 'min:0'],
+            'deposit_bonus_enabled'  => ['nullable', 'boolean'],
+            'deposit_bonus_percent'  => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'deposit_bonus_start'    => ['nullable', 'date'],
+            'deposit_bonus_end'      => ['nullable', 'date'],
         ]);
 
         foreach ($data as $key => $value) {

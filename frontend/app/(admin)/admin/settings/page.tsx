@@ -29,6 +29,10 @@ export default function AdminSettings() {
         maintenance_end: String(s?.maintenance_end ?? "07:00"),
         login_tac_enabled: !!s?.login_tac_enabled,
         total_deposit_adjustment: Number(s?.total_deposit_adjustment ?? 0),
+        deposit_bonus_enabled: !!s?.deposit_bonus_enabled,
+        deposit_bonus_percent: Number(s?.deposit_bonus_percent ?? 0),
+        deposit_bonus_start: s?.deposit_bonus_start ? String(s.deposit_bonus_start) : null,
+        deposit_bonus_end: s?.deposit_bonus_end ? String(s.deposit_bonus_end) : null,
       };
       const { data } = await api.put("/admin/settings", payload);
       setS(data.settings); setMsg("Settings saved.");
@@ -72,6 +76,31 @@ export default function AdminSettings() {
             <span className="text-sm font-medium">Require email login code (TAC / 2FA) — admin &amp; staff</span>
           </label>
           <p className="text-xs text-muted mt-1 ml-7">When on, <b>admins and staff</b> must enter a 6-digit code emailed to them at login. Regular members log in without a code. Keep on for best security.</p>
+        </div>
+        <div className="sm:col-span-2 border-t border-[var(--line)] pt-4">
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input type="checkbox" className="w-4 h-4 accent-[var(--gold)]"
+              checked={!!s.deposit_bonus_enabled} onChange={(e) => setS((p) => ({ ...(p || {}), deposit_bonus_enabled: e.target.checked }))} />
+            <span className="text-sm font-medium">🎁 Deposit Bonus Promo</span>
+          </label>
+          <p className="text-xs text-muted mt-1 ml-7 mb-3">When on, real deposits (form + auto) made within the window get an extra % credited to their A-Wallet. Applies by the deposit&apos;s date.</p>
+          <div className="grid sm:grid-cols-3 gap-4 ml-7">
+            <div>
+              <label className="text-sm text-muted">Bonus %</label>
+              <input type="number" step="any" className="input-field mt-1"
+                value={String(s.deposit_bonus_percent ?? "")} onChange={(e) => field("deposit_bonus_percent", e.target.value)} />
+            </div>
+            <div>
+              <label className="text-sm text-muted">Start date</label>
+              <input type="date" className="input-field mt-1"
+                value={String(s.deposit_bonus_start ?? "")} onChange={(e) => field("deposit_bonus_start", e.target.value)} />
+            </div>
+            <div>
+              <label className="text-sm text-muted">End date</label>
+              <input type="date" className="input-field mt-1"
+                value={String(s.deposit_bonus_end ?? "")} onChange={(e) => field("deposit_bonus_end", e.target.value)} />
+            </div>
+          </div>
         </div>
         <div className="sm:col-span-2 text-xs text-muted">
           Sponsor %: {JSON.stringify(s.sponsor_bonus_percents)} · Matching %: {JSON.stringify(s.match_percents)}

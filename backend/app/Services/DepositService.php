@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Deposit;
 use App\Models\User;
+use App\Services\SettingsService;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -97,11 +98,52 @@ class DepositService
             // 2. Fund aggregate (drives rank)
             $user->increment('total_fund', $fresh->amount);
 
+            // 3. Deposit bonus promo — extra % of the deposit into A-WALLET when a
+            //    promo is running and this deposit was made within the window.
+            //    Only reaches here for REAL deposits (form + auto), never admin
+            //    adjust / LD transfer (those don't go through credit()).
+            $bonus = $this->depositBonus($fresh);
+            if ($bonus !== null && bccomp($bonus, '0', 8) > 0) {
+                $this->wallets->credit($user, 'A', $bonus, 'deposit_bonus', $fresh, ['percent' => (float) app(SettingsService::class)->get('deposit_bonus_percent', 0)], 'Deposit bonus (promo)');
+            }
+
             $deposit->setRawAttributes($fresh->getAttributes());
         });
 
         // 3. Re-evaluate ranks across the network (total_fund changed)
         $this->ranks->updateAll();
+    }
+
+    /**
+     * The promo bonus (USDT, 8dp) for a deposit, or null when no promo applies.
+     * Eligible when the promo is enabled, the percent > 0, and the deposit was
+     * MADE (created_at) within the [start, end] window (end is inclusive of the
+     * whole day). Timezone is the app timezone.
+     */
+    protected function depositBonus(Deposit $deposit): ?string
+    {
+        $s = app(SettingsService::class);
+        if (! $s->get('deposit_bonus_enabled')) {
+            return null;
+        }
+        $pct = (float) $s->get('deposit_bonus_percent', 0);
+        if ($pct <= 0) {
+            return null;
+        }
+
+        $tz    = config('app.timezone');
+        $when  = ($deposit->created_at ?? now())->copy()->setTimezone($tz);
+        $start = $s->get('deposit_bonus_start');
+        $end   = $s->get('deposit_bonus_end');
+
+        if ($start && $when->lt(\Illuminate\Support\Carbon::parse($start, $tz)->startOfDay())) {
+            return null;
+        }
+        if ($end && $when->gt(\Illuminate\Support\Carbon::parse($end, $tz)->endOfDay())) {
+            return null;
+        }
+
+        return bcmul((string) $deposit->amount, (string) ($pct / 100), 8);
     }
 
     public function reject(Deposit $deposit, User $admin, ?string $note = null): Deposit

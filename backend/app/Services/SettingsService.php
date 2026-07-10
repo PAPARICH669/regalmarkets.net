@@ -38,6 +38,12 @@ class SettingsService
             'deposit_network'        => ['regal.deposit_network', 'string'],
             'login_tac_enabled'      => [null, 'bool'], // email TAC (OTP) on login, default ON
             'total_deposit_adjustment' => [null, 'number'], // USDT deducted from the admin dashboard Total Deposit
+            // Deposit bonus promo — extra % credited to A-WALLET on real deposits
+            // made within the window. Default OFF.
+            'deposit_bonus_enabled'  => [null, 'bool'],
+            'deposit_bonus_percent'  => [null, 'number'],
+            'deposit_bonus_start'    => [null, 'string'], // Y-m-d
+            'deposit_bonus_end'      => [null, 'string'], // Y-m-d
         ];
     }
 

@@ -188,7 +188,26 @@ class MiscController extends Controller
             'deposit_network'        => $settings->get('deposit_network'),
             // Auto-deposit is live when enabled (public BSC RPC needs no key).
             'deposit_auto_verify'    => (bool) config('regal.deposit.auto_verify'),
+            // Deposit bonus promo banner (only when running right now).
+            'deposit_bonus'          => $this->depositBonusInfo($settings),
         ]);
+    }
+
+    /** Promo banner payload for the member deposit page, or null when not running. */
+    protected function depositBonusInfo(SettingsService $settings): ?array
+    {
+        if (! $settings->get('deposit_bonus_enabled')) return null;
+        $pct = (float) $settings->get('deposit_bonus_percent', 0);
+        if ($pct <= 0) return null;
+
+        $tz    = config('app.timezone');
+        $now   = now($tz);
+        $start = $settings->get('deposit_bonus_start');
+        $end   = $settings->get('deposit_bonus_end');
+        if ($start && $now->lt(\Illuminate\Support\Carbon::parse($start, $tz)->startOfDay())) return null;
+        if ($end && $now->gt(\Illuminate\Support\Carbon::parse($end, $tz)->endOfDay())) return null;
+
+        return ['percent' => $pct, 'end' => $end ?: null];
     }
 
     public function updateProfile(Request $request)

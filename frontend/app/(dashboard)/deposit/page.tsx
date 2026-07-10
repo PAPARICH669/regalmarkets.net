@@ -18,6 +18,7 @@ export default function DepositPage() {
   const [history, setHistory] = useState<Deposit[]>([]);
   const [addr, setAddr] = useState<{ address: string; network: string }>({ address: "", network: "BEP20 (BSC)" });
   const [auto, setAuto] = useState(false);
+  const [bonus, setBonus] = useState<{ percent: number; end: string | null } | null>(null);
   const [copied, setCopied] = useState(false);
 
   const load = () => api.get("/deposits").then((r) => setHistory(r.data.data));
@@ -26,6 +27,7 @@ export default function DepositPage() {
     api.get("/public-settings").then((r) => {
       setAddr({ address: r.data.deposit_address, network: r.data.deposit_network });
       setAuto(!!r.data.deposit_auto_verify);
+      setBonus(r.data.deposit_bonus || null);
     });
   }, []);
 
@@ -58,6 +60,17 @@ export default function DepositPage() {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">Deposit USDT</h1>
+
+      {bonus && (
+        <div className="rounded-xl border border-gold/40 bg-gold/10 px-4 py-3 flex items-center gap-3">
+          <span className="text-2xl">🎁</span>
+          <div>
+            <p className="font-semibold text-gold-light">Deposit Bonus {bonus.percent}%</p>
+            <p className="text-sm text-muted">Deposit now and get an extra <b className="text-gold-light">{bonus.percent}%</b> credited to your A-Wallet{bonus.end ? <> — valid until <b className="text-foreground">{bonus.end}</b></> : ""}.</p>
+          </div>
+        </div>
+      )}
+
       <div className="grid lg:grid-cols-2 gap-6">
         <div className="glass p-6">
           <h3 className="font-semibold">New Deposit</h3>
