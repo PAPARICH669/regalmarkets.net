@@ -300,6 +300,19 @@ function ChangeRequestForm({
     setErr(""); try { const { data } = await api.post("/account-changes/resend-tac", { request_id: reqId }); setMsg(data.message); } catch (e) { setErr(apiError(e)); }
   }
 
+  // Live BEP20 format check for the wallet address field (0x + 40 hex).
+  const walletCheck = (() => {
+    if (field !== "wallet_address") return null;
+    const v = newValue.trim();
+    if (v === "") return null;
+    if (!/^0x/i.test(v)) return { ok: false, typing: false, msg: "Must start with 0x." };
+    if (/[^0-9a-fA-F]/.test(v.slice(2))) return { ok: false, typing: false, msg: "Invalid characters — only 0-9 and a-f allowed." };
+    if (v.length < 42) return { ok: false, typing: true, msg: `Too short — need 42 characters (0x + 40). Now ${v.length}.` };
+    if (v.length > 42) return { ok: false, typing: false, msg: `Too long — need 42 characters. Now ${v.length}.` };
+    return { ok: true, typing: false, msg: "✓ Valid BEP20 (BSC) address format." };
+  })();
+  const walletBlocks = field === "wallet_address" && !!newValue.trim() && !!walletCheck && !walletCheck.ok;
+
   return (
     <div className="bg-black/20 rounded-xl p-4 border border-[var(--line)]">
       <label className="text-sm font-medium">{label}</label>
@@ -315,8 +328,14 @@ function ChangeRequestForm({
 
       {step === "idle" ? (
         <form onSubmit={submitNew} className="space-y-2">
-          <input type={inputType} className="input-field" placeholder={placeholder} value={newValue} onChange={(e) => setNewValue(e.target.value)} required />
-          <button disabled={loading || !newValue} className="btn-gold w-full py-2 text-sm disabled:opacity-50">{loading ? "Saving…" : (isFirstTime ? "Save address" : "Request change → send code")}</button>
+          <input type={inputType} className="input-field" style={walletCheck ? { borderColor: walletCheck.ok ? "#4ade80" : walletCheck.typing ? "#facc15" : "#f87171" } : undefined}
+            placeholder={placeholder} value={newValue} onChange={(e) => setNewValue(e.target.value)} required />
+          {walletCheck && (
+            <p className={`text-[11px] flex items-start gap-1 ${walletCheck.ok ? "text-green-400" : walletCheck.typing ? "text-yellow-400" : "text-red-400"}`}>
+              <span>{walletCheck.ok ? "✓" : walletCheck.typing ? "…" : "⚠"}</span><span>{walletCheck.msg}</span>
+            </p>
+          )}
+          <button disabled={loading || !newValue || walletBlocks} className="btn-gold w-full py-2 text-sm disabled:opacity-50">{loading ? "Saving…" : (isFirstTime ? "Save address" : "Request change → send code")}</button>
         </form>
       ) : (
         <form onSubmit={confirmTac} className="space-y-2">

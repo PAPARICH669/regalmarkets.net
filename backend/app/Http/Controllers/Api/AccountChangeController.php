@@ -40,15 +40,18 @@ class AccountChangeController extends Controller
             }
         }
 
+        // Wallet address must be a valid BEP20 (BSC) format — 0x + 40 hex chars —
+        // whether it is a first-time set or a change (server-side guard mirroring
+        // the live check on the form).
+        if ($data['field'] === 'wallet_address' && ! preg_match('/^0x[a-fA-F0-9]{40}$/', trim($data['new_value']))) {
+            throw ValidationException::withMessages(['new_value' => 'Enter a valid BEP20 address (0x…, 42 characters).']);
+        }
+
         // First-time wallet address (none set yet) is saved DIRECTLY — no TAC, no
         // admin approval. Changing an EXISTING address still needs TAC + approval
         // (protects the payout address from account-takeover).
         if ($data['field'] === 'wallet_address' && trim((string) $user->wallet_address) === '') {
-            $addr = trim($data['new_value']);
-            if (! preg_match('/^0x[a-fA-F0-9]{40}$/', $addr)) {
-                throw ValidationException::withMessages(['new_value' => 'Enter a valid BEP20 address (0x…, 42 characters).']);
-            }
-            $user->update(['wallet_address' => $addr]);
+            $user->update(['wallet_address' => trim($data['new_value'])]);
             return response()->json(['message' => 'Withdrawal address saved.', 'applied' => true], 200);
         }
 
