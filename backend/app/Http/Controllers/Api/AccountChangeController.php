@@ -28,9 +28,17 @@ class AccountChangeController extends Controller
     {
         $user = $request->user();
         $data = $request->validate([
-            'field'     => ['required', 'in:email,wallet_address'],
+            'field'     => ['required', 'in:email,wallet_address,phone'],
             'new_value' => ['required', 'string', 'max:191'],
         ]);
+
+        // Phone: a member may edit it, but the change still needs a TAC + admin
+        // approval (same flow as email). Only a light format check here.
+        if ($data['field'] === 'phone') {
+            if (strlen(preg_replace('/\D/', '', $data['new_value'])) < 7) {
+                throw ValidationException::withMessages(['new_value' => 'Enter a valid phone number.']);
+            }
+        }
 
         // First-time wallet address (none set yet) is saved DIRECTLY — no TAC, no
         // admin approval. Changing an EXISTING address still needs TAC + approval
@@ -63,7 +71,11 @@ class AccountChangeController extends Controller
         $req = AccountChangeRequest::create([
             'user_id'        => $user->id,
             'field'          => $data['field'],
-            'old_value'      => $data['field'] === 'email' ? $user->email : $user->wallet_address,
+            'old_value'      => match ($data['field']) {
+                'email' => $user->email,
+                'phone' => $user->phone,
+                default => $user->wallet_address,
+            },
             'new_value'      => trim($data['new_value']),
             'status'         => 'pending_tac',
             'tac_code'       => $code,
@@ -124,7 +136,11 @@ class AccountChangeController extends Controller
 
     protected function sendTac($user, string $code, string $field): void
     {
-        $label = $field === 'email' ? 'email address' : 'USDT withdrawal address';
+        $label = match ($field) {
+            'email' => 'email address',
+            'phone' => 'phone number',
+            default => 'USDT withdrawal address',
+        };
         try {
             $html = '<div style="font-family:Arial,sans-serif;background:#04102a;padding:32px;color:#eef3fc">'
                 . '<div style="max-width:520px;margin:auto;background:#0a1c40;border:1px solid rgba(201,162,39,.3);border-radius:14px;padding:28px">'

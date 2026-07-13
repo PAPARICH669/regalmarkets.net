@@ -95,11 +95,11 @@ export default function ProfilePage() {
               <input className="input-field mt-1 opacity-60" value={user?.email || ""} disabled />
             </div>
             <div>
-              <label className="text-sm text-muted">Phone number <span className="text-xs">(admin only)</span></label>
+              <label className="text-sm text-muted">Phone number <span className="text-xs">(change needs approval)</span></label>
               <input className="input-field mt-1 opacity-60" value={user?.phone || "—"} disabled />
             </div>
           </div>
-          <p className="text-xs text-muted">To change your <b>email</b> or <b>wallet address</b>, use the <b className="text-gold-light">Email &amp; Wallet Change</b> section below (TAC + admin approval required). Phone changes: contact admin/support.</p>
+          <p className="text-xs text-muted">To change your <b>email</b>, <b>phone number</b>, or <b>wallet address</b>, use the <b className="text-gold-light">Email, Phone &amp; Wallet Change</b> section below (TAC + admin approval required).</p>
 
           <div className="border-t border-[var(--line)] pt-4">
             <p className="text-sm font-medium flex items-center gap-2 mb-3"><Users size={16} className="text-gold-light" /> Beneficiary (Pewaris)</p>
@@ -127,11 +127,12 @@ export default function ProfilePage() {
 
       {/* Email / wallet change requests */}
       <div className="glass p-6">
-        <h3 className="font-semibold flex items-center gap-2"><Wallet size={18} className="text-gold-light" /> Email &amp; Wallet Change</h3>
+        <h3 className="font-semibold flex items-center gap-2"><Wallet size={18} className="text-gold-light" /> Email, Phone &amp; Wallet Change</h3>
         <p className="text-sm text-muted mt-1">Each change needs a 6-digit code (TAC) sent to your <b>current email</b>, then admin/staff approval before it takes effect.</p>
 
         <div className="mt-5 grid sm:grid-cols-2 gap-5">
           <ChangeRequestForm field="email" label="New Email" current={user?.email || "—"} placeholder="you@email.com" inputType="email" onDone={loadRequests} />
+          <ChangeRequestForm field="phone" label="New Phone Number" current={user?.phone || "—"} placeholder="+60123456789" inputType="tel" onDone={loadRequests} />
           <ChangeRequestForm field="wallet_address" label="New USDT Address (BEP20)" current={user?.wallet_address || "—"} placeholder="0x… (BEP20 / BSC)" onDone={loadRequests} />
         </div>
 
@@ -141,7 +142,7 @@ export default function ProfilePage() {
             <div className="space-y-2">
               {requests.map((r) => (
                 <div key={r.id} className="flex items-center justify-between gap-3 text-sm bg-black/30 rounded-lg px-3 py-2">
-                  <span className="text-muted">{r.field === "email" ? "Email" : "Wallet"} → <span className="text-foreground break-all">{r.new_value}</span></span>
+                  <span className="text-muted">{r.field === "email" ? "Email" : r.field === "phone" ? "Phone" : "Wallet"} → <span className="text-foreground break-all">{r.new_value}</span></span>
                   <CRStatus status={r.status} />
                 </div>
               ))}
@@ -260,7 +261,7 @@ function CRStatus({ status }: { status: string }) {
 function ChangeRequestForm({
   field, label, current, placeholder, inputType = "text", onDone,
 }: {
-  field: "email" | "wallet_address";
+  field: "email" | "wallet_address" | "phone";
   label: string;
   current: string;
   placeholder: string;

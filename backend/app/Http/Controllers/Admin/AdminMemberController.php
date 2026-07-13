@@ -69,6 +69,8 @@ class AdminMemberController extends Controller
                 return response()->json(['message' => 'That email is already in use by another member.'], 422);
             }
             $user->update(['email' => $changeRequest->new_value]);
+        } elseif ($changeRequest->field === 'phone') {
+            $user->update(['phone' => $changeRequest->new_value]);
         } else { // wallet_address
             $user->update(['wallet_address' => $changeRequest->new_value]);
         }
