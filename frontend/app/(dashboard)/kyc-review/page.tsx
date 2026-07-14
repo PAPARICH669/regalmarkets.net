@@ -5,6 +5,7 @@ import api, { apiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { shortDate } from "@/lib/format";
 import { flagEmoji } from "@/lib/countries";
+import KycReviewModal from "@/components/KycReviewModal";
 
 interface Kyc {
   id: number; username: string; name: string; email: string; phone: string;
@@ -17,6 +18,7 @@ export default function StaffKycPage() {
   const [items, setItems] = useState<Kyc[]>([]);
   const [filter, setFilter] = useState("pending");
   const [error, setError] = useState("");
+  const [viewing, setViewing] = useState<Kyc | null>(null);
 
   const load = useCallback(() => {
     api.get(`/staff/kyc?status=${filter}`).then((r) => setItems(r.data.data)).catch((e) => setError(apiError(e)));
@@ -27,22 +29,12 @@ export default function StaffKycPage() {
     return <div className="glass p-6 text-muted">You are not assigned to KYC.</div>;
   }
 
-  async function viewImage(id: number, kind: "kyc-document" | "kyc-selfie") {
-    const win = window.open("", "_blank");
-    try {
-      const res = await api.get(`/staff/members/${id}/${kind}`, { responseType: "blob" });
-      const url = window.URL.createObjectURL(res.data);
-      if (win) win.location.href = url;
-      else { const a = document.createElement("a"); a.href = url; a.target = "_blank"; a.click(); }
-      setTimeout(() => window.URL.revokeObjectURL(url), 30000);
-    } catch (e) { if (win) win.close(); setError(apiError(e)); }
-  }
   async function verify(id: number) {
-    try { await api.post(`/staff/members/${id}/kyc/verify`); load(); } catch (e) { setError(apiError(e)); }
+    try { await api.post(`/staff/members/${id}/kyc/verify`); setViewing(null); load(); } catch (e) { setError(apiError(e)); }
   }
   async function reject(id: number) {
     const note = window.prompt("Reason for rejection (optional):") ?? "";
-    try { await api.post(`/staff/members/${id}/kyc/reject`, { note }); load(); } catch (e) { setError(apiError(e)); }
+    try { await api.post(`/staff/members/${id}/kyc/reject`, { note }); setViewing(null); load(); } catch (e) { setError(apiError(e)); }
   }
 
   return (
@@ -71,14 +63,9 @@ export default function StaffKycPage() {
                 <td className="font-mono text-xs">{k.id_number}</td>
                 <td className="text-xs text-muted">{shortDate(k.updated_at)}</td>
                 <td>
-                  <div className="flex flex-col gap-1">
-                    {k.kyc_document_path
-                      ? <button onClick={() => viewImage(k.id, "kyc-document")} className="btn-ghost px-3 py-1 text-xs">View ID</button>
-                      : <span className="text-xs text-muted">No ID</span>}
-                    {k.kyc_selfie_path
-                      ? <button onClick={() => viewImage(k.id, "kyc-selfie")} className="btn-ghost px-3 py-1 text-xs">View Selfie</button>
-                      : <span className="text-xs text-muted">No selfie</span>}
-                  </div>
+                  {(k.kyc_document_path || k.kyc_selfie_path)
+                    ? <button onClick={() => setViewing(k)} className="btn-ghost px-3 py-1 text-xs">View</button>
+                    : <span className="text-xs text-muted">—</span>}
                 </td>
                 <td>
                   {k.kyc_status !== "verified" ? (
@@ -94,6 +81,11 @@ export default function StaffKycPage() {
           </tbody>
         </table>
       </div>
+
+      {viewing && (
+        <KycReviewModal member={viewing} basePath="/staff/members"
+          onClose={() => setViewing(null)} onVerify={verify} onReject={reject} />
+      )}
     </div>
   );
 }
