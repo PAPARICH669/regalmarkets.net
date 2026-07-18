@@ -81,15 +81,20 @@ export default function ReportsPage() {
       {/* ---- Daily Commission detail ---- */}
       {tab === "roi" && (
         <div className="glass p-5">
-          <h3 className="font-semibold mb-4">Daily Commission</h3>
-          <ReportTable head={["Date", "Package", "Amount"]} loading={loading} empty={roi.length === 0}>
-            {roi.map((x) => (
+          <h3 className="font-semibold mb-1">Daily Commission</h3>
+          <p className="text-sm text-muted mb-4">The <b className="text-foreground">%</b> is the rate paid that day (commission ÷ package capital).</p>
+          <ReportTable head={["Date", "Package", "%", "Amount"]} loading={loading} empty={roi.length === 0}>
+            {roi.map((x) => {
+              const principal = Number(x.package?.principal ?? 0);
+              const pct = principal > 0 ? (Number(x.amount) / principal) * 100 : 0;
+              return (
               <tr key={x.id} className="border-t border-[var(--line)]">
                 <td className="py-2">{shortDate(x.roi_date).split(",")[0]}</td>
                 <td className="text-muted">Package #{x.package?.id} · {usdt(x.package?.principal)}</td>
+                <td><span className="rank-badge">{pct.toFixed(2)}%</span></td>
                 <td className="gold-text font-medium">{usdt(x.amount)}</td>
               </tr>
-            ))}
+            );})}
           </ReportTable>
         </div>
       )}
