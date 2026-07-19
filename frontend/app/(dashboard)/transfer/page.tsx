@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ArrowLeftRight, Wallet, Mail } from "lucide-react";
+import { ArrowLeftRight, Wallet, Lock } from "lucide-react";
 import api, { apiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { usdt, shortDate } from "@/lib/format";
@@ -10,11 +10,11 @@ interface Hist { id: number; direction: string; amount: string; note: string | n
 
 export default function TransferPage() {
   const { user, refresh } = useAuth();
-  const [step, setStep] = useState<"idle" | "tac">("idle");
+  const [step, setStep] = useState<"idle" | "confirm">("idle");
   const [username, setUsername] = useState("");
   const [amount, setAmount] = useState("");
   const [recipient, setRecipient] = useState<{ id: number; username: string; name: string } | null>(null);
-  const [code, setCode] = useState("");
+  const [password, setPassword] = useState("");
   const [msg, setMsg] = useState(""); const [err, setErr] = useState(""); const [loading, setLoading] = useState(false);
   const [history, setHistory] = useState<Hist[]>([]);
 
@@ -31,15 +31,15 @@ export default function TransferPage() {
       const amt = parseFloat(amount);
       if (!amt || amt < 1) { setErr("Minimum transfer is 1 USDT."); setLoading(false); return; }
       const { data } = await api.post("/ld/transfer/init", { username: username.trim(), amount: amt });
-      setRecipient(data.recipient); setCode(""); setStep("tac"); setMsg(data.message);
+      setRecipient(data.recipient); setPassword(""); setStep("confirm"); setMsg("");
     } catch (e) { setErr(apiError(e, "Username not found.")); } finally { setLoading(false); }
   }
 
   async function confirmTransfer() {
     setErr(""); setMsg(""); setLoading(true);
     try {
-      const { data } = await api.post("/ld/transfer/confirm", { code });
-      setMsg(data.message); setStep("idle"); setUsername(""); setAmount(""); setCode(""); setRecipient(null);
+      const { data } = await api.post("/ld/transfer/confirm", { password });
+      setMsg(data.message); setStep("idle"); setUsername(""); setAmount(""); setPassword(""); setRecipient(null);
       refresh(); loadHistory();
     } catch (e) { setErr(apiError(e)); } finally { setLoading(false); }
   }
@@ -55,7 +55,7 @@ export default function TransferPage() {
             <span className="text-lg font-bold gold-text">{usdt(user?.wallet_l ?? 0)}</span>
           </div>
           <div className="flex items-center gap-2 mt-4"><ArrowLeftRight size={18} className="text-gold-light" /><h3 className="font-semibold">Transfer kredit</h3></div>
-          <p className="text-sm text-muted mt-1">Dari LD WALLET ke A-WALLET ahli. Minimum 1 USDT. Setiap transfer perlu kod TAC.</p>
+          <p className="text-sm text-muted mt-1">Dari LD WALLET ke A-WALLET ahli. Minimum 1 USDT. Setiap transfer perlu kata laluan anda.</p>
 
           {msg && <div className="mt-4 text-sm text-green-400 bg-green-500/10 border border-green-500/30 rounded-lg px-4 py-3">{msg}</div>}
           {err && <div className="mt-4 text-sm text-red-400 bg-red-500/10 border border-red-500/30 rounded-lg px-4 py-3">{err}</div>}
@@ -70,10 +70,11 @@ export default function TransferPage() {
                 <label className="text-sm text-muted">Jumlah (USDT)</label>
                 <input type="number" step="0.01" min="1" className="input-field mt-1" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="cth: 100" required />
               </div>
-              <button disabled={loading} className="btn-gold w-full py-2.5">{loading ? "Menyemak…" : "Hantar"}</button>
+              <button disabled={loading} className="btn-gold w-full py-2.5">{loading ? "Menyemak…" : "Continue"}</button>
             </form>
           ) : (
             <div className="mt-5 border border-[var(--line)] rounded-lg p-4 bg-black/20">
+              <p className="text-sm font-semibold mb-3">Sahkan butiran transfer</p>
               <div className="flex items-center gap-3 mb-3">
                 <div className="w-10 h-10 rounded-full bg-gold-light/15 grid place-items-center text-gold-light font-semibold">
                   {(recipient?.name || recipient?.username || "?").slice(0, 2).toUpperCase()}
@@ -83,15 +84,18 @@ export default function TransferPage() {
                   <p className="text-xs text-muted">@{recipient?.username} · ID {recipient?.id}</p>
                 </div>
               </div>
-              <div className="flex justify-between text-sm border-t border-[var(--line)] pt-2 mb-3">
-                <span className="text-muted">Masuk ke A-WALLET</span><span className="font-semibold">{usdt(amount)}</span>
+              <div className="space-y-1 text-sm border-t border-[var(--line)] pt-2 mb-3">
+                <div className="flex justify-between"><span className="text-muted">Username</span><span className="font-medium">@{recipient?.username}</span></div>
+                <div className="flex justify-between"><span className="text-muted">Nama</span><span className="font-medium">{recipient?.name}</span></div>
+                <div className="flex justify-between"><span className="text-muted">Jumlah masuk A-WALLET</span><span className="font-bold gold-text">{usdt(amount)}</span></div>
               </div>
-              <p className="text-xs text-muted mb-2 flex items-center gap-1"><Mail size={13} /> Kod TAC dihantar ke email anda.</p>
-              <input inputMode="numeric" maxLength={6} className="input-field text-center tracking-[0.4em] font-mono"
-                placeholder="······" value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))} />
+              <label className="text-xs text-muted flex items-center gap-1 mb-1"><Lock size={13} /> Kata laluan anda</label>
+              <input type="password" autoComplete="current-password" className="input-field"
+                placeholder="Masukkan kata laluan" value={password} onChange={(e) => setPassword(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter" && password) confirmTransfer(); }} />
               <div className="flex gap-2 mt-3">
-                <button onClick={() => { setStep("idle"); setRecipient(null); setMsg(""); }} className="btn-ghost flex-1 py-2 text-sm">Batal</button>
-                <button onClick={confirmTransfer} disabled={loading || code.length < 6} className="btn-gold flex-[2] py-2 text-sm">{loading ? "Menghantar…" : "Sahkan & hantar"}</button>
+                <button onClick={() => { setStep("idle"); setRecipient(null); setPassword(""); setMsg(""); setErr(""); }} className="btn-ghost flex-1 py-2 text-sm">Batal</button>
+                <button onClick={confirmTransfer} disabled={loading || !password} className="btn-gold flex-[2] py-2 text-sm">{loading ? "Menghantar…" : "Confirm"}</button>
               </div>
             </div>
           )}

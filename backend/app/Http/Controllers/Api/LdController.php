@@ -14,10 +14,11 @@ use Illuminate\Validation\ValidationException;
 
 /**
  * LD (Leader-Distributor) credit transfers from the LD WALLET (type 'L') into a
- * member's A-WALLET. Two steps, each transfer gated by an email TAC:
- *   1) init()    — validate + lookup recipient, email a TAC, stash the pending details
- *   2) confirm() — verify the TAC, then move LD WALLET -> recipient A-WALLET
- * The member's own A-WALLET is never a transfer source.
+ * member's A-WALLET. Two steps, gated by the LD's own PASSWORD (no email TAC):
+ *   1) init()    — validate + lookup recipient, stash the pending details server-side
+ *   2) confirm() — re-enter password, then move LD WALLET -> recipient A-WALLET
+ * The pending recipient/amount live on the server so what the LD confirmed on
+ * screen is exactly what is executed. The member's own A-WALLET is never a source.
  */
 class LdController extends Controller
 {
@@ -28,7 +29,7 @@ class LdController extends Controller
         abort_unless((bool) $request->user()->is_ld, 403, 'Not authorized.');
     }
 
-    /** Step 1: validate, look up the recipient, email a TAC to the LD. */
+    /** Step 1: validate + look up the recipient, stash the pending transfer. */
     public function init(Request $request)
     {
         $this->ensureLd($request);
@@ -48,53 +49,49 @@ class LdController extends Controller
             throw ValidationException::withMessages(['amount' => 'Insufficient LD WALLET balance.']);
         }
 
-        $code = (string) random_int(100000, 999999);
+        // Stash server-side so confirm() executes exactly what was shown on the
+        // confirmation screen. No TAC — the LD's password is the gate.
         $ld->update([
-            'ld_tac_code'       => $code,
-            'ld_tac_expires_at' => now()->addMinutes(10),
+            'ld_tac_code'       => null,
+            'ld_tac_expires_at' => now()->addMinutes(15),
             'ld_tac_member_id'  => $target->id,
             'ld_tac_amount'     => $amount,
         ]);
 
-        try {
-            app(MailService::class)->sendLdTransferTac(
-                $ld->email, $ld->username, $code, $target->name ?: $target->username, number_format((float) $amount, 2)
-            );
-        } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::warning('LD transfer TAC email failed: ' . $e->getMessage());
-        }
-
         return response()->json([
-            'message'   => 'Kod TAC dihantar ke email anda.',
+            'message'   => 'Sila semak butiran dan masukkan kata laluan anda untuk sahkan.',
             'recipient' => ['id' => $target->id, 'username' => $target->username, 'name' => $target->name ?: $target->username],
+            'amount'    => $amount,
         ]);
     }
 
-    /** Step 2: verify the TAC and execute the LD WALLET -> A-WALLET transfer. */
+    /** Step 2: verify the LD's password and execute the LD WALLET -> A-WALLET transfer. */
     public function confirm(Request $request)
     {
         $this->ensureLd($request);
-        $data = $request->validate(['code' => ['required', 'string']]);
+        $data = $request->validate(['password' => ['required', 'string']]);
         $ld   = $request->user();
 
-        $valid = $ld->ld_tac_code
-            && $ld->ld_tac_expires_at
-            && now()->lessThanOrEqualTo($ld->ld_tac_expires_at)
-            && hash_equals($ld->ld_tac_code, trim($data['code']))
-            && $ld->ld_tac_member_id
-            && $ld->ld_tac_amount;
+        if (! \Illuminate\Support\Facades\Hash::check($data['password'], $ld->password)) {
+            throw ValidationException::withMessages(['password' => 'Kata laluan salah.']);
+        }
 
-        if (! $valid) {
-            throw ValidationException::withMessages(['code' => 'Invalid or expired TAC code.']);
+        $pending = $ld->ld_tac_member_id
+            && $ld->ld_tac_amount
+            && $ld->ld_tac_expires_at
+            && now()->lessThanOrEqualTo($ld->ld_tac_expires_at);
+
+        if (! $pending) {
+            throw ValidationException::withMessages(['password' => 'Sesi tamat tempoh. Sila mula semula.']);
         }
 
         $target = User::find($ld->ld_tac_member_id);
         $amount = number_format((float) $ld->ld_tac_amount, 8, '.', '');
         if (! $target) {
-            throw ValidationException::withMessages(['code' => 'Recipient no longer exists.']);
+            throw ValidationException::withMessages(['password' => 'Recipient no longer exists.']);
         }
         if (bccomp($this->wallets->balance($ld, 'L'), $amount, 8) < 0) {
-            throw ValidationException::withMessages(['code' => 'Insufficient LD WALLET balance.']);
+            throw ValidationException::withMessages(['password' => 'Insufficient LD WALLET balance.']);
         }
 
         $transfer = DB::transaction(function () use ($ld, $target, $amount) {
