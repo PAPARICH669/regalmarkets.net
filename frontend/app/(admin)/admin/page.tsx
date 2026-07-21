@@ -18,7 +18,16 @@ interface Stats {
 
 export default function AdminOverview() {
   const [s, setS] = useState<Stats | null>(null);
-  useEffect(() => { api.get("/admin/dashboard").then((r) => setS(r.data)); }, []);
+  useEffect(() => {
+    const load = () => api.get("/admin/dashboard").then((r) => setS(r.data)).catch(() => {});
+    load();
+    // Re-fetch whenever the admin returns to this tab, so totals (E-Wallet, etc.)
+    // always reflect the latest — e.g. right after a manual wallet adjustment.
+    const onFocus = () => { if (document.visibilityState === "visible") load(); };
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onFocus);
+    return () => { window.removeEventListener("focus", onFocus); document.removeEventListener("visibilitychange", onFocus); };
+  }, []);
   if (!s) return <div className="text-muted py-10">Loading…</div>;
 
   return (
