@@ -94,7 +94,7 @@ export default function AdminFinancials() {
         </table>
       </div>
 
-      {detailFor && <DetailModal row={detailFor} onClose={() => setDetailFor(null)} />}
+      {detailFor && <DetailModal row={detailFor} onClose={() => setDetailFor(null)} onChanged={() => load(q)} />}
     </div>
   );
 }
@@ -102,19 +102,47 @@ export default function AdminFinancials() {
 interface Pkg { id: number; principal: string; total_return: string; total_paid: string; status: string; activated_at: string | null; }
 interface Wd { id: number; amount: string; fee: string; net_amount: string; status: string; wallet_address: string | null; txid: string | null; created_at: string; processed_at: string | null; }
 
-function DetailModal({ row, onClose }: { row: Row; onClose: () => void }) {
+function DetailModal({ row, onClose, onChanged }: { row: Row; onClose: () => void; onChanged: () => void }) {
   const [packages, setPackages] = useState<Pkg[]>([]);
   const [withdrawals, setWithdrawals] = useState<Wd[]>([]);
+  const [balA, setBalA] = useState(row.wallet_a);
+  const [balE, setBalE] = useState(row.wallet_e);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    api.get(`/admin/member-financials/${row.id}`).then((r) => { setPackages(r.data.packages); setWithdrawals(r.data.withdrawals); }).finally(() => setLoading(false));
+  // Adjust form
+  const [type, setType] = useState<"A" | "E" | "L">("A");
+  const [direction, setDirection] = useState<"credit" | "debit">("credit");
+  const [amount, setAmount] = useState("");
+  const [note, setNote] = useState("");
+  const [confirming, setConfirming] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState(""); const [err, setErr] = useState("");
+
+  const loadDetail = useCallback(() => {
+    return api.get(`/admin/member-financials/${row.id}`).then((r) => {
+      setPackages(r.data.packages); setWithdrawals(r.data.withdrawals);
+      setBalA(Number(r.data.member.wallet_a)); setBalE(Number(r.data.member.wallet_e));
+    }).finally(() => setLoading(false));
   }, [row.id]);
+  useEffect(() => { loadDetail(); }, [loadDetail]);
+
+  const curBal = type === "A" ? balA : type === "E" ? balE : 0;
+  const newBal = curBal + (direction === "credit" ? 1 : -1) * (Number(amount) || 0);
+
+  async function doAdjust() {
+    setErr(""); setMsg(""); setBusy(true);
+    try {
+      await api.post(`/admin/members/${row.id}/adjust-wallet`, { type, direction, amount: Number(amount), note: note.trim() || undefined });
+      setMsg(`Berjaya ${direction === "credit" ? "credit" : "debit"} ${usdt(amount)} ke ${type}-Wallet.`);
+      setAmount(""); setNote(""); setConfirming(false);
+      await loadDetail(); onChanged();
+    } catch (e) { setErr(apiError(e)); } finally { setBusy(false); }
+  }
 
   return (
     <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4" onClick={onClose}>
       <div className="w-full max-w-2xl max-h-[85vh] overflow-y-auto rounded-2xl border border-[var(--line)] bg-[var(--surface)]" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center gap-3 px-4 py-3 border-b border-[var(--line)] sticky top-0 bg-[var(--surface)]">
+        <div className="flex items-center gap-3 px-4 py-3 border-b border-[var(--line)] sticky top-0 bg-[var(--surface)] z-10">
           <div className="flex-1">
             <div className="font-semibold">{row.name}</div>
             <div className="text-xs text-muted">@{row.username}</div>
@@ -124,8 +152,58 @@ function DetailModal({ row, onClose }: { row: Row; onClose: () => void }) {
 
         <div className="p-4 grid grid-cols-3 gap-3">
           <Stat label="Modal aktif" value={usdt(row.invested)} />
-          <Stat label="Total Withdraw" value={usdt(row.withdrawn)} danger />
-          <Stat label="Baki A + E" value={usdt(row.wallet_a + row.wallet_e)} />
+          <Stat label="Baki A" value={usdt(balA)} />
+          <Stat label="Baki E" value={usdt(balE)} />
+        </div>
+
+        {/* Adjust wallet */}
+        <div className="mx-4 mb-4 p-4 rounded-xl border border-gold-light/30 bg-gold-light/5">
+          <p className="text-sm font-semibold text-gold-light mb-3">Adjust wallet</p>
+          {msg && <div className="mb-3 text-xs text-green-400 bg-green-500/10 border border-green-500/30 rounded-lg px-3 py-2">{msg}</div>}
+          {err && <div className="mb-3 text-xs text-red-400 bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">{err}</div>}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs text-muted">Wallet</label>
+              <select className="input-field mt-1" value={type} onChange={(e) => { setType(e.target.value as "A" | "E" | "L"); setConfirming(false); }}>
+                <option value="A">A-Wallet (modal)</option>
+                <option value="E">E-Wallet (earning)</option>
+                <option value="L">LD Wallet</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-xs text-muted">Jenis</label>
+              <select className="input-field mt-1" value={direction} onChange={(e) => { setDirection(e.target.value as "credit" | "debit"); setConfirming(false); }}>
+                <option value="credit">Credit (+ tambah)</option>
+                <option value="debit">Debit (− tolak)</option>
+              </select>
+            </div>
+          </div>
+          <div className="mt-3">
+            <label className="text-xs text-muted">Jumlah (USDT)</label>
+            <input type="number" step="0.01" min="0" className="input-field mt-1" value={amount} onChange={(e) => { setAmount(e.target.value); setConfirming(false); }} placeholder="0.00" />
+          </div>
+          <div className="mt-3">
+            <label className="text-xs text-muted">Nota (sebab)</label>
+            <input type="text" className="input-field mt-1" value={note} onChange={(e) => setNote(e.target.value)} placeholder="cth: pelarasan manual / bonus" maxLength={255} />
+          </div>
+          {Number(amount) > 0 && type !== "L" && (
+            <div className="mt-3 text-xs bg-black/30 rounded-lg px-3 py-2">
+              Baki {type}: <b>{usdt(curBal)}</b> → <b className={newBal < 0 ? "text-red-400" : "text-gold-light"}>{usdt(newBal)}</b> selepas {direction} {usdt(amount)}
+              {newBal < 0 && <span className="text-red-400"> (baki tak cukup!)</span>}
+            </div>
+          )}
+          {!confirming ? (
+            <button disabled={!(Number(amount) > 0)} onClick={() => setConfirming(true)}
+              className="btn-gold w-full py-2.5 text-sm mt-3 disabled:opacity-50">Adjust {direction === "credit" ? "credit" : "debit"} {amount ? usdt(amount) : ""}</button>
+          ) : (
+            <div className="mt-3 space-y-2">
+              <p className="text-xs text-yellow-400">Sahkan: <b>{direction === "credit" ? "CREDIT" : "DEBIT"} {usdt(amount)}</b> ke <b>{type}-Wallet @{row.username}</b>?</p>
+              <div className="flex gap-2">
+                <button onClick={() => setConfirming(false)} className="btn-ghost flex-1 py-2 text-sm">Batal</button>
+                <button disabled={busy} onClick={doAdjust} className="btn-gold flex-[2] py-2 text-sm">{busy ? "Memproses…" : "Ya, laksana"}</button>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="px-4 pb-4">
