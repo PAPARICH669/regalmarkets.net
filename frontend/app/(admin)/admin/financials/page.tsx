@@ -114,6 +114,7 @@ function DetailModal({ row, onClose, onChanged }: { row: Row; onClose: () => voi
   const [direction, setDirection] = useState<"credit" | "debit">("credit");
   const [amount, setAmount] = useState("");
   const [note, setNote] = useState("");
+  const [free, setFree] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState(""); const [err, setErr] = useState("");
@@ -132,9 +133,9 @@ function DetailModal({ row, onClose, onChanged }: { row: Row; onClose: () => voi
   async function doAdjust() {
     setErr(""); setMsg(""); setBusy(true);
     try {
-      await api.post(`/admin/members/${row.id}/adjust-wallet`, { type, direction, amount: Number(amount), note: note.trim() || undefined });
-      setMsg(`Berjaya ${direction === "credit" ? "credit" : "debit"} ${usdt(amount)} ke ${type}-Wallet.`);
-      setAmount(""); setNote(""); setConfirming(false);
+      await api.post(`/admin/members/${row.id}/adjust-wallet`, { type, direction, amount: Number(amount), note: note.trim() || undefined, free: direction === "credit" ? free : false });
+      setMsg(`Berjaya ${direction === "credit" ? (free ? "credit FREE" : "credit") : "debit"} ${usdt(amount)} ke ${type}-Wallet.`);
+      setAmount(""); setNote(""); setFree(false); setConfirming(false);
       await loadDetail(); onChanged();
     } catch (e) { setErr(apiError(e)); } finally { setBusy(false); }
   }
@@ -186,6 +187,12 @@ function DetailModal({ row, onClose, onChanged }: { row: Row; onClose: () => voi
             <label className="text-xs text-muted">Nota (sebab)</label>
             <input type="text" className="input-field mt-1" value={note} onChange={(e) => setNote(e.target.value)} placeholder="cth: pelarasan manual / bonus" maxLength={255} />
           </div>
+          {direction === "credit" && (
+            <label className="mt-3 flex items-start gap-2 cursor-pointer text-xs">
+              <input type="checkbox" className="w-4 h-4 mt-0.5 accent-[var(--gold)]" checked={free} onChange={(e) => { setFree(e.target.checked); setConfirming(false); }} />
+              <span>Kredit <b className="text-gold-light">FREE</b> (promosi / hadiah) — <b>jangan kira sebagai deposit</b> dalam laporan.</span>
+            </label>
+          )}
           {Number(amount) > 0 && type !== "L" && (
             <div className="mt-3 text-xs bg-black/30 rounded-lg px-3 py-2">
               Baki {type}: <b>{usdt(curBal)}</b> → <b className={newBal < 0 ? "text-red-400" : "text-gold-light"}>{usdt(newBal)}</b> selepas {direction} {usdt(amount)}

@@ -127,10 +127,17 @@ class AdminMemberController extends Controller
             'direction' => ['required', 'in:credit,debit'],
             'amount'    => ['required', 'numeric', 'min:0.00000001'],
             'note'      => ['nullable', 'string', 'max:255'],
+            'free'      => ['nullable', 'boolean'],
         ]);
 
+        // A "free" credit (promo/gift) is recorded as type `free_credit` so it is
+        // NEVER counted as a real deposit in dashboard/report totals. The wallet
+        // balance still increases. Only applies to credits.
+        $isFree = $data['direction'] === 'credit' && ! empty($data['free']);
+
         if ($data['direction'] === 'credit') {
-            $this->wallets->credit($user, $data['type'], $data['amount'], 'admin_adjust', null, ['admin' => $request->user()->id], $data['note'] ?? 'Admin credit');
+            $this->wallets->credit($user, $data['type'], $data['amount'], $isFree ? 'free_credit' : 'admin_adjust',
+                null, ['admin' => $request->user()->id, 'free' => $isFree], $data['note'] ?? ($isFree ? 'Free credit' : 'Admin credit'));
         } else {
             $this->wallets->debit($user, $data['type'], $data['amount'], 'admin_adjust', null, ['admin' => $request->user()->id], $data['note'] ?? 'Admin debit');
         }
@@ -255,10 +262,10 @@ class AdminMemberController extends Controller
     /** History of admin wallet adjustments (credit/debit) — id, amount, wallet, note. */
     public function walletAdjustments()
     {
-        return \App\Models\WalletTransaction::where('type', 'admin_adjust')
+        return \App\Models\WalletTransaction::whereIn('type', ['admin_adjust', 'free_credit'])
             ->with('user:id,username')
             ->latest()->take(100)
-            ->get(['id', 'user_id', 'wallet_type', 'direction', 'amount', 'note', 'created_at']);
+            ->get(['id', 'user_id', 'wallet_type', 'type', 'direction', 'amount', 'note', 'created_at']);
     }
 
     /** List KYC submissions (default pending). */
