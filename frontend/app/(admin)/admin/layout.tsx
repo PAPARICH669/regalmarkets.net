@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   LayoutDashboard, ArrowDownToLine, ArrowUpFromLine, Users, Settings,
-  Megaphone, Wrench, Layers, FileText, LogOut, Menu, ShieldCheck, TrendingUp, UserCog, Gift, History,
+  Megaphone, Wrench, Layers, FileText, LogOut, Menu, ShieldCheck, TrendingUp, UserCog, Gift, History, Coins,
 } from "lucide-react";
 import Logo from "@/components/Logo";
 import IdleLogout from "@/components/IdleLogout";
@@ -18,6 +18,7 @@ const NAV = [
   { href: "/admin/deposits", label: "Deposits", icon: ArrowDownToLine },
   { href: "/admin/withdrawals", label: "Withdrawals", icon: ArrowUpFromLine },
   { href: "/admin/members", label: "Members", icon: Users, staff: true },
+  { href: "/admin/financials", label: "Member Financials", icon: Coins },
   { href: "/admin/kyc", label: "KYC", icon: ShieldCheck, staff: true },
   { href: "/admin/change-requests", label: "Change Requests", icon: UserCog, staff: true },
   { href: "/admin/sponsor-rewards", label: "Sponsor Rewards", icon: Gift },

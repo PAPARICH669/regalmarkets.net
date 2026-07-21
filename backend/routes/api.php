@@ -133,6 +133,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::middleware('admin')->group(function () {
             Route::get('/dashboard', [AdminDashboardController::class, 'index']);
 
+            Route::get('/member-financials', [\App\Http\Controllers\Admin\AdminFinancialController::class, 'index']);
+            Route::get('/member-financials/export', [\App\Http\Controllers\Admin\AdminFinancialController::class, 'export']);
+            Route::get('/member-financials/{user}', [\App\Http\Controllers\Admin\AdminFinancialController::class, 'show']);
+
             Route::get('/deposits', [AdminDepositController::class, 'index']);
             Route::post('/deposits/{deposit}/approve', [AdminDepositController::class, 'approve']);
             Route::post('/deposits/{deposit}/reject', [AdminDepositController::class, 'reject']);
