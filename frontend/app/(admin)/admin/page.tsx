@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import {
-  Users, ArrowDownToLine, ArrowUpFromLine, AlertTriangle, Layers, Gift, Coins, Activity,
+  Users, ArrowDownToLine, ArrowUpFromLine, AlertTriangle, Layers, Gift, Coins, Activity, Wallet,
 } from "lucide-react";
 import StatCard from "@/components/StatCard";
 import AdminRegisterLink from "@/components/AdminRegisterLink";
@@ -10,7 +10,7 @@ import api from "@/lib/api";
 import { usdt } from "@/lib/format";
 
 interface Stats {
-  members: number; frozen_members: number; total_deposits: number; pending_deposits: number;
+  members: number; frozen_members: number; total_deposits: number; real_deposits: number; pending_deposits: number;
   total_withdrawals: number; pending_withdrawals: number; roi_liability: number;
   total_sponsor_bonus: number; total_matching_bonus: number; wallet_a_total: number;
   wallet_e_total: number; active_packages: number;
@@ -36,6 +36,7 @@ export default function AdminOverview() {
       <AdminRegisterLink />
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard label="Total Members" value={s.members} icon={<Users size={18} />} accent sub={`${s.frozen_members} frozen`} />
+        <StatCard label="Deposit Sebenar" value={usdt(s.real_deposits)} icon={<Wallet size={18} />} accent sub="borang + admin + LD" />
         <StatCard label="Total Deposits" value={usdt(s.total_deposits)} icon={<ArrowDownToLine size={18} />} sub={`${s.pending_deposits} pending`} />
         <StatCard label="Total Withdrawals" value={usdt(s.total_withdrawals)} icon={<ArrowUpFromLine size={18} />} sub={`${s.pending_withdrawals} pending`} />
         <StatCard label="Commission Liability" value={usdt(s.roi_liability)} icon={<AlertTriangle size={18} />} accent sub={`${s.active_packages} active packages`} />

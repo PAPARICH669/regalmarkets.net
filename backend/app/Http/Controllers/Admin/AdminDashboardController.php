@@ -29,9 +29,15 @@ class AdminDashboardController extends Controller
         // Manual deduction from the Total Deposit figure (admin-configurable),
         // e.g. to back out non-deposit seed credits.
         $depositAdjustment = (float) app(\App\Services\SettingsService::class)->get('total_deposit_adjustment', 0);
-        $totalDeposits = (float) Deposit::where('status', 'approved')->whereNotIn('user_id', $excluded)->sum('amount')
-            + (float) WalletTransaction::where('type', 'admin_adjust')->where('direction', 'credit')->where('wallet_type', 'A')->whereNotIn('user_id', $excluded)->sum('amount')
-            - $depositAdjustment;
+        $formDeposits  = (float) Deposit::where('status', 'approved')->whereNotIn('user_id', $excluded)->sum('amount');
+        $adminCredits  = (float) WalletTransaction::where('type', 'admin_adjust')->where('direction', 'credit')->where('wallet_type', 'A')->whereNotIn('user_id', $excluded)->sum('amount');
+        $ldCredits     = (float) WalletTransaction::where('type', 'ld_transfer')->where('direction', 'credit')->where('wallet_type', 'A')->whereNotIn('user_id', $excluded)->sum('amount');
+
+        $totalDeposits = $formDeposits + $adminCredits - $depositAdjustment;
+        // Real money into member A-WALLETs across all three channels (form + admin
+        // top-ups + LD transfers), excluding dummy accounts and FREE credits
+        // (which are type free_credit, so not in $adminCredits).
+        $realDeposits  = $formDeposits + $adminCredits + $ldCredits;
 
         return response()->json([
             'members'             => User::members()->whereNotIn('id', $excluded)->count(),
@@ -39,6 +45,7 @@ class AdminDashboardController extends Controller
             // Real capital in = approved deposits (form) + manual admin A-WALLET
             // top-ups, minus the configurable deposit adjustment. Dummy excluded.
             'total_deposits'      => $totalDeposits,
+            'real_deposits'       => $realDeposits,
             'pending_deposits'    => Deposit::where('status', 'pending')->whereNotIn('user_id', $excluded)->count(),
             'total_withdrawals'   => (float) Withdrawal::where('status', 'approved')->whereNotIn('user_id', $excluded)->sum('amount'),
             'pending_withdrawals' => Withdrawal::where('status', 'pending')->whereNotIn('user_id', $excluded)->count(),
