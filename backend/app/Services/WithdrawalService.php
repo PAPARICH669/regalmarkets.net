@@ -65,6 +65,15 @@ class WithdrawalService
         $fee       = number_format($feeFlat, 8, '.', '');
         $net       = bcsub($amountStr, $fee, 8);
 
+        // Insufficient balance is a normal user mistake — return a friendly 422,
+        // not a 500 from the wallet debit throwing "Insufficient E-WALLET balance".
+        $balance = $this->wallets->balance($user, 'E');
+        if (bccomp($balance, $amountStr, 8) < 0) {
+            throw ValidationException::withMessages([
+                'amount' => 'Insufficient E-Wallet balance. Your balance is ' . number_format((float) $balance, 2) . ' USDT.',
+            ]);
+        }
+
         return DB::transaction(function () use ($user, $amountStr, $fee, $net, $walletAddress) {
             $withdrawal = Withdrawal::create([
                 'user_id'        => $user->id,
