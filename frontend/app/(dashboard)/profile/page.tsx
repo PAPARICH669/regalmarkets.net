@@ -116,9 +116,9 @@ export default function ProfilePage() {
           </div>
 
           <div className="border-t border-[var(--line)] pt-4">
-            <label className="text-sm text-muted flex items-center gap-2"><Wallet size={15} className="text-gold-light" /> USDT Withdrawal Address <span className="text-xs">(admin only)</span> <span className="text-gold-light text-xs">(BEP20)</span></label>
+            <label className="text-sm text-muted flex items-center gap-2"><Wallet size={15} className="text-gold-light" /> USDT Withdrawal Address <span className="text-xs">(change needs approval)</span> <span className="text-gold-light text-xs">(BEP20)</span></label>
             <input className="input-field mt-1 opacity-60" value={user?.wallet_address || "—"} disabled />
-            <p className="text-xs text-muted mt-1">🔒 To change this, use the <b className="text-gold-light">Email &amp; Wallet Change</b> section below.</p>
+            <p className="text-xs text-muted mt-1">You can change this <b className="text-foreground">anytime</b> in the <b className="text-gold-light">Email, Phone &amp; Wallet Change</b> section below — a TAC + admin/staff approval is required.</p>
           </div>
 
           <button disabled={pLoad} className="btn-gold px-6 py-2.5">{pLoad ? "Saving…" : "Save Profile"}</button>
