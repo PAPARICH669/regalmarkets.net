@@ -33,6 +33,8 @@ export default function AdminSettings() {
         deposit_bonus_percent: Number(s?.deposit_bonus_percent ?? 0),
         deposit_bonus_start: s?.deposit_bonus_start ? String(s.deposit_bonus_start) : null,
         deposit_bonus_end: s?.deposit_bonus_end ? String(s.deposit_bonus_end) : null,
+        deposit_address: s?.deposit_address ? String(s.deposit_address).trim() : null,
+        deposit_network: String(s?.deposit_network ?? "BEP20 (BSC)"),
       };
       const { data } = await api.put("/admin/settings", payload);
       setS(data.settings); setMsg("Settings saved.");
@@ -77,6 +79,23 @@ export default function AdminSettings() {
           </label>
           <p className="text-xs text-muted mt-1 ml-7">When on, <b>admins and staff</b> must enter a 6-digit code emailed to them at login. Regular members log in without a code. Keep on for best security.</p>
         </div>
+        <div className="sm:col-span-2 border-t border-[var(--line)] pt-4">
+          <p className="text-sm font-medium mb-1">💳 USDT Deposit Address (BEP20)</p>
+          <p className="text-xs text-muted mb-3">Alamat yang member hantar USDT untuk deposit. QR dijana automatik dari alamat ini di halaman Deposit member.</p>
+          <div className="grid sm:grid-cols-2 gap-4">
+            <div>
+              <label className="text-sm text-muted">Deposit address</label>
+              <input type="text" className="input-field mt-1 font-mono text-sm" value={String(s.deposit_address ?? "")}
+                onChange={(e) => field("deposit_address", e.target.value)} placeholder="0x… (42 aksara)" />
+            </div>
+            <div>
+              <label className="text-sm text-muted">Network label</label>
+              <input type="text" className="input-field mt-1" value={String(s.deposit_network ?? "")}
+                onChange={(e) => field("deposit_network", e.target.value)} placeholder="BEP20 (BSC)" />
+            </div>
+          </div>
+        </div>
+
         <div className="sm:col-span-2 border-t border-[var(--line)] pt-4">
           <label className="flex items-center gap-3 cursor-pointer">
             <input type="checkbox" className="w-4 h-4 accent-[var(--gold)]"

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Copy, Check, Wallet } from "lucide-react";
+import { QRCodeCanvas } from "qrcode.react";
 import api, { apiError } from "@/lib/api";
 import { usdt, shortDate } from "@/lib/format";
 import StatusPill from "@/components/StatusPill";
@@ -82,11 +83,19 @@ export default function DepositPage() {
               <span className="text-sm font-medium flex items-center gap-2"><Wallet size={16} className="text-gold-light" /> Send USDT to (deposit address)</span>
               <span className="rank-badge">{addr.network}</span>
             </div>
+            {addr.address && (
+              <div className="mt-3 flex justify-center">
+                <div className="bg-white p-2 rounded-lg">
+                  <QRCodeCanvas value={addr.address} size={150} includeMargin={false} />
+                </div>
+              </div>
+            )}
             <div className="mt-3 flex items-center gap-2 bg-black/40 rounded-lg p-3">
               <span className="flex-1 text-xs break-all font-mono">{addr.address || "loading…"}</span>
               <button type="button" onClick={() => { navigator.clipboard.writeText(addr.address); setCopied(true); setTimeout(() => setCopied(false), 1500); }}
                 className="btn-ghost p-2 shrink-0" title="Copy address">{copied ? <Check size={15} className="text-green-400" /> : <Copy size={15} />}</button>
             </div>
+            <p className="text-[11px] text-muted mt-1 text-center">Imbas QR atau salin alamat</p>
             <p className="text-xs text-muted mt-2">⚠️ Send <b>USDT on {addr.network}</b> only. {auto ? "After sending, paste your transaction hash below — it credits automatically." : "After sending, submit the amount + TXID below for approval."}</p>
           </div>
 
