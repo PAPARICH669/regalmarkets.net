@@ -112,8 +112,11 @@ class MiscController extends Controller
             ))->pluck('pct', 'ym');
 
             // Fixed range: Jun 2026 → Dec 2026. Future months show as empty bars.
-            $start = \Carbon\Carbon::createFromFormat('Y-m', '2026-06', $tz)->startOfMonth();
-            $end   = \Carbon\Carbon::createFromFormat('Y-m', '2026-12', $tz)->startOfMonth();
+            // NOTE: parse with an explicit day 1 — createFromFormat('Y-m', ...) fills
+            // in the CURRENT day, so on the 31st "2026-06" overflows to 1 July and
+            // drops June from the range.
+            $start = \Carbon\Carbon::createFromFormat('Y-m-d', '2026-06-01', $tz)->startOfMonth();
+            $end   = \Carbon\Carbon::createFromFormat('Y-m-d', '2026-12-01', $tz)->startOfMonth();
             $now   = now($tz)->startOfMonth();
             $curYm = $now->format('Y-m');
 
