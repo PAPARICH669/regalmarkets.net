@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { X, AlertTriangle } from "lucide-react";
 import api, { apiError } from "@/lib/api";
 import { usdt, shortDate } from "@/lib/format";
 import StatusPill from "@/components/StatusPill";
@@ -11,20 +12,26 @@ export default function AdminWithdrawals() {
   const [items, setItems] = useState<Withdrawal[]>([]);
   const [filter, setFilter] = useState("pending");
   const [error, setError] = useState("");
+  const [confirming, setConfirming] = useState<Withdrawal | null>(null);
+  const [txid, setTxid] = useState("");
+  const [busy, setBusy] = useState(false);
 
   const load = useCallback(() => {
-    api.get(`/admin/withdrawals${filter ? `?status=${filter}` : ""}`).then((r) => setItems(r.data.data));
+    api.get(`/admin/withdrawals${filter ? `?status=${filter}` : ""}`).then((r) => setItems(r.data.data)).catch((e) => setError(apiError(e)));
   }, [filter]);
   useEffect(() => { load(); }, [load]);
 
-  async function approve(id: number) {
-    setError("");
-    const txid = window.prompt("Enter payout TXID (optional):") ?? "";
-    try { await api.post(`/admin/withdrawals/${id}/approve`, { txid }); load(); }
-    catch (err) { setError(apiError(err)); }
+  async function confirmApprove() {
+    if (!confirming) return;
+    setError(""); setBusy(true);
+    try {
+      await api.post(`/admin/withdrawals/${confirming.id}/approve`, { txid: txid.trim() });
+      setConfirming(null); setTxid(""); load();
+    } catch (err) { setError(apiError(err)); } finally { setBusy(false); }
   }
   async function reject(id: number) {
     setError("");
+    if (!window.confirm("Reject this withdrawal? The held amount is returned to the member's E-Wallet.")) return;
     try { await api.post(`/admin/withdrawals/${id}/reject`, { note: "Rejected by admin" }); load(); }
     catch (err) { setError(apiError(err)); }
   }
@@ -52,7 +59,7 @@ export default function AdminWithdrawals() {
                 <td>
                   {w.status === "pending" ? (
                     <div className="flex gap-2">
-                      <button onClick={() => approve(w.id)} className="btn-gold px-3 py-1 text-xs">Approve</button>
+                      <button onClick={() => { setConfirming(w); setTxid(""); setError(""); }} className="btn-gold px-3 py-1 text-xs">Approve</button>
                       <button onClick={() => reject(w.id)} className="btn-ghost px-3 py-1 text-xs text-red-400">Reject</button>
                     </div>
                   ) : <span className="text-xs text-muted">—</span>}
@@ -63,6 +70,45 @@ export default function AdminWithdrawals() {
           </tbody>
         </table>
       </div>
+
+      {/* Approve confirmation */}
+      {confirming && (
+        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4" onClick={() => !busy && setConfirming(null)}>
+          <div className="w-full max-w-md rounded-2xl border border-[var(--line)] bg-[var(--surface)]" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center gap-2 px-4 py-3 border-b border-[var(--line)]">
+              <span className="font-semibold flex-1">Sahkan Withdrawal</span>
+              <button onClick={() => setConfirming(null)} aria-label="Close" className="btn-ghost p-2"><X size={16} /></button>
+            </div>
+            <div className="p-4 space-y-3">
+              <div className="rounded-lg bg-amber-500/10 border border-amber-500/30 px-3 py-2 text-xs text-amber-300 flex items-start gap-2">
+                <AlertTriangle size={14} className="mt-0.5 shrink-0" /> Semak butiran betul-betul sebelum sahkan. Selepas approve, bayaran dianggap dibuat.
+              </div>
+              <div className="space-y-1.5 text-sm bg-black/30 rounded-lg p-3">
+                <Row k="Member" v={`@${confirming.user?.username}`} />
+                <Row k="Amount (kasar)" v={`${usdt(confirming.amount)} USDT`} />
+                <Row k="Fee" v={`${usdt(confirming.fee)} USDT`} />
+                <Row k="Net (dibayar)" v={`${usdt(confirming.net_amount)} USDT`} bold />
+              </div>
+              <div>
+                <span className="text-xs text-muted">Alamat payout (BEP20)</span>
+                <div className="font-mono text-xs break-all bg-black/30 rounded-lg p-2 mt-1">{confirming.wallet_address}</div>
+              </div>
+              <div>
+                <label className="text-xs text-muted">Payout TXID (pilihan — hash transaksi bayaran)</label>
+                <input className="input-field mt-1 font-mono text-sm" value={txid} onChange={(e) => setTxid(e.target.value)} placeholder="0x… (jika ada)" />
+              </div>
+              <div className="flex gap-2 pt-1">
+                <button onClick={() => setConfirming(null)} disabled={busy} className="btn-ghost flex-1 py-2.5 text-sm">Batal</button>
+                <button onClick={confirmApprove} disabled={busy} className="btn-gold flex-[2] py-2.5 text-sm">{busy ? "Memproses…" : "✓ Sahkan & Approve"}</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
+}
+
+function Row({ k, v, bold }: { k: string; v: string; bold?: boolean }) {
+  return <div className="flex justify-between"><span className="text-muted">{k}</span><span className={bold ? "font-bold gold-text" : "font-medium"}>{v}</span></div>;
 }

@@ -37,7 +37,7 @@ class AdminMemberController extends Controller
     public function pendingCounts()
     {
         return response()->json([
-            'deposits'        => \App\Models\Deposit::where('status', 'pending')->count(),
+            'deposits'        => \App\Models\Deposit::whereIn('status', ['pending', 'review'])->count(),
             'withdrawals'     => \App\Models\Withdrawal::where('status', 'pending')->count(),
             'kyc'             => User::where('kyc_status', 'pending')->count(),
             'change_requests' => \App\Models\AccountChangeRequest::where('status', 'pending')->count(),
