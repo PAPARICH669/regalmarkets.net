@@ -30,6 +30,9 @@ class User extends Authenticatable
 
     protected $hidden = [
         'password', 'remember_token', 'two_factor_secret', 'email_verification_code', 'login_tac_code', 'ld_tac_code',
+        // Never serialize the login IP — protects the admin's/members' location
+        // even if a raw User model is ever returned in a response by mistake.
+        'last_login_ip',
     ];
 
     protected $casts = [
