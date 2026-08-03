@@ -39,15 +39,24 @@ class DashboardController extends Controller
         $matchingBonus = (float) MatchingBonusLog::where('to_user_id', $user->id)->sum('amount');
         $roiEarned     = (float) RoiLog::where('user_id', $user->id)->sum('amount');
 
-        // Last 14 days earnings series (for chart)
+        // Last 14 days earnings series (for chart). Pre-aggregate in 3 grouped
+        // queries (was 3 queries × 14 days = 42).
         $invested = (float) $user->total_invested;
-        $series = collect(range(13, 0))->map(function ($daysAgo) use ($user, $invested) {
-            $date = Carbon::today()->subDays($daysAgo);
-            $roi  = (float) RoiLog::where('user_id', $user->id)->whereDate('roi_date', $date)->sum('amount');
-            $match = (float) MatchingBonusLog::where('to_user_id', $user->id)->whereDate('created_at', $date)->sum('amount');
-            $spon = (float) SponsorBonusLog::where('to_user_id', $user->id)->whereDate('created_at', $date)->sum('amount');
+        $from     = Carbon::today()->subDays(13)->toDateString();
+        $roiByDate = RoiLog::where('user_id', $user->id)->where('roi_date', '>=', $from)
+            ->selectRaw("DATE_FORMAT(roi_date,'%Y-%m-%d') d, SUM(amount) s")->groupBy('d')->pluck('s', 'd');
+        $matchByDate = MatchingBonusLog::where('to_user_id', $user->id)->where('created_at', '>=', $from . ' 00:00:00')
+            ->selectRaw("DATE_FORMAT(created_at,'%Y-%m-%d') d, SUM(amount) s")->groupBy('d')->pluck('s', 'd');
+        $sponByDate = SponsorBonusLog::where('to_user_id', $user->id)->where('created_at', '>=', $from . ' 00:00:00')
+            ->selectRaw("DATE_FORMAT(created_at,'%Y-%m-%d') d, SUM(amount) s")->groupBy('d')->pluck('s', 'd');
+
+        $series = collect(range(13, 0))->map(function ($daysAgo) use ($invested, $roiByDate, $matchByDate, $sponByDate) {
+            $ds    = Carbon::today()->subDays($daysAgo)->toDateString();
+            $roi   = (float) ($roiByDate[$ds] ?? 0);
+            $match = (float) ($matchByDate[$ds] ?? 0);
+            $spon  = (float) ($sponByDate[$ds] ?? 0);
             return [
-                'date'        => $date->toDateString(),
+                'date'        => $ds,
                 'roi'         => $roi,
                 'roi_percent' => $invested > 0 ? round($roi / $invested * 100, 3) : 0,
                 'matching'    => $match,
