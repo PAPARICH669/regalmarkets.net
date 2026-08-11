@@ -8,6 +8,7 @@ import RankBadge from "@/components/RankBadge";
 
 interface Member {
   id: number; username: string; email: string; phone?: string; kyc_status?: string;
+  email_verified_at?: string | null;
   total_fund: string; total_invested: string; wallet_address?: string | null;
   is_frozen: boolean; is_staff?: boolean; is_admin?: boolean; is_ld?: boolean; can_kyc?: boolean; can_cr?: boolean; referrals_count: number;
   rank?: { id: number; name: string }; sponsor?: { id: number; username: string } | null;
@@ -29,6 +30,10 @@ export default function AdminMembers() {
 
   async function freeze(id: number) {
     try { await api.post(`/admin/members/${id}/freeze`); load(); } catch (e) { setError(apiError(e)); }
+  }
+  async function verifyEmail(id: number, username: string) {
+    if (!window.confirm(`Mark @${username}'s email as verified? They will be able to log in.`)) return;
+    try { await api.post(`/admin/members/${id}/verify-email`); load(); } catch (e) { setError(apiError(e)); }
   }
   async function adjust(id: number) {
     const type = window.prompt("Wallet — A (capital), E (earnings), or L (LD WALLET):", "A"); if (!type) return;
@@ -104,7 +109,10 @@ export default function AdminMembers() {
                   <div className="flex flex-wrap gap-1.5">
                     <button onClick={() => editContact(m.id, m.email, m.phone || "")} className="btn-ghost px-2 py-1 text-xs">Contact</button>
                     {isAdmin && (<>
-                      <button onClick={() => freeze(m.id)} className="btn-ghost px-2 py-1 text-xs">{m.is_frozen ? "Unfreeze" : "Freeze"}</button>
+                      {!m.email_verified_at && (
+                      <button onClick={() => verifyEmail(m.id, m.username)} className="px-2 py-1 text-xs rounded bg-green-500/20 text-green-300" title="Email belum verify — tekan untuk sahkan manual">✓ Verify Email</button>
+                    )}
+                    <button onClick={() => freeze(m.id)} className="btn-ghost px-2 py-1 text-xs">{m.is_frozen ? "Unfreeze" : "Freeze"}</button>
                       <button onClick={() => adjust(m.id)} className="btn-ghost px-2 py-1 text-xs">Adjust</button>
                       <button onClick={() => resetPw(m.id, m.username)} className="btn-ghost px-2 py-1 text-xs">Reset PW</button>
                       <button onClick={() => setWallet(m.id, m.wallet_address)} className="btn-ghost px-2 py-1 text-xs">Wallet</button>

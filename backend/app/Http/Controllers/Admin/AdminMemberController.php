@@ -183,6 +183,17 @@ class AdminMemberController extends Controller
     }
 
     /** Admin edits a member's email / phone (members cannot change these themselves). */
+    /** Manually mark a member's email as verified (e.g. they never got the code). */
+    public function verifyEmail(Request $request, User $user)
+    {
+        if ($user->email_verified_at) {
+            return response()->json(['message' => 'Email is already verified.'], 422);
+        }
+        $user->update(['email_verified_at' => now(), 'email_verification_code' => null]);
+        $this->audit->log($request, 'member.verify_email', $user);
+        return response()->json(['message' => 'Email marked as verified.']);
+    }
+
     public function editContact(Request $request, User $user)
     {
         $data = $request->validate([
