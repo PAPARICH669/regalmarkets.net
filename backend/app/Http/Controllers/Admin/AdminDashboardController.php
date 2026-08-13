@@ -36,8 +36,9 @@ class AdminDashboardController extends Controller
         $totalDeposits = $formDeposits + $adminCredits - $depositAdjustment;
         // Real money into member A-WALLETs across all three channels (form + admin
         // top-ups + LD transfers), excluding dummy accounts and FREE credits
-        // (which are type free_credit, so not in $adminCredits).
-        $realDeposits  = $formDeposits + $adminCredits + $ldCredits;
+        // (type free_credit, not in $adminCredits), MINUS the admin deduct setting
+        // — so changing "Total Deposit Deduction" moves this figure live.
+        $realDeposits  = $formDeposits + $adminCredits + $ldCredits - $depositAdjustment;
 
         return response()->json([
             'members'             => User::members()->whereNotIn('id', $excluded)->count(),
