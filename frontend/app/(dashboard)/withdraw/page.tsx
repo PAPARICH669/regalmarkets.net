@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Coins } from "lucide-react";
 import api, { apiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import { usdt, shortDate } from "@/lib/format";
+import { usdt, usdtFloor, floorTo, shortDate } from "@/lib/format";
 import StatusPill from "@/components/StatusPill";
 import KycBanner from "@/components/KycBanner";
 
@@ -56,13 +56,22 @@ export default function WithdrawPage() {
           )}
           <div className="mt-4 flex items-center justify-between bg-black/30 rounded-lg p-3">
             <span className="text-sm text-muted flex items-center gap-2"><Coins size={16} className="text-gold-light" /> E-WALLET balance</span>
-            <span className="text-lg font-bold gold-text">{usdt(user?.wallet_e ?? 0)}</span>
+            <span className="text-lg font-bold gold-text">{usdtFloor(user?.wallet_e ?? 0)}</span>
           </div>
           {msg && <div className="mt-4 text-sm text-green-400 bg-green-500/10 border border-green-500/30 rounded-lg px-4 py-3">{msg}</div>}
           {error && <div className="mt-4 text-sm text-red-400 bg-red-500/10 border border-red-500/30 rounded-lg px-4 py-3">{error}</div>}
           <form onSubmit={submit} className="mt-5 space-y-4">
             <div>
-              <label className="text-sm text-muted">Amount (USDT)</label>
+              <div className="flex items-center justify-between">
+                <label className="text-sm text-muted">Amount (USDT)</label>
+                <button
+                  type="button"
+                  onClick={() => setAmount(String(floorTo(user?.wallet_e ?? 0)))}
+                  className="text-xs px-2 py-0.5 rounded bg-gold-light/15 text-gold-light hover:bg-gold-light/25"
+                >
+                  Max {usdtFloor(user?.wallet_e ?? 0)}
+                </button>
+              </div>
               <input type="number" step="0.01" className="input-field mt-1" value={amount} onChange={(e) => setAmount(e.target.value)} required />
             </div>
             <div>
