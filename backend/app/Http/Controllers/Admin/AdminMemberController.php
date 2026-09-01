@@ -71,8 +71,8 @@ class AdminMemberController extends Controller
             $user->update(['email' => $changeRequest->new_value]);
         } elseif ($changeRequest->field === 'phone') {
             $user->update(['phone' => $changeRequest->new_value]);
-        } else { // wallet_address
-            $user->update(['wallet_address' => $changeRequest->new_value]);
+        } else { // wallet_address / btc_address / eth_address / sol_address
+            $user->update([$changeRequest->field => $changeRequest->new_value]);
         }
 
         $changeRequest->update([

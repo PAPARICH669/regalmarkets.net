@@ -134,7 +134,11 @@ export default function ProfilePage() {
           <ChangeRequestForm field="email" label="New Email" current={user?.email || "—"} placeholder="you@email.com" inputType="email" onDone={loadRequests} />
           <ChangeRequestForm field="phone" label="New Phone Number" current={user?.phone || "—"} placeholder="+60123456789" inputType="tel" onDone={loadRequests} />
           <ChangeRequestForm field="wallet_address" label="New USDT Address (BEP20)" current={user?.wallet_address || "—"} placeholder="0x… (BEP20 / BSC)" onDone={loadRequests} />
+          <ChangeRequestForm field="btc_address" label="New BTC Address (BEP20)" current={user?.btc_address || "—"} placeholder="0x… (BEP20 / BSC)" onDone={loadRequests} />
+          <ChangeRequestForm field="eth_address" label="New ETH Address (BEP20)" current={user?.eth_address || "—"} placeholder="0x… (BEP20 / BSC)" onDone={loadRequests} />
+          <ChangeRequestForm field="sol_address" label="New SOL Address (BEP20)" current={user?.sol_address || "—"} placeholder="0x… (BEP20 / BSC)" onDone={loadRequests} />
         </div>
+        <p className="text-xs text-muted mt-3">BTC, ETH &amp; SOL are all received on the <b className="text-gold-light">BEP20 (BSC)</b> network, so every address is a <b>0x…</b> address. Set these to withdraw in those coins.</p>
 
         {requests.length > 0 && (
           <div className="mt-6 border-t border-[var(--line)] pt-4">
@@ -142,7 +146,7 @@ export default function ProfilePage() {
             <div className="space-y-2">
               {requests.map((r) => (
                 <div key={r.id} className="flex items-center justify-between gap-3 text-sm bg-black/30 rounded-lg px-3 py-2">
-                  <span className="text-muted">{r.field === "email" ? "Email" : r.field === "phone" ? "Phone" : "Wallet"} → <span className="text-foreground break-all">{r.new_value}</span></span>
+                  <span className="text-muted">{CR_FIELD[r.field] || r.field} → <span className="text-foreground break-all">{r.new_value}</span></span>
                   <CRStatus status={r.status} />
                 </div>
               ))}
@@ -242,6 +246,11 @@ export default function ProfilePage() {
 
 interface ChangeReq { id: number; field: string; new_value: string; status: string; }
 
+const CR_FIELD: Record<string, string> = {
+  email: "Email", phone: "Phone", wallet_address: "USDT",
+  btc_address: "BTC", eth_address: "ETH", sol_address: "SOL",
+};
+
 function CRStatus({ status }: { status: string }) {
   const map: Record<string, string> = {
     pending_tac: "bg-white/10 text-muted",
@@ -261,20 +270,23 @@ function CRStatus({ status }: { status: string }) {
 function ChangeRequestForm({
   field, label, current, placeholder, inputType = "text", onDone,
 }: {
-  field: "email" | "wallet_address" | "phone";
+  field: "email" | "wallet_address" | "phone" | "btc_address" | "eth_address" | "sol_address";
   label: string;
   current: string;
   placeholder: string;
   inputType?: string;
   onDone?: () => void;
 }) {
+  // Every payout address (USDT + BTC/ETH/SOL) is a BEP20 (0x) address and follows
+  // the same first-time-instant / change-needs-approval rules.
+  const isAddress = field !== "email" && field !== "phone";
   const [step, setStep] = useState<"idle" | "tac">("idle");
   const [newValue, setNewValue] = useState("");
   const [reqId, setReqId] = useState<number | null>(null);
   const [code, setCode] = useState("");
   const [msg, setMsg] = useState(""); const [err, setErr] = useState(""); const [loading, setLoading] = useState(false);
   const refresh = useAuth((s) => s.refresh);
-  const isFirstTime = field === "wallet_address" && (!current || current === "—");
+  const isFirstTime = isAddress && (!current || current === "—");
 
   async function submitNew(e: React.FormEvent) {
     e.preventDefault(); setMsg(""); setErr(""); setLoading(true);
@@ -300,9 +312,9 @@ function ChangeRequestForm({
     setErr(""); try { const { data } = await api.post("/account-changes/resend-tac", { request_id: reqId }); setMsg(data.message); } catch (e) { setErr(apiError(e)); }
   }
 
-  // Live BEP20 format check for the wallet address field (0x + 40 hex).
+  // Live BEP20 format check for any address field (0x + 40 hex).
   const walletCheck = (() => {
-    if (field !== "wallet_address") return null;
+    if (!isAddress) return null;
     const v = newValue.trim();
     if (v === "") return null;
     if (!/^0x/i.test(v)) return { ok: false, typing: false, msg: "Must start with 0x." };
@@ -311,13 +323,13 @@ function ChangeRequestForm({
     if (v.length > 42) return { ok: false, typing: false, msg: `Too long — need 42 characters. Now ${v.length}.` };
     return { ok: true, typing: false, msg: "✓ Valid BEP20 (BSC) address format." };
   })();
-  const walletBlocks = field === "wallet_address" && !!newValue.trim() && !!walletCheck && !walletCheck.ok;
+  const walletBlocks = isAddress && !!newValue.trim() && !!walletCheck && !walletCheck.ok;
 
   return (
     <div className="bg-black/20 rounded-xl p-4 border border-[var(--line)]">
       <label className="text-sm font-medium">{label}</label>
       <p className="text-xs text-muted mt-0.5 break-all">Current: {current}</p>
-      {field === "wallet_address" && (
+      {isAddress && (
         <p className={`text-[11px] mb-2 ${isFirstTime ? "text-green-400" : "text-yellow-400"}`}>
           {isFirstTime ? "First-time — saved instantly, no approval needed." : "Changing needs admin approval (security)."}
         </p>

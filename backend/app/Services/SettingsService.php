@@ -44,6 +44,9 @@ class SettingsService
             'deposit_bonus_percent'  => [null, 'number'],
             'deposit_bonus_start'    => [null, 'string'], // Y-m-d
             'deposit_bonus_end'      => [null, 'string'], // Y-m-d
+            // Coin-swap withdrawals (receive BTC/ETH/SOL instead of USDT).
+            'coin_swap_enabled'        => [null, 'bool'],   // whole feature toggle, default ON
+            'coin_swap_markup_percent' => ['regal.coin_swap.markup_percent', 'number'], // system rate uplift over CoinGecko
         ];
     }
 

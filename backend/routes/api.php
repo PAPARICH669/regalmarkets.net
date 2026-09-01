@@ -92,6 +92,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Actions blocked during maintenance + when frozen
     Route::middleware(['not.frozen', 'maintenance'])->group(function () {
         Route::get('/withdrawals/config', [WithdrawalController::class, 'config']);
+        Route::get('/withdrawals/coin-rates', [WithdrawalController::class, 'coinRates']);
         Route::get('/withdrawals', [WithdrawalController::class, 'index']);
         Route::post('/withdrawals', [WithdrawalController::class, 'store'])->middleware('kyc');
 

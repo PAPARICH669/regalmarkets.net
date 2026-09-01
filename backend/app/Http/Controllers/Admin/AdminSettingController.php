@@ -43,6 +43,8 @@ class AdminSettingController extends Controller
             'deposit_bonus_end'      => ['nullable', 'date'],
             'deposit_address'        => ['nullable', 'string', 'regex:/^0x[a-fA-F0-9]{40}$/'],
             'deposit_network'        => ['nullable', 'string', 'max:30'],
+            'coin_swap_enabled'        => ['nullable', 'boolean'],
+            'coin_swap_markup_percent' => ['nullable', 'numeric', 'min:0', 'max:50'],
         ], [
             'deposit_address.regex' => 'Enter a valid BEP20 address (0x…, 42 characters).',
         ]);

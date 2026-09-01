@@ -6,7 +6,18 @@ import api, { apiError } from "@/lib/api";
 import { usdt, shortDate } from "@/lib/format";
 import StatusPill from "@/components/StatusPill";
 
-interface Withdrawal { id: number; amount: string; fee: string; net_amount: string; wallet_address: string; status: string; created_at: string; user?: { username: string; email: string }; }
+interface Withdrawal {
+  id: number; amount: string; fee: string; net_amount: string; wallet_address: string;
+  status: string; created_at: string; user?: { username: string; email: string };
+  coin?: string; network?: string; coin_address?: string; system_rate?: string;
+  coin_fee?: string; coin_amount_est?: string; coin_amount_actual?: string | null;
+}
+
+function trimCoin(v: string | number | null | undefined, dp = 8) {
+  const n = Number(v ?? 0);
+  return n.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: dp });
+}
+const isSwap = (w: Withdrawal) => !!w.coin && w.coin !== "USDT";
 
 export default function AdminWithdrawals() {
   const [items, setItems] = useState<Withdrawal[]>([]);
@@ -14,6 +25,7 @@ export default function AdminWithdrawals() {
   const [error, setError] = useState("");
   const [confirming, setConfirming] = useState<Withdrawal | null>(null);
   const [txid, setTxid] = useState("");
+  const [coinActual, setCoinActual] = useState("");
   const [busy, setBusy] = useState(false);
 
   const load = useCallback(() => {
@@ -21,12 +33,19 @@ export default function AdminWithdrawals() {
   }, [filter]);
   useEffect(() => { load(); }, [load]);
 
+  function openApprove(w: Withdrawal) {
+    setConfirming(w); setTxid(""); setError("");
+    setCoinActual(isSwap(w) ? trimCoin(w.coin_amount_est) : "");
+  }
+
   async function confirmApprove() {
     if (!confirming) return;
     setError(""); setBusy(true);
     try {
-      await api.post(`/admin/withdrawals/${confirming.id}/approve`, { txid: txid.trim() });
-      setConfirming(null); setTxid(""); load();
+      const payload: Record<string, string> = { txid: txid.trim() };
+      if (isSwap(confirming) && coinActual.trim()) payload.coin_amount_actual = coinActual.trim();
+      await api.post(`/admin/withdrawals/${confirming.id}/approve`, payload);
+      setConfirming(null); setTxid(""); setCoinActual(""); load();
     } catch (err) { setError(apiError(err)); } finally { setBusy(false); }
   }
   async function reject(id: number) {
@@ -47,19 +66,27 @@ export default function AdminWithdrawals() {
       {error && <div className="text-sm text-red-400 bg-red-500/10 border border-red-500/30 rounded-lg px-4 py-3">{error}</div>}
       <div className="glass overflow-x-auto">
         <table className="w-full text-sm">
-          <thead className="bg-white/5 text-gold-light text-left"><tr><th className="px-4 py-3">Member</th><th>Amount</th><th>Net</th><th>Address</th><th>Status</th><th>Action</th></tr></thead>
+          <thead className="bg-white/5 text-gold-light text-left"><tr><th className="px-4 py-3">Member</th><th>Amount</th><th>Receive</th><th>Address</th><th>Status</th><th>Action</th></tr></thead>
           <tbody>
             {items.map((w) => (
               <tr key={w.id} className="border-t border-[var(--line)]">
                 <td className="px-4 py-3">{w.user?.username}<div className="text-xs text-muted">{shortDate(w.created_at)}</div></td>
                 <td>{usdt(w.amount)}</td>
-                <td>{usdt(w.net_amount)}</td>
-                <td className="text-xs text-muted truncate max-w-[140px]">{w.wallet_address}</td>
+                <td>
+                  {isSwap(w) ? (
+                    <div>
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-gold-light/15 text-gold-light mr-1">{w.coin}</span>
+                      {trimCoin(w.coin_amount_actual ?? w.coin_amount_est)} {w.coin}
+                      {!w.coin_amount_actual && <span className="text-xs text-muted"> (est)</span>}
+                    </div>
+                  ) : usdt(w.net_amount)}
+                </td>
+                <td className="text-xs text-muted truncate max-w-[140px]">{w.coin_address || w.wallet_address}</td>
                 <td><StatusPill status={w.status} /></td>
                 <td>
                   {w.status === "pending" ? (
                     <div className="flex gap-2">
-                      <button onClick={() => { setConfirming(w); setTxid(""); setError(""); }} className="btn-gold px-3 py-1 text-xs">Approve</button>
+                      <button onClick={() => openApprove(w)} className="btn-gold px-3 py-1 text-xs">Approve</button>
                       <button onClick={() => reject(w.id)} className="btn-ghost px-3 py-1 text-xs text-red-400">Reject</button>
                     </div>
                   ) : <span className="text-xs text-muted">—</span>}
@@ -86,13 +113,31 @@ export default function AdminWithdrawals() {
               <div className="space-y-1.5 text-sm bg-black/30 rounded-lg p-3">
                 <Row k="Member" v={`@${confirming.user?.username}`} />
                 <Row k="Amount (kasar)" v={`${usdt(confirming.amount)} USDT`} />
-                <Row k="Fee" v={`${usdt(confirming.fee)} USDT`} />
-                <Row k="Net (dibayar)" v={`${usdt(confirming.net_amount)} USDT`} bold />
+                {isSwap(confirming) ? (
+                  <>
+                    <Row k="Receive in" v={`${confirming.coin} (${confirming.network})`} />
+                    <Row k="System rate" v={`${trimCoin(confirming.system_rate, 2)} USDT`} />
+                    <Row k="Network fee" v={`${trimCoin(confirming.coin_fee)} ${confirming.coin}`} />
+                    <Row k="Estimated (net)" v={`${trimCoin(confirming.coin_amount_est)} ${confirming.coin}`} bold />
+                  </>
+                ) : (
+                  <>
+                    <Row k="Fee" v={`${usdt(confirming.fee)} USDT`} />
+                    <Row k="Net (dibayar)" v={`${usdt(confirming.net_amount)} USDT`} bold />
+                  </>
+                )}
               </div>
               <div>
-                <span className="text-xs text-muted">Alamat payout (BEP20)</span>
-                <div className="font-mono text-xs break-all bg-black/30 rounded-lg p-2 mt-1">{confirming.wallet_address}</div>
+                <span className="text-xs text-muted">Alamat payout ({confirming.network || "BEP20"})</span>
+                <div className="font-mono text-xs break-all bg-black/30 rounded-lg p-2 mt-1">{confirming.coin_address || confirming.wallet_address}</div>
               </div>
+              {isSwap(confirming) && (
+                <div>
+                  <label className="text-xs text-muted">Jumlah {confirming.coin} SEBENAR dihantar <span className="text-gold-light">(muktamad)</span></label>
+                  <input className="input-field mt-1 font-mono text-sm" value={coinActual} onChange={(e) => setCoinActual(e.target.value)} placeholder={`cth ${trimCoin(confirming.coin_amount_est)}`} inputMode="decimal" />
+                  <p className="text-[11px] text-muted mt-1">Masukkan jumlah coin sebenar yang kau hantar. Ini jadi rekod muktamad.</p>
+                </div>
+              )}
               <div>
                 <label className="text-xs text-muted">Payout TXID (pilihan — hash transaksi bayaran)</label>
                 <input className="input-field mt-1 font-mono text-sm" value={txid} onChange={(e) => setTxid(e.target.value)} placeholder="0x… (jika ada)" />

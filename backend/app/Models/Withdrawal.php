@@ -10,10 +10,14 @@ class Withdrawal extends Model
     protected $guarded = [];
 
     protected $casts = [
-        'amount'       => 'decimal:8',
-        'fee'          => 'decimal:8',
-        'net_amount'   => 'decimal:8',
-        'processed_at' => 'datetime',
+        'amount'             => 'decimal:8',
+        'fee'                => 'decimal:8',
+        'net_amount'         => 'decimal:8',
+        'system_rate'        => 'decimal:8',
+        'coin_fee'           => 'decimal:12',
+        'coin_amount_est'    => 'decimal:12',
+        'coin_amount_actual' => 'decimal:12',
+        'processed_at'       => 'datetime',
     ];
 
     public function user(): BelongsTo

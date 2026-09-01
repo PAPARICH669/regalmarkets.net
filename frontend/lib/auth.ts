@@ -14,6 +14,9 @@ export interface AuthUser {
   referral_code: string;
   sponsor?: string | null;
   wallet_address?: string | null;
+  btc_address?: string | null;
+  eth_address?: string | null;
+  sol_address?: string | null;
   heir_name?: string | null;
   heir_phone?: string | null;
   id_type?: string | null;

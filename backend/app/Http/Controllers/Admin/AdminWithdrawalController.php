@@ -23,10 +23,19 @@ class AdminWithdrawalController extends Controller
 
     public function approve(Request $request, Withdrawal $withdrawal)
     {
-        $data = $request->validate(['txid' => ['nullable', 'string', 'max:191']]);
+        $data = $request->validate([
+            'txid'               => ['nullable', 'string', 'max:191'],
+            // Actual coin amount the admin sent (coin swaps only) — source of truth.
+            'coin_amount_actual' => ['nullable', 'numeric', 'min:0'],
+        ]);
         $wasPending = $withdrawal->status === 'pending';
-        $withdrawal = $this->withdrawals->approve($withdrawal, $request->user(), $data['txid'] ?? null);
-        $this->audit->log($request, 'withdrawal.approve', $withdrawal, ['amount' => $withdrawal->amount]);
+        $withdrawal = $this->withdrawals->approve(
+            $withdrawal,
+            $request->user(),
+            $data['txid'] ?? null,
+            $data['coin_amount_actual'] ?? null
+        );
+        $this->audit->log($request, 'withdrawal.approve', $withdrawal, ['amount' => $withdrawal->amount, 'coin' => $withdrawal->coin]);
 
         // Notify the member by email on a real approval (failure must not block it).
         if ($wasPending && $withdrawal->status === 'approved') {

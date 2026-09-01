@@ -107,4 +107,23 @@ return [
 
     // Where uploaded payment proofs are stored (private disk, served via controller).
     'proof_disk' => 'local',
+
+    // Coin-swap withdrawals. A member may receive a withdrawal in one of these
+    // coins instead of USDT. All are sent on BEP20 (BSC), so every payout address
+    // is a 0x… BEP20 address (validated exactly like the USDT wallet_address).
+    //
+    // Estimate shown to the member = live CoinGecko price × (1 + markup%). The
+    // FINAL amount is whatever the admin actually sends (Model A / manual).
+    // 'min' and 'fee' are in COIN units. 'dp' is display decimals.
+    'coin_swap' => [
+        'markup_percent' => 2.0,   // system rate uplift over CoinGecko (admin-tunable via settings)
+        'price_ttl'      => 60,    // seconds to cache CoinGecko prices
+        'coins' => [
+            // USDT is the base (no swap, rate 1). Fee/min mirror the normal withdrawal.
+            'USDT' => ['name' => 'Tether',    'coingecko_id' => null,       'network' => 'BEP20', 'dp' => 2, 'min' => 0,       'fee' => 0],
+            'BTC'  => ['name' => 'Bitcoin',   'coingecko_id' => 'bitcoin',  'network' => 'BEP20', 'dp' => 8, 'min' => 0.0001,  'fee' => 0.00002],
+            'ETH'  => ['name' => 'Ethereum',  'coingecko_id' => 'ethereum', 'network' => 'BEP20', 'dp' => 6, 'min' => 0.001,   'fee' => 0.0003],
+            'SOL'  => ['name' => 'Solana',    'coingecko_id' => 'solana',   'network' => 'BEP20', 'dp' => 4, 'min' => 0.02,    'fee' => 0.01],
+        ],
+    ],
 ];

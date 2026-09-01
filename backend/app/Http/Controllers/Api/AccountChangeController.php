@@ -28,9 +28,12 @@ class AccountChangeController extends Controller
     {
         $user = $request->user();
         $data = $request->validate([
-            'field'     => ['required', 'in:email,wallet_address,phone'],
+            'field'     => ['required', 'in:email,wallet_address,phone,btc_address,eth_address,sol_address'],
             'new_value' => ['required', 'string', 'max:191'],
         ]);
+
+        // Every payout address (USDT + BTC/ETH/SOL coin swaps) is BEP20 (0x + 40 hex).
+        $addressFields = ['wallet_address', 'btc_address', 'eth_address', 'sol_address'];
 
         // Phone: a member may edit it, but the change still needs a TAC + admin
         // approval (same flow as email). Only a light format check here.
@@ -40,19 +43,19 @@ class AccountChangeController extends Controller
             }
         }
 
-        // Wallet address must be a valid BEP20 (BSC) format — 0x + 40 hex chars —
-        // whether it is a first-time set or a change (server-side guard mirroring
-        // the live check on the form).
-        if ($data['field'] === 'wallet_address' && ! preg_match('/^0x[a-fA-F0-9]{40}$/', trim($data['new_value']))) {
+        // Address must be a valid BEP20 (BSC) format — 0x + 40 hex chars — whether
+        // it is a first-time set or a change (server-side guard mirroring the form).
+        if (in_array($data['field'], $addressFields, true)
+            && ! preg_match('/^0x[a-fA-F0-9]{40}$/', trim($data['new_value']))) {
             throw ValidationException::withMessages(['new_value' => 'Enter a valid BEP20 address (0x…, 42 characters).']);
         }
 
-        // First-time wallet address (none set yet) is saved DIRECTLY — no TAC, no
-        // admin approval. Changing an EXISTING address still needs TAC + approval
+        // First-time address (none set yet) is saved DIRECTLY — no TAC, no admin
+        // approval. Changing an EXISTING address still needs TAC + approval
         // (protects the payout address from account-takeover).
-        if ($data['field'] === 'wallet_address' && trim((string) $user->wallet_address) === '') {
-            $user->update(['wallet_address' => trim($data['new_value'])]);
-            return response()->json(['message' => 'Withdrawal address saved.', 'applied' => true], 200);
+        if (in_array($data['field'], $addressFields, true) && trim((string) $user->{$data['field']}) === '') {
+            $user->update([$data['field'] => trim($data['new_value'])]);
+            return response()->json(['message' => 'Address saved.', 'applied' => true], 200);
         }
 
         if ($data['field'] === 'email') {
@@ -77,7 +80,7 @@ class AccountChangeController extends Controller
             'old_value'      => match ($data['field']) {
                 'email' => $user->email,
                 'phone' => $user->phone,
-                default => $user->wallet_address,
+                default => $user->{$data['field']},
             },
             'new_value'      => trim($data['new_value']),
             'status'         => 'pending_tac',
@@ -142,6 +145,9 @@ class AccountChangeController extends Controller
         $label = match ($field) {
             'email' => 'email address',
             'phone' => 'phone number',
+            'btc_address' => 'BTC withdrawal address',
+            'eth_address' => 'ETH withdrawal address',
+            'sol_address' => 'SOL withdrawal address',
             default => 'USDT withdrawal address',
         };
         try {
