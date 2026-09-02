@@ -10,35 +10,33 @@ import StatusPill from "@/components/StatusPill";
 import KycBanner from "@/components/KycBanner";
 
 interface Withdrawal {
-  id: number; amount: string; fee: string; net_amount: string; wallet_address: string;
+  id: number; amount: string; net_amount: string; wallet_address: string;
   txid: string | null; status: string; created_at: string;
   coin?: string; network?: string; coin_amount_est?: string; coin_amount_actual?: string | null;
 }
-interface CoinInfo {
-  coin: string; name: string; network: string; dp: number; min: number; fee: number;
-  system_rate: number | null; available: boolean;
-}
+interface NetInfo { network: string; fee: number; type: string; address_key: string; }
+interface CoinInfo { coin: string; name: string; dp: number; min: number; system_rate: number | null; available: boolean; networks: NetInfo[]; }
 interface Cfg {
   min: number; max_amount: number; fee_flat: number; max_per_day: number;
   processing_hours: number; window_start: string; window_end: string;
   coin_swap_enabled: boolean; coins: CoinInfo[];
 }
 
-const COIN_STYLE: Record<string, string> = {
-  USDT: "#26a17b", BTC: "#f7931a", ETH: "#627eea", SOL: "#9945ff",
+const COIN_STYLE: Record<string, string> = { USDT: "#26a17b", BTC: "#f7931a", ETH: "#627eea", SOL: "#9945ff" };
+const ADDR_HINT: Record<string, string> = {
+  evm: "BEP20 / EVM address (0x…, 42 characters).",
+  btc: "Native Bitcoin address (bc1…, 1…, or 3…).",
+  sol: "Native Solana address (base58).",
 };
 
-function fmtCoin(n: number, dp: number) {
-  return n.toLocaleString("en-US", { minimumFractionDigits: dp, maximumFractionDigits: dp });
-}
-function trimCoin(n: number, dp: number) {
-  return fmtCoin(n, dp).replace(/\.?0+$/, "");
-}
+const fmtCoin = (n: number, dp: number) => n.toLocaleString("en-US", { minimumFractionDigits: dp, maximumFractionDigits: dp });
+const trimCoin = (n: number, dp: number) => fmtCoin(n, dp).replace(/\.?0+$/, "");
 
 export default function WithdrawPage() {
   const { user, refresh } = useAuth();
   const [amount, setAmount] = useState("");
   const [coin, setCoin] = useState("USDT");
+  const [netIdx, setNetIdx] = useState(0);
   const [cfg, setCfg] = useState<Cfg | null>(null);
   const [coins, setCoins] = useState<CoinInfo[]>([]);
   const [msg, setMsg] = useState(""); const [error, setError] = useState("");
@@ -46,63 +44,52 @@ export default function WithdrawPage() {
   const [history, setHistory] = useState<Withdrawal[]>([]);
 
   const load = () => api.get("/withdrawals").then((r) => setHistory(r.data.data));
-
   useEffect(() => {
     load();
     api.get("/withdrawals/config").then((r) => { setCfg(r.data); setCoins(r.data.coins || []); });
   }, []);
-
-  // Keep coin rates fresh while a swap coin is selected (system rate follows the market).
   useEffect(() => {
     if (coin === "USDT") return;
-    const tick = () => api.get("/withdrawals/coin-rates").then((r) => setCoins(r.data.coins || [])).catch(() => {});
-    const id = setInterval(tick, 60000);
+    const id = setInterval(() => api.get("/withdrawals/coin-rates").then((r) => setCoins(r.data.coins || [])).catch(() => {}), 60000);
     return () => clearInterval(id);
   }, [coin]);
 
   const sel = useMemo(() => coins.find((c) => c.coin === coin) || null, [coins, coin]);
+  const selNet = sel?.networks?.[netIdx] || sel?.networks?.[0] || null;
   const isUsdt = coin === "USDT";
-
-  // Payout address for the selected coin (locked; set/changed only via Profile + approval).
-  const address = useMemo(() => {
-    const map: Record<string, string | null | undefined> = {
-      USDT: user?.wallet_address, BTC: user?.btc_address, ETH: user?.eth_address, SOL: user?.sol_address,
-    };
-    return (map[coin] || "").trim();
-  }, [user, coin]);
-  const hasAddress = address.length > 0;
-
-  const amt = Number(amount) || 0;
   const rate = sel?.system_rate ?? 1;
   const rateUnavailable = !isUsdt && (!sel || sel.system_rate == null);
 
-  // Estimate. USDT keeps its flat USDT fee; coins deduct a network fee in coin units.
+  function pickCoin(c: string) { setCoin(c); setNetIdx(0); }
+
+  const address = useMemo(() => {
+    if (!selNet) return "";
+    return ((user as unknown as Record<string, string | null>)?.[selNet.address_key] || "").trim();
+  }, [user, selNet]);
+  const hasAddress = address.length > 0;
+
+  const amt = Number(amount) || 0;
+
   const est = useMemo(() => {
-    if (!cfg) return null;
+    if (!cfg || !sel || !selNet) return null;
     if (isUsdt) {
       const fee = cfg.fee_flat;
       return { receive: Math.max(amt - fee, 0), unit: "USDT", dp: 2, feeText: usdt(fee), minUsdt: cfg.min };
     }
-    if (!sel || sel.system_rate == null) return null;
+    if (sel.system_rate == null) return null;
     const gross = rate > 0 ? amt / rate : 0;
-    const receive = Math.max(gross - sel.fee, 0);
-    const minUsdt = Math.max(cfg.min, (sel.min + sel.fee) * rate);
-    return {
-      receive, unit: sel.coin, dp: sel.dp,
-      feeText: `${trimCoin(sel.fee, sel.dp)} ${sel.coin}`,
-      gross, minUsdt,
-    };
-  }, [cfg, sel, amt, rate, isUsdt]);
+    const receive = Math.max(gross - selNet.fee, 0);
+    const minUsdt = Math.max(cfg.min, (sel.min + selNet.fee) * rate);
+    return { receive, unit: sel.coin, dp: sel.dp, feeText: `${trimCoin(selNet.fee, sel.dp)} ${sel.coin}`, gross, minUsdt };
+  }, [cfg, sel, selNet, amt, rate, isUsdt]);
 
   const belowMin = !!est && amt > 0 && amt < est.minUsdt;
 
   async function submit(e: React.FormEvent) {
-    e.preventDefault();
-    setMsg(""); setError(""); setLoading(true);
+    e.preventDefault(); setMsg(""); setError(""); setLoading(true);
     try {
-      const { data } = await api.post("/withdrawals", { amount, coin });
-      setMsg(data.message); setAmount("");
-      load(); refresh();
+      const { data } = await api.post("/withdrawals", { amount, coin, network: selNet?.network });
+      setMsg(data.message); setAmount(""); load(); refresh();
     } catch (err) { setError(apiError(err)); } finally { setLoading(false); }
   }
 
@@ -120,11 +107,11 @@ export default function WithdrawPage() {
           <p className="text-sm text-muted mt-1">
             From E-WALLET. Min {cfg ? usdt(cfg.min) : "…"}, max {cfg ? usdt(cfg.max_amount) : "…"} per withdrawal.
             <b className="text-foreground"> {cfg?.max_per_day ?? 1} withdrawal/day.</b>
-            {" "}Processed within {cfg?.processing_hours ?? 72} working hours (Mon–Fri, weekends excluded).
+            {" "}Processed within {cfg?.processing_hours ?? 72} working hours (Mon–Fri).
           </p>
           {cfg && (
             <div className="mt-3 text-sm text-gold-light bg-gold-light/5 border border-gold-light/20 rounded-lg px-4 py-2">
-              ⏰ Withdrawal requests are accepted only between <b>{cfg.window_start}–{cfg.window_end}</b>.
+              ⏰ Requests are accepted only between <b>{cfg.window_start}–{cfg.window_end}</b>.
             </div>
           )}
           <div className="mt-4 flex items-center justify-between bg-black/30 rounded-lg p-3">
@@ -135,7 +122,6 @@ export default function WithdrawPage() {
           {error && <div className="mt-4 text-sm text-red-400 bg-red-500/10 border border-red-500/30 rounded-lg px-4 py-3">{error}</div>}
 
           <form onSubmit={submit} className="mt-5 space-y-4">
-            {/* Coin selector */}
             {shownCoins.length > 1 && (
               <div>
                 <label className="text-sm text-muted">Receive in</label>
@@ -144,13 +130,29 @@ export default function WithdrawPage() {
                     const on = c.coin === coin;
                     const off = c.coin !== "USDT" && !c.available;
                     return (
-                      <button
-                        type="button" key={c.coin} disabled={off}
-                        onClick={() => setCoin(c.coin)}
-                        className={`rounded-xl border px-2 py-2 text-center transition ${on ? "border-gold-light bg-gold-light/10" : "border-[var(--line)] bg-black/20 hover:border-gold-light/40"} ${off ? "opacity-40 cursor-not-allowed" : ""}`}
-                      >
+                      <button type="button" key={c.coin} disabled={off} onClick={() => pickCoin(c.coin)}
+                        className={`rounded-xl border px-2 py-2 text-center transition ${on ? "border-gold-light bg-gold-light/10" : "border-[var(--line)] bg-black/20 hover:border-gold-light/40"} ${off ? "opacity-40 cursor-not-allowed" : ""}`}>
                         <span className="mx-auto mb-1 flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-bold text-white" style={{ background: COIN_STYLE[c.coin] || "#555" }}>{c.coin[0]}</span>
                         <span className="block text-xs font-semibold">{c.coin}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Network selector — only when the coin has more than one network */}
+            {sel && sel.networks.length > 1 && (
+              <div>
+                <label className="text-sm text-muted">Network</label>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {sel.networks.map((n, i) => {
+                    const on = i === netIdx;
+                    return (
+                      <button type="button" key={n.network} onClick={() => setNetIdx(i)}
+                        className={`rounded-lg border px-3 py-1.5 text-left transition ${on ? "border-gold-light bg-gold-light/10 text-gold-light" : "border-[var(--line)] bg-black/20 text-muted hover:border-gold-light/40"}`}>
+                        <span className="block text-sm font-medium">{n.network}</span>
+                        <span className="block text-[10px] opacity-80">fee {trimCoin(n.fee, sel.dp)} {sel.coin}</span>
                       </button>
                     );
                   })}
@@ -169,50 +171,38 @@ export default function WithdrawPage() {
               <input type="number" step="0.01" className="input-field mt-1" value={amount} onChange={(e) => setAmount(e.target.value)} required />
             </div>
 
-            {/* Estimate */}
             {amt > 0 && est && !rateUnavailable && (
               <div className={`rounded-lg p-3 space-y-1 text-sm ${belowMin ? "bg-red-500/5 border border-red-500/30" : "bg-black/30"}`}>
                 <div className="flex justify-between font-semibold">
                   <span>{isUsdt ? "You receive" : "Estimated net received"}</span>
                   <span className="gold-text">{fmtCoin(est.receive, est.dp)} {est.unit}</span>
                 </div>
-                {!isUsdt && (
-                  <div className="flex justify-between text-muted"><span>System rate</span><span>1 {coin} ≈ {fmtCoin(rate, rate < 10 ? 2 : 0)} USDT</span></div>
-                )}
+                {!isUsdt && <div className="flex justify-between text-muted"><span>System rate</span><span>1 {coin} ≈ {fmtCoin(rate, rate < 10 ? 2 : 0)} USDT</span></div>}
                 <div className="flex justify-between text-muted"><span>Network fee</span><span>{est.feeText}</span></div>
-                {!isUsdt && <div className="flex justify-between text-muted"><span>Network</span><span>{sel?.network}</span></div>}
-                {belowMin && (
-                  <div className="text-red-400 text-xs pt-1">
-                    Minimum for {coin} is {usdt(est.minUsdt)}{!isUsdt ? ` (≥ ${trimCoin(sel!.min, sel!.dp)} ${coin})` : ""}.
-                  </div>
-                )}
-                {!isUsdt && (
-                  <div className="text-[11px] text-muted pt-1">Estimate · final amount follows the rate at the time it is processed.</div>
-                )}
+                {!isUsdt && <div className="flex justify-between text-muted"><span>Network</span><span>{selNet?.network}</span></div>}
+                {belowMin && <div className="text-red-400 text-xs pt-1">Minimum for {coin}{!isUsdt && selNet ? ` (${selNet.network})` : ""} is {usdt(est.minUsdt)}.</div>}
+                {!isUsdt && <div className="text-[11px] text-muted pt-1">Estimate · final amount follows the rate at the time it is processed.</div>}
               </div>
             )}
             {rateUnavailable && (
               <div className="text-sm text-yellow-400 bg-yellow-500/10 border border-yellow-500/30 rounded-lg px-4 py-3">
-                Live price for {coin} is temporarily unavailable. Please try again shortly or withdraw in USDT.
+                Live price for {coin} is temporarily unavailable. Try again shortly or withdraw in USDT.
               </div>
             )}
 
-            {/* Payout address (locked, per coin) */}
             <div>
               <label className="text-sm text-muted">
-                {coin} withdrawal address <span className="text-gold-light font-medium">(BEP20)</span> <span className="text-xs">🔒 set in Profile</span>
+                {coin} address{!isUsdt && selNet ? ` · ${selNet.network}` : " (BEP20)"} <span className="text-xs">🔒 set in Profile</span>
               </label>
-              <input className="input-field mt-1 opacity-70" value={hasAddress ? address : ""} placeholder={`No ${coin} address set`} disabled />
+              <input className="input-field mt-1 opacity-70" value={hasAddress ? address : ""} placeholder={`No ${coin}${selNet ? " " + selNet.network : ""} address set`} disabled />
               {hasAddress ? (
                 <p className="text-xs text-muted mt-1">🔒 Locked. Change it in your <Link href="/profile" className="text-gold-light underline">Profile</Link> (needs admin approval).</p>
               ) : (
-                <p className="text-xs text-red-400 mt-1">⚠️ No {coin} address set. Add it in your <Link href="/profile" className="text-gold-light underline">Profile</Link> before withdrawing in {coin}.</p>
+                <p className="text-xs text-red-400 mt-1">⚠️ No {coin}{selNet ? " " + selNet.network : ""} address set. Add it in your <Link href="/profile" className="text-gold-light underline">Profile</Link>. {selNet ? ADDR_HINT[selNet.type] : ""}</p>
               )}
             </div>
 
-            <button disabled={disabled} className="btn-gold w-full py-2.5 disabled:opacity-50">
-              {loading ? "Requesting…" : "Request Withdrawal"}
-            </button>
+            <button disabled={disabled} className="btn-gold w-full py-2.5 disabled:opacity-50">{loading ? "Requesting…" : "Request Withdrawal"}</button>
           </form>
         </div>
 
@@ -228,7 +218,7 @@ export default function WithdrawPage() {
                     <td>
                       {!w.coin || w.coin === "USDT"
                         ? usdt(w.net_amount)
-                        : <span>{trimCoin(Number(w.coin_amount_actual ?? w.coin_amount_est ?? 0), 8)} {w.coin}{w.coin_amount_actual ? "" : " (est)"}</span>}
+                        : <span>{trimCoin(Number(w.coin_amount_actual ?? w.coin_amount_est ?? 0), 8)} {w.coin}<span className="text-xs text-muted"> {w.network}{w.coin_amount_actual ? "" : " · est"}</span></span>}
                     </td>
                     <td><StatusPill status={w.status} /></td>
                     <td className="text-muted text-xs">{shortDate(w.created_at)}</td>

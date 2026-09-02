@@ -135,10 +135,12 @@ export default function ProfilePage() {
           <ChangeRequestForm field="phone" label="New Phone Number" current={user?.phone || "—"} placeholder="+60123456789" inputType="tel" onDone={loadRequests} />
           <ChangeRequestForm field="wallet_address" label="New USDT Address (BEP20)" current={user?.wallet_address || "—"} placeholder="0x… (BEP20 / BSC)" onDone={loadRequests} />
           <ChangeRequestForm field="btc_address" label="New BTC Address (BEP20)" current={user?.btc_address || "—"} placeholder="0x… (BEP20 / BSC)" onDone={loadRequests} />
+          <ChangeRequestForm field="btc_native_address" label="New BTC Address (Bitcoin network)" current={user?.btc_native_address || "—"} placeholder="bc1… / 1… / 3…" addrType="btc" onDone={loadRequests} />
           <ChangeRequestForm field="eth_address" label="New ETH Address (BEP20)" current={user?.eth_address || "—"} placeholder="0x… (BEP20 / BSC)" onDone={loadRequests} />
           <ChangeRequestForm field="sol_address" label="New SOL Address (BEP20)" current={user?.sol_address || "—"} placeholder="0x… (BEP20 / BSC)" onDone={loadRequests} />
+          <ChangeRequestForm field="sol_native_address" label="New SOL Address (Solana network)" current={user?.sol_native_address || "—"} placeholder="Base58 (Solana)" addrType="sol" onDone={loadRequests} />
         </div>
-        <p className="text-xs text-muted mt-3">BTC, ETH &amp; SOL are all received on the <b className="text-gold-light">BEP20 (BSC)</b> network, so every address is a <b>0x…</b> address. Set these to withdraw in those coins.</p>
+        <p className="text-xs text-muted mt-3">BTC &amp; SOL can be received on <b className="text-gold-light">BEP20 (0x…)</b> or their <b className="text-gold-light">native network</b> (Bitcoin / Solana) — set the one matching how you want to receive. ETH &amp; USDT are BEP20.</p>
 
         {requests.length > 0 && (
           <div className="mt-6 border-t border-[var(--line)] pt-4">
@@ -248,7 +250,8 @@ interface ChangeReq { id: number; field: string; new_value: string; status: stri
 
 const CR_FIELD: Record<string, string> = {
   email: "Email", phone: "Phone", wallet_address: "USDT",
-  btc_address: "BTC", eth_address: "ETH", sol_address: "SOL",
+  btc_address: "BTC (BEP20)", eth_address: "ETH", sol_address: "SOL (BEP20)",
+  btc_native_address: "BTC (Bitcoin)", sol_native_address: "SOL (Solana)",
 };
 
 function CRStatus({ status }: { status: string }) {
@@ -268,17 +271,18 @@ function CRStatus({ status }: { status: string }) {
 }
 
 function ChangeRequestForm({
-  field, label, current, placeholder, inputType = "text", onDone,
+  field, label, current, placeholder, inputType = "text", addrType = "evm", onDone,
 }: {
-  field: "email" | "wallet_address" | "phone" | "btc_address" | "eth_address" | "sol_address";
+  field: "email" | "wallet_address" | "phone" | "btc_address" | "eth_address" | "sol_address" | "btc_native_address" | "sol_native_address";
   label: string;
   current: string;
   placeholder: string;
   inputType?: string;
+  addrType?: "evm" | "btc" | "sol";
   onDone?: () => void;
 }) {
-  // Every payout address (USDT + BTC/ETH/SOL) is a BEP20 (0x) address and follows
-  // the same first-time-instant / change-needs-approval rules.
+  // Payout addresses follow the same first-time-instant / change-needs-approval
+  // rules; the format check depends on the network type (evm / btc / sol).
   const isAddress = field !== "email" && field !== "phone";
   const [step, setStep] = useState<"idle" | "tac">("idle");
   const [newValue, setNewValue] = useState("");
@@ -312,11 +316,22 @@ function ChangeRequestForm({
     setErr(""); try { const { data } = await api.post("/account-changes/resend-tac", { request_id: reqId }); setMsg(data.message); } catch (e) { setErr(apiError(e)); }
   }
 
-  // Live BEP20 format check for any address field (0x + 40 hex).
+  // Live format check, per network type (evm = 0x, btc = native, sol = base58).
   const walletCheck = (() => {
     if (!isAddress) return null;
     const v = newValue.trim();
     if (v === "") return null;
+    if (addrType === "btc") {
+      if (/^bc1[a-z0-9]{25,59}$/.test(v) || /^[13][a-km-zA-HJ-NP-Z1-9]{25,34}$/.test(v)) return { ok: true, typing: false, msg: "✓ Valid Bitcoin address." };
+      if (/^(bc1|[13])/.test(v)) return { ok: false, typing: true, msg: "Keep typing… Bitcoin address (bc1…/1…/3…)." };
+      return { ok: false, typing: false, msg: "Must be a Bitcoin address (bc1…, 1…, or 3…)." };
+    }
+    if (addrType === "sol") {
+      if (/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(v)) return { ok: true, typing: false, msg: "✓ Valid Solana address." };
+      if (v.length < 32) return { ok: false, typing: true, msg: `Keep typing… Solana base58 (32–44). Now ${v.length}.` };
+      return { ok: false, typing: false, msg: "Must be a valid Solana base58 address (32–44 chars)." };
+    }
+    // evm
     if (!/^0x/i.test(v)) return { ok: false, typing: false, msg: "Must start with 0x." };
     if (/[^0-9a-fA-F]/.test(v.slice(2))) return { ok: false, typing: false, msg: "Invalid characters — only 0-9 and a-f allowed." };
     if (v.length < 42) return { ok: false, typing: true, msg: `Too short — need 42 characters (0x + 40). Now ${v.length}.` };

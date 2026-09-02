@@ -118,12 +118,25 @@ return [
     'coin_swap' => [
         'markup_percent' => 2.0,   // system rate uplift over CoinGecko (admin-tunable via settings)
         'price_ttl'      => 60,    // seconds to cache CoinGecko prices
+        // Each coin lists the NETWORKS it can be received on. Each network has its
+        // own fee (in coin units), an address 'type' (evm=0x, btc=native Bitcoin,
+        // sol=native Solana) and the user column its payout address is stored in.
+        // 'min' & 'dp' are coin-level.
         'coins' => [
-            // USDT is the base (no swap, rate 1). Fee/min mirror the normal withdrawal.
-            'USDT' => ['name' => 'Tether',    'coingecko_id' => null,       'network' => 'BEP20', 'dp' => 2, 'min' => 0,       'fee' => 0],
-            'BTC'  => ['name' => 'Bitcoin',   'coingecko_id' => 'bitcoin',  'network' => 'BEP20', 'dp' => 8, 'min' => 0.0001,  'fee' => 0.00002],
-            'ETH'  => ['name' => 'Ethereum',  'coingecko_id' => 'ethereum', 'network' => 'BEP20', 'dp' => 6, 'min' => 0.001,   'fee' => 0.0003],
-            'SOL'  => ['name' => 'Solana',    'coingecko_id' => 'solana',   'network' => 'BEP20', 'dp' => 4, 'min' => 0.02,    'fee' => 0.01],
+            'USDT' => ['name' => 'Tether',   'coingecko_id' => null,       'dp' => 2, 'min' => 0,      'networks' => [
+                'BEP20' => ['fee' => 0,        'type' => 'evm', 'field' => 'wallet_address'],
+            ]],
+            'BTC'  => ['name' => 'Bitcoin',  'coingecko_id' => 'bitcoin',  'dp' => 8, 'min' => 0.0001, 'networks' => [
+                'BEP20' => ['fee' => 0.000025, 'type' => 'evm', 'field' => 'btc_address'],
+                'BTC'   => ['fee' => 0.0005,   'type' => 'btc', 'field' => 'btc_native_address'],
+            ]],
+            'ETH'  => ['name' => 'Ethereum', 'coingecko_id' => 'ethereum', 'dp' => 6, 'min' => 0.001,  'networks' => [
+                'BEP20' => ['fee' => 0.0003,   'type' => 'evm', 'field' => 'eth_address'],
+            ]],
+            'SOL'  => ['name' => 'Solana',   'coingecko_id' => 'solana',   'dp' => 4, 'min' => 0.02,   'networks' => [
+                'BEP20' => ['fee' => 0.01,     'type' => 'evm', 'field' => 'sol_address'],
+                'SOL'   => ['fee' => 0.01,     'type' => 'sol', 'field' => 'sol_native_address'],
+            ]],
         ],
     ],
 ];

@@ -402,6 +402,8 @@ class AuthController extends Controller
             'btc_address'    => $user->btc_address,
             'eth_address'    => $user->eth_address,
             'sol_address'    => $user->sol_address,
+            'btc_native_address' => $user->btc_native_address,
+            'sol_native_address' => $user->sol_native_address,
             'heir_name'      => $user->heir_name,
             'heir_phone'     => $user->heir_phone,
             'id_type'        => $user->id_type,

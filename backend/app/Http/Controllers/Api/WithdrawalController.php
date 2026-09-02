@@ -21,48 +21,40 @@ class WithdrawalController extends Controller
         return $request->user()->withdrawals()->latest()->paginate(15);
     }
 
-    /** Which stored address field backs each payout coin. */
-    protected function addressField(string $coin): ?string
-    {
-        return match ($coin) {
-            'USDT' => 'wallet_address',
-            'BTC'  => 'btc_address',
-            'ETH'  => 'eth_address',
-            'SOL'  => 'sol_address',
-            default => null,
-        };
-    }
-
     public function store(Request $request)
     {
         $data = $request->validate([
-            'amount' => ['required', 'numeric', 'min:0.00000001'],
-            'coin'   => ['nullable', 'string', 'max:12'],
+            'amount'  => ['required', 'numeric', 'min:0.00000001'],
+            'coin'    => ['nullable', 'string', 'max:12'],
+            'network' => ['nullable', 'string', 'max:20'],
         ]);
 
-        $user = $request->user();
-        $coin = strtoupper(trim($data['coin'] ?? 'USDT'));
+        $user    = $request->user();
+        $coin    = strtoupper(trim($data['coin'] ?? 'USDT'));
+        $network = isset($data['network']) ? strtoupper(trim($data['network'])) : null;
 
         if ($coin !== 'USDT' && ! $this->coins->enabled()) {
             return response()->json(['message' => 'Coin-swap withdrawals are currently unavailable. Please withdraw in USDT.'], 422);
         }
 
-        $field = $this->addressField($coin);
-        if ($field === null) {
-            return response()->json(['message' => 'Unknown coin selected.'], 422);
+        // Resolve the stored, admin-approved payout address for this coin+network.
+        $nw = $this->coins->network($coin, $network);
+        if ($nw === null) {
+            return response()->json(['message' => 'Unknown coin/network selected.'], 422);
         }
+        $network = $nw['network'];
+        $field   = $nw['field'];
 
-        // The payout address is LOCKED to the member's stored, admin-approved address
-        // for that coin — members cannot redirect their own withdrawals.
+        // The payout address is LOCKED to the member's stored address for that
+        // coin+network — members cannot redirect their own withdrawals.
         $address = trim((string) $user->{$field});
         if ($address === '') {
-            $label = $coin === 'USDT' ? 'USDT (BEP20)' : "{$coin} (BEP20)";
             return response()->json([
-                'message' => "No {$label} address is set on your account yet. Please add it in your Profile first.",
+                'message' => "No {$coin} ({$network}) address is set on your account yet. Please add it in your Profile first.",
             ], 422);
         }
 
-        $withdrawal = $this->withdrawals->request($user, $data['amount'], $coin, $address);
+        $withdrawal = $this->withdrawals->request($user, $data['amount'], $coin, $network, $address);
 
         // Telegram admin alert — always fires, now with coin details for swaps.
         $lines = [

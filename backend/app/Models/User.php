@@ -18,7 +18,7 @@ class User extends Authenticatable
     protected $fillable = [
         'username', 'name', 'nickname', 'email', 'phone', 'country', 'password', 'sponsor_id', 'rank_id',
         'referral_code', 'total_invested', 'total_fund', 'wallet_address',
-        'btc_address', 'eth_address', 'sol_address',
+        'btc_address', 'eth_address', 'sol_address', 'btc_native_address', 'sol_native_address',
         'heir_name', 'heir_phone',
         'id_type', 'id_number', 'kyc_country', 'kyc_document_path', 'kyc_document_hash',
         'kyc_selfie_path', 'kyc_selfie_hash', 'kyc_status', 'kyc_note',

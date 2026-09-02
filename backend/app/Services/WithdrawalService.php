@@ -26,9 +26,10 @@ class WithdrawalService
         protected CoinSwapService $coins,
     ) {}
 
-    public function request(User $user, $amount, string $coin, string $walletAddress): Withdrawal
+    public function request(User $user, $amount, string $coin, ?string $network, string $walletAddress): Withdrawal
     {
         $coin      = strtoupper(trim($coin));
+        $network   = $network ? strtoupper(trim($network)) : null;
         $maxAmount = (float) $this->settings->get('max_withdrawal_daily');
         $maxPerDay = (int) $this->settings->get('withdrawal_max_per_day');
         $amount    = (float) $amount;
@@ -88,7 +89,10 @@ class WithdrawalService
             if (! $this->coins->enabled() || ! $this->coins->isCoin($coin)) {
                 throw ValidationException::withMessages(['coin' => 'This coin is not available for withdrawal.']);
             }
-            $quote = $this->coins->quote($coin, $amount);
+            if ($this->coins->network($coin, $network) === null) {
+                throw ValidationException::withMessages(['network' => 'Invalid network for this coin.']);
+            }
+            $quote = $this->coins->quote($coin, $network, $amount);
             if ($quote === null) {
                 throw ValidationException::withMessages([
                     'coin' => 'Live price is temporarily unavailable. Please try again in a moment.',
