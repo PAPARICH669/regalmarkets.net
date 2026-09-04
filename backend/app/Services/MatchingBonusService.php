@@ -32,7 +32,25 @@ class MatchingBonusService
     public function __construct(
         protected WalletService $wallets,
         protected SettingsService $settings,
+        protected RankService $ranks,
     ) {}
+
+    /**
+     * Rank name used for MATCHING purposes. Normally the member's actual rank, but
+     * if they carry a matching-rank override they earn only that (lower) rank's %
+     * until they genuinely qualify for their displayed rank — then the real rank
+     * applies. No override (the common case) behaves exactly as before.
+     */
+    protected function matchRankName(User $node): string
+    {
+        if ($node->matching_rank_id === null) {
+            return $node->rankName();
+        }
+        if ($this->ranks->qualifiesForOwnRank($node)) {
+            return $node->rankName();
+        }
+        return optional($node->matchingRank)->name ?? $node->rankName();
+    }
 
     public function distributeForRoi(RoiLog $roiLog): void
     {
@@ -41,13 +59,13 @@ class MatchingBonusService
         $percents  = $this->settings->get('match_percents'); // ['USER'=>1,...]
         $maxPct    = max($percents);
 
-        $floor = (float) ($percents[$earner->rankName()] ?? 0);
+        $floor = (float) ($percents[$this->matchRankName($earner)] ?? 0);
         $depth = 0;
         $node  = $earner->sponsor;
 
         while ($node) {
             $depth++;
-            $rank      = $node->rankName();
+            $rank      = $this->matchRankName($node);
             $uplinePct = (float) ($percents[$rank] ?? 0);
 
             if ($rank === 'USER') {

@@ -150,6 +150,7 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::post('/members/{user}/freeze', [AdminMemberController::class, 'freeze']);
             Route::post('/members/{user}/adjust-wallet', [AdminMemberController::class, 'adjustWallet']);
             Route::post('/members/{user}/rank', [AdminMemberController::class, 'editRank']);
+            Route::post('/members/{user}/matching-rank', [AdminMemberController::class, 'setMatchingRank']);
             Route::post('/members/{user}/reset-password', [AdminMemberController::class, 'resetPassword']);
             Route::post('/members/{user}/verify-email', [AdminMemberController::class, 'verifyEmail']);
             Route::post('/members/{user}/staff', [AdminMemberController::class, 'toggleStaff']);

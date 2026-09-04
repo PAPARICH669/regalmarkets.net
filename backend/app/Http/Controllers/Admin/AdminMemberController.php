@@ -21,7 +21,7 @@ class AdminMemberController extends Controller
 
     public function index(Request $request)
     {
-        $q = User::with(['rank:id,name,level', 'sponsor:id,username'])->withCount('referrals')->latest();
+        $q = User::with(['rank:id,name,level', 'matchingRank:id,name', 'sponsor:id,username'])->withCount('referrals')->latest();
         if ($search = $request->query('search')) {
             $q->where(fn ($w) => $w->where('username', 'like', "%$search%")
                 ->orWhere('email', 'like', "%$search%")
@@ -156,6 +156,19 @@ class AdminMemberController extends Controller
         ]);
         $this->audit->log($request, 'member.edit_rank', $user, $data);
         return response()->json(['message' => 'Rank updated.', 'user' => $user->fresh('rank')]);
+    }
+
+    /**
+     * Matching-rank override: force the matching bonus to be calculated as a
+     * (usually lower) rank until the member genuinely qualifies for their displayed
+     * rank. Pass matching_rank_id = null to clear (matching uses the real rank).
+     */
+    public function setMatchingRank(Request $request, User $user)
+    {
+        $data = $request->validate(['matching_rank_id' => ['nullable', 'exists:ranks,id']]);
+        $user->update(['matching_rank_id' => $data['matching_rank_id'] ?? null]);
+        $this->audit->log($request, 'member.set_matching_rank', $user, $data);
+        return response()->json(['message' => 'Matching rank updated.', 'user' => $user->fresh('matchingRank')]);
     }
 
     public function tree(User $user, NetworkService $network)

@@ -86,6 +86,29 @@ class RankService
         return ['changed' => $changed];
     }
 
+    /**
+     * Does this member GENUINELY meet the requirements of their displayed rank
+     * (own total_invested + direct-leg production)? Used by the matching-bonus
+     * override so a manually-boosted rank does not earn the higher matching % until
+     * it is actually earned. USER (level 1) always qualifies.
+     */
+    public function qualifiesForOwnRank(User $user): bool
+    {
+        $rank = $user->rank;
+        if (! $rank || (int) $rank->level <= 1) {
+            return true;
+        }
+        $rankIdToLevel = Rank::all()->pluck('level', 'id')->toArray();
+        $directs = User::where('sponsor_id', $user->id)->get(['id', 'rank_id', 'total_invested']);
+        $level = [];
+        $fund  = [];
+        foreach ($directs as $d) {
+            $level[$d->id] = $d->rank_id ? ($rankIdToLevel[$d->rank_id] ?? 1) : 1;
+            $fund[$d->id]  = (float) $d->total_invested;
+        }
+        return $this->meets($rank, (float) $user->total_invested, $directs->pluck('id')->all(), $level, [], $fund);
+    }
+
     /** Highest rank level a user qualifies for given current snapshot. */
     protected function evaluate(int $userId, array $level, array $fund, array $children, $ranksByLevel): int
     {

@@ -12,6 +12,7 @@ interface Member {
   total_fund: string; total_invested: string; wallet_address?: string | null;
   is_frozen: boolean; is_staff?: boolean; is_admin?: boolean; is_ld?: boolean; can_kyc?: boolean; can_cr?: boolean; referrals_count: number;
   rank?: { id: number; name: string }; sponsor?: { id: number; username: string } | null;
+  matching_rank_id?: number | null; matching_rank?: { id: number; name: string } | null;
 }
 interface Rank { id: number; name: string; }
 
@@ -44,6 +45,9 @@ export default function AdminMembers() {
   }
   async function setRank(id: number, rank_id: number) {
     try { await api.post(`/admin/members/${id}/rank`, { rank_id }); load(); } catch (e) { setError(apiError(e)); }
+  }
+  async function setMatchingRank(id: number, matching_rank_id: number | null) {
+    try { await api.post(`/admin/members/${id}/matching-rank`, { matching_rank_id }); load(); } catch (e) { setError(apiError(e)); }
   }
   async function editContact(id: number, email: string, phone: string) {
     const newEmail = window.prompt("Email:", email); if (newEmail === null) return;
@@ -134,6 +138,12 @@ export default function AdminMembers() {
                       <select className="bg-[var(--surface)] border border-[var(--line)] rounded px-1 py-1 text-xs"
                         value={m.rank?.id ?? ""} onChange={(e) => setRank(m.id, Number(e.target.value))}>
                         {ranks.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
+                      </select>
+                      <select title="Matching rank override — matching bonus is calculated as this rank until the member genuinely qualifies for their real rank"
+                        className={`border border-[var(--line)] rounded px-1 py-1 text-xs ${m.matching_rank_id ? "bg-amber-500/15 text-amber-300" : "bg-[var(--surface)]"}`}
+                        value={m.matching_rank_id ?? ""} onChange={(e) => setMatchingRank(m.id, e.target.value ? Number(e.target.value) : null)}>
+                        <option value="">Match: auto</option>
+                        {ranks.map((r) => <option key={r.id} value={r.id}>Match: {r.name}</option>)}
                       </select>
                     </>)}
                   </div>

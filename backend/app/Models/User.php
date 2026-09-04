@@ -17,7 +17,7 @@ class User extends Authenticatable
 
     protected $fillable = [
         'username', 'name', 'nickname', 'email', 'phone', 'country', 'password', 'sponsor_id', 'rank_id',
-        'referral_code', 'total_invested', 'total_fund', 'wallet_address',
+        'referral_code', 'total_invested', 'total_fund', 'wallet_address', 'matching_rank_id',
         'btc_address', 'eth_address', 'sol_address', 'btc_native_address', 'sol_native_address',
         'heir_name', 'heir_phone',
         'id_type', 'id_number', 'kyc_country', 'kyc_document_path', 'kyc_document_hash',
@@ -70,6 +70,12 @@ class User extends Authenticatable
     public function rank(): BelongsTo
     {
         return $this->belongsTo(Rank::class);
+    }
+
+    /** Optional matching-bonus rank override (see MatchingBonusService). */
+    public function matchingRank(): BelongsTo
+    {
+        return $this->belongsTo(Rank::class, 'matching_rank_id');
     }
 
     public function wallets(): HasMany
