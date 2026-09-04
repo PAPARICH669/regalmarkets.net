@@ -140,8 +140,8 @@ export default function AdminMembers() {
                         {ranks.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
                       </select>
                       <select title="Matching rank override — matching bonus is calculated as this rank until the member genuinely qualifies for their real rank"
-                        className={`border border-[var(--line)] rounded px-1 py-1 text-xs ${m.matching_rank_id ? "bg-amber-500/15 text-amber-300" : "bg-[var(--surface)]"}`}
-                        value={m.matching_rank_id ?? ""} onChange={(e) => setMatchingRank(m.id, e.target.value ? Number(e.target.value) : null)}>
+                        className={`border border-[var(--line)] rounded px-1 py-1 text-xs ${m.matching_rank ? "bg-amber-500/15 text-amber-300" : "bg-[var(--surface)]"}`}
+                        value={m.matching_rank?.id ?? ""} onChange={(e) => setMatchingRank(m.id, e.target.value ? Number(e.target.value) : null)}>
                         <option value="">Match: auto</option>
                         {ranks.map((r) => <option key={r.id} value={r.id}>Match: {r.name}</option>)}
                       </select>

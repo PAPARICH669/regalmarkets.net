@@ -34,6 +34,10 @@ class User extends Authenticatable
         // Never serialize the login IP — protects the admin's/members' location
         // even if a raw User model is ever returned in a response by mistake.
         'last_login_ip',
+        // Internal matching-bonus override — must never be visible to members.
+        // The admin UI reads it via the `matchingRank` relation (matching_rank),
+        // which is unaffected by this hidden attribute.
+        'matching_rank_id',
     ];
 
     protected $casts = [
