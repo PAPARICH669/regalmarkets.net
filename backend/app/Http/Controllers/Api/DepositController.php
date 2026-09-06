@@ -138,8 +138,12 @@ class DepositController extends Controller
     /**
      * Return a non-null reason to route a verified deposit to manual review:
      *  - the TX is older than the recency window (guards claiming a stranger's
-     *    old unclaimed deposit), or
-     *  - the sender address has already been used by several other accounts.
+     *    old unclaimed deposit).
+     *
+     * NOTE: the "sender used on other accounts" check is disabled when
+     * review_from_reuse <= 0. It is off by default because members legitimately
+     * withdraw from EXCHANGES (Binance/Luno etc.) whose shared hot-wallet address
+     * appears across many accounts — which wrongly flagged normal deposits.
      */
     protected function reviewReason(int $userId, array $r): ?string
     {
@@ -149,11 +153,12 @@ class DepositController extends Controller
             return 'transaction older than ' . $days . ' days';
         }
 
-        if ($r['from']) {
+        $reuseLimit = (int) config('regal.deposit.review_from_reuse');
+        if ($reuseLimit > 0 && $r['from']) {
             $others = Deposit::where('from_address', $r['from'])
                 ->where('user_id', '!=', $userId)
                 ->distinct()->count('user_id');
-            if ($others >= (int) config('regal.deposit.review_from_reuse')) {
+            if ($others >= $reuseLimit) {
                 return 'sender used on other accounts';
             }
         }

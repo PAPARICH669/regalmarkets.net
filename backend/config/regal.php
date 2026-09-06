@@ -102,7 +102,7 @@ return [
         'usdt_contract'     => env('USDT_BEP20_CONTRACT', '0x55d398326f99059fF775485246999027B3197955'),
         'min_confirmations' => (int) env('DEPOSIT_MIN_CONFIRMATIONS', 15),
         'recency_days'      => (int) env('DEPOSIT_RECENCY_DAYS', 7),          // older TX → manual review
-        'review_from_reuse' => (int) env('DEPOSIT_REVIEW_FROM_REUSE', 3),     // same sender on ≥N other accounts → review
+        'review_from_reuse' => (int) env('DEPOSIT_REVIEW_FROM_REUSE', 0),     // same sender on ≥N other accounts → review. 0 = OFF (members may deposit from shared exchange addresses)
     ],
 
     // Where uploaded payment proofs are stored (private disk, served via controller).
