@@ -18,9 +18,11 @@ const NAV = [
   { href: "/fund", label: "Fund", icon: Repeat },
   { href: "/activity", label: "Activity", icon: History },
   { href: "/transfer", label: "Transfer", icon: ArrowLeftRight, ld: true },
-  { href: "/kyc-review", label: "KYC", icon: ShieldCheck, kyc: true },
+  { href: "/kyc-review", label: "KYC Review", icon: UserCheck, kyc: true },
   { href: "/change-requests", label: "Change Requests", icon: UserCheck, cr: true },
   { href: "/network", label: "Team Network", icon: Network },
+  { href: "/wallet", label: "Wallet", icon: Wallet },
+  { href: "/kyc", label: "KYC", icon: ShieldCheck },
   { href: "/profile", label: "Profile & Security", icon: UserCog },
 ];
 
