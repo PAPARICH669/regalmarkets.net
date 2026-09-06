@@ -167,6 +167,15 @@ class AuthController extends Controller
         }
     }
 
+    /**
+     * Accounts allowed to log in 24h — bypassing the daily maintenance window:
+     * admins, staff (incl. KYC/Change-Request duty holders) and LD accounts.
+     */
+    protected function canBypassMaintenance(User $user): bool
+    {
+        return $user->is_admin || $user->is_staff || $user->is_ld || $user->can_kyc || $user->can_cr;
+    }
+
     public function login(Request $request)
     {
         $data = $request->validate([
@@ -192,7 +201,7 @@ class AuthController extends Controller
         }
 
         // Members cannot log in during the maintenance window; admins always can.
-        if (! $user->is_admin && app(\App\Services\MaintenanceService::class)->isActive()) {
+        if (! $this->canBypassMaintenance($user) && app(\App\Services\MaintenanceService::class)->isActive()) {
             return response()->json([
                 'message'     => 'System is under maintenance. Login re-opens at the end of the window.',
                 'maintenance' => app(\App\Services\MaintenanceService::class)->status(),
@@ -266,7 +275,7 @@ class AuthController extends Controller
         }
 
         // Re-check gates that could have changed since password step.
-        if (! $user->is_admin && app(\App\Services\MaintenanceService::class)->isActive()) {
+        if (! $this->canBypassMaintenance($user) && app(\App\Services\MaintenanceService::class)->isActive()) {
             return response()->json([
                 'message'     => 'System is under maintenance. Login re-opens at the end of the window.',
                 'maintenance' => app(\App\Services\MaintenanceService::class)->status(),
