@@ -109,6 +109,14 @@ body {
   border-color: var(--gold);
   box-shadow: 0 0 0 3px rgba(201, 162, 39, 0.15);
 }
+/* Native <select> dropdown options render in the OS popup, which defaults to a
+   light background — the light option text was invisible. Force a solid dark
+   background + light text so every dropdown (KYC, admin, withdraw…) is readable. */
+.input-field option,
+select option {
+  background-color: var(--surface);
+  color: var(--foreground);
+}
 
 .card-hover {
   transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
