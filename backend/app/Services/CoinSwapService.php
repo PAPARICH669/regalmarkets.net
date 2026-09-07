@@ -163,8 +163,13 @@ class CoinSwapService
         $gross    = $rate > 0 ? $usdtAmount / $rate : 0.0;
         $net      = max($gross - $feeCoin, 0.0);
 
+        // Min/max/per-day mirror the USDT withdrawal ($10 / $500 / 1-per-day —
+        // max & per-day are enforced in WithdrawalService before the coin branch).
+        // The only per-coin floor on the minimum is that the amount must cover the
+        // network fee (else the member nets ~0); this only rises above $10 on a
+        // high-fee network such as native Bitcoin.
         $baseMinUsdt = (float) $this->settings->get('min_withdrawal', 10);
-        $minUsdt     = max($baseMinUsdt, ($minCoin + $feeCoin) * $rate);
+        $minUsdt     = max($baseMinUsdt, $feeCoin * $rate);
 
         return [
             'coin'        => $symbol,
