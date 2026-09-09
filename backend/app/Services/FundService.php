@@ -20,6 +20,7 @@ class FundService
         protected SponsorBonusService $sponsor,
         protected RankService $ranks,
         protected SettingsService $settings,
+        protected WalletService $wallets,
     ) {}
 
     public function fund(User $user, $amount): InvestmentPackage
@@ -31,6 +32,16 @@ class FundService
             throw ValidationException::withMessages(['amount' => "Minimum fund is {$min} USDT."]);
         }
         $amount = number_format((float) $amount, 8, '.', '');
+
+        // Insufficient A-WALLET is a normal user mistake — return a friendly 422
+        // instead of letting WalletService throw a 500 ("server error"). This is
+        // what members saw when they tried to fund more than their A-WALLET holds.
+        $balance = $this->wallets->balance($user, 'A');
+        if (bccomp($balance, $amount, 8) < 0) {
+            throw ValidationException::withMessages([
+                'amount' => 'Insufficient A-Wallet balance. Your balance is ' . number_format((float) $balance, 2) . ' USDT.',
+            ]);
+        }
 
         $package = DB::transaction(function () use ($user, $amount) {
             // Lock A-WALLET capital into a 200% package (throws if A-WALLET short).
