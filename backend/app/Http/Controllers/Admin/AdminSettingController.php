@@ -41,6 +41,7 @@ class AdminSettingController extends Controller
             'deposit_bonus_percent'  => ['nullable', 'numeric', 'min:0', 'max:100'],
             'deposit_bonus_start'    => ['nullable', 'date'],
             'deposit_bonus_end'      => ['nullable', 'date'],
+            'deposit_bonus_min'      => ['nullable', 'numeric', 'min:0'],
             'deposit_address'        => ['nullable', 'string', 'regex:/^0x[a-fA-F0-9]{40}$/'],
             'deposit_network'        => ['nullable', 'string', 'max:30'],
             'coin_swap_enabled'        => ['nullable', 'boolean'],

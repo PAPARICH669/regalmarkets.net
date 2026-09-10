@@ -131,6 +131,13 @@ class DepositService
             return null;
         }
 
+        // Minimum deposit to qualify for the promo (default 100 USDT). Deposits
+        // below this get NO bonus.
+        $min = (float) $s->get('deposit_bonus_min', 100);
+        if ($min > 0 && (float) $deposit->amount < $min) {
+            return null;
+        }
+
         $tz    = config('app.timezone');
         $when  = ($deposit->created_at ?? now())->copy()->setTimezone($tz);
         $start = $s->get('deposit_bonus_start');
