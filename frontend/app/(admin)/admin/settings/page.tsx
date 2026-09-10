@@ -31,6 +31,7 @@ export default function AdminSettings() {
         total_deposit_adjustment: Number(s?.total_deposit_adjustment ?? 0),
         deposit_bonus_enabled: !!s?.deposit_bonus_enabled,
         deposit_bonus_percent: Number(s?.deposit_bonus_percent ?? 0),
+        deposit_bonus_min: Number(s?.deposit_bonus_min ?? 100),
         deposit_bonus_start: s?.deposit_bonus_start ? String(s.deposit_bonus_start) : null,
         deposit_bonus_end: s?.deposit_bonus_end ? String(s.deposit_bonus_end) : null,
         deposit_address: s?.deposit_address ? String(s.deposit_address).trim() : null,
@@ -103,11 +104,17 @@ export default function AdminSettings() {
             <span className="text-sm font-medium">🎁 Deposit Bonus Promo</span>
           </label>
           <p className="text-xs text-muted mt-1 ml-7 mb-3">When on, real deposits (form + auto) made within the window get an extra % credited to their A-Wallet. Applies by the deposit&apos;s date.</p>
-          <div className="grid sm:grid-cols-3 gap-4 ml-7">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 ml-7">
             <div>
               <label className="text-sm text-muted">Bonus %</label>
               <input type="number" step="any" className="input-field mt-1"
                 value={String(s.deposit_bonus_percent ?? "")} onChange={(e) => field("deposit_bonus_percent", e.target.value)} />
+            </div>
+            <div>
+              <label className="text-sm text-muted">Min deposit (USDT)</label>
+              <input type="number" step="any" className="input-field mt-1" placeholder="100"
+                value={String(s.deposit_bonus_min ?? "")} onChange={(e) => field("deposit_bonus_min", e.target.value)} />
+              <p className="text-[11px] text-muted mt-1">Deposit below this gets no bonus.</p>
             </div>
             <div>
               <label className="text-sm text-muted">Start date</label>
