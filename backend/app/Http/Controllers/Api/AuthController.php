@@ -232,11 +232,19 @@ class AuthController extends Controller
         // so nobody gets locked out.
         if (($user->is_admin || $user->is_staff)
             && (bool) app(\App\Services\SettingsService::class)->get('login_tac_enabled', true)) {
-            $code = (string) random_int(100000, 999999);
-            $user->update([
-                'login_tac_code'       => $code,
-                'login_tac_expires_at' => now()->addMinutes(10),
-            ]);
+            // Reuse a still-valid code on rapid re-login/retry so every delivered
+            // email carries the SAME code — while email delivery lags (Brevo free
+            // tier), whichever email arrives still works, instead of each attempt
+            // invalidating the previous code.
+            if ($user->login_tac_code && $user->login_tac_expires_at && now()->lt($user->login_tac_expires_at)) {
+                $code = $user->login_tac_code;
+            } else {
+                $code = (string) random_int(100000, 999999);
+                $user->update([
+                    'login_tac_code'       => $code,
+                    'login_tac_expires_at' => now()->addMinutes(10),
+                ]);
+            }
             if ($this->sendTacEmail($user, $code)) {
                 return response()->json([
                     'message'      => 'A 6-digit login code (TAC) has been sent to your email.',

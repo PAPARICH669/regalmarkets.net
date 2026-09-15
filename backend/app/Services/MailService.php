@@ -23,7 +23,7 @@ class MailService
             return false;
         }
 
-        $response = Http::withHeaders([
+        $response = Http::timeout(10)->withHeaders([
             'api-key'      => $key,
             'accept'       => 'application/json',
             'content-type' => 'application/json',
