@@ -32,7 +32,7 @@ export default function TransferPage() {
       if (!amt || amt < 1) { setErr("Minimum transfer is 1 USDT."); setLoading(false); return; }
       const { data } = await api.post("/ld/transfer/init", { username: username.trim(), amount: amt });
       setRecipient(data.recipient); setPassword(""); setStep("confirm"); setMsg("");
-    } catch (e) { setErr(apiError(e, "Username not found.")); } finally { setLoading(false); }
+    } catch (e) { setErr(apiError(e, "Penerima tidak dijumpai.")); } finally { setLoading(false); }
   }
 
   async function confirmTransfer() {
@@ -63,8 +63,9 @@ export default function TransferPage() {
           {step === "idle" ? (
             <form onSubmit={startTransfer} className="mt-5 space-y-4">
               <div>
-                <label className="text-sm text-muted">Username ahli</label>
-                <input type="text" className="input-field mt-1" value={username} onChange={(e) => setUsername(e.target.value)} placeholder="cth: KOMANDO" required />
+                <label className="text-sm text-muted">Username atau nama ahli</label>
+                <input type="text" className="input-field mt-1" value={username} onChange={(e) => setUsername(e.target.value)} placeholder="cth: KOMANDO atau nama penuh" required />
+                <p className="text-xs text-muted mt-1">Boleh guna username atau nickname/nama ahli. Kalau nama sama ada pada beberapa akaun, guna username.</p>
               </div>
               <div>
                 <label className="text-sm text-muted">Jumlah (USDT)</label>

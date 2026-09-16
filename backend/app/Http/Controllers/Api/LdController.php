@@ -34,12 +34,32 @@ class LdController extends Controller
     {
         $this->ensureLd($request);
         $data = $request->validate([
-            'username' => ['required', 'string', 'exists:users,username'],
+            // Accepts a username OR the member's nickname/name, so an LD can find
+            // the recipient by either — even if the member goes by a new name.
+            'username' => ['required', 'string', 'max:191'],
             'amount'   => ['required', 'numeric', 'min:1'],
-        ], [], ['username' => 'username']);
+        ], [], ['username' => 'recipient']);
 
-        $ld     = $request->user();
-        $target = User::where('username', $data['username'])->first();
+        $ld    = $request->user();
+        $term  = trim($data['username']);
+
+        // 1) Exact username (unique) wins. 2) Else exact nickname/name — but only
+        // when it resolves to a SINGLE member (names are not unique).
+        $target = User::where('username', $term)->first();
+        if (! $target) {
+            $matches = User::where('nickname', $term)->orWhere('name', $term)->get();
+            if ($matches->count() > 1) {
+                throw ValidationException::withMessages([
+                    'username' => 'Beberapa akaun menggunakan nama ini. Sila masukkan username tepat.',
+                ]);
+            }
+            $target = $matches->first();
+        }
+        if (! $target) {
+            throw ValidationException::withMessages([
+                'username' => 'Penerima tidak dijumpai. Semak username atau nama.',
+            ]);
+        }
         if ($target->id === $ld->id) {
             throw ValidationException::withMessages(['username' => 'You cannot transfer to yourself.']);
         }
