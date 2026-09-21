@@ -296,9 +296,14 @@ class AdminMemberController extends Controller
     public function kycList(Request $request)
     {
         $status = $request->query('status', 'pending');
-        return User::where('kyc_status', $status)
-            ->select('id', 'username', 'name', 'email', 'phone', 'kyc_country', 'id_type', 'id_number', 'kyc_status', 'kyc_document_path', 'kyc_selfie_path', 'kyc_note', 'updated_at')
-            ->latest('updated_at')->paginate(20);
+        $q = User::where('kyc_status', $status)
+            ->select('id', 'username', 'name', 'email', 'phone', 'kyc_country', 'id_type', 'id_number', 'kyc_status', 'kyc_document_path', 'kyc_selfie_path', 'kyc_note', 'updated_at');
+        if ($search = trim((string) $request->query('search'))) {
+            $q->where(fn ($w) => $w->where('username', 'like', "%{$search}%")
+                ->orWhere('name', 'like', "%{$search}%")
+                ->orWhere('email', 'like', "%{$search}%"));
+        }
+        return $q->latest('updated_at')->paginate(20);
     }
 
     public function verifyKyc(Request $request, User $user)

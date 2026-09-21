@@ -17,13 +17,15 @@ export default function StaffKycPage() {
   const user = useAuth((s) => s.user);
   const [items, setItems] = useState<Kyc[]>([]);
   const [filter, setFilter] = useState("pending");
+  const [search, setSearch] = useState("");
   const [error, setError] = useState("");
   const [viewing, setViewing] = useState<Kyc | null>(null);
 
   const load = useCallback(() => {
-    api.get(`/staff/kyc?status=${filter}`).then((r) => setItems(r.data.data)).catch((e) => setError(apiError(e)));
-  }, [filter]);
-  useEffect(() => { load(); }, [load]);
+    const q = search.trim() ? `&search=${encodeURIComponent(search.trim())}` : "";
+    api.get(`/staff/kyc?status=${filter}${q}`).then((r) => setItems(r.data.data)).catch((e) => setError(apiError(e)));
+  }, [filter, search]);
+  useEffect(() => { const t = setTimeout(load, 250); return () => clearTimeout(t); }, [load]);
 
   if (user && !user.can_kyc) {
     return <div className="glass p-6 text-muted">You are not assigned to KYC.</div>;
@@ -41,12 +43,15 @@ export default function StaffKycPage() {
     <div className="space-y-5">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <h1 className="text-2xl font-bold">KYC Verification</h1>
+        <div className="flex items-center gap-2 flex-wrap">
+        <input className="input-field w-56" placeholder="Cari username / nama / email…" value={search} onChange={(e) => setSearch(e.target.value)} />
         <select className="input-field w-auto" value={filter} onChange={(e) => setFilter(e.target.value)}>
           <option value="pending">Pending</option>
           <option value="unsubmitted">Unsubmitted</option>
           <option value="verified">Verified</option>
           <option value="rejected">Rejected</option>
         </select>
+        </div>
       </div>
       {error && <div className="text-sm text-red-400 bg-red-500/10 border border-red-500/30 rounded-lg px-4 py-3">{error}</div>}
       <div className="glass overflow-x-auto">
