@@ -20,8 +20,15 @@ return [
 
     // ROI / investment package
     'roi' => [
-        'daily_percent'   => 1.0,   // 1% of principal per day
+        'daily_percent'   => 1.0,   // 1% of principal per day (flat mode)
         'return_multiple' => 2.0,   // 200% total return (deposit x2 then stops)
+        // Daily commission mode. 'flat' = classic fixed daily %. 'monthly_target'
+        // = admin sets a monthly target split into fluctuating clean 2-dp daily %s
+        // (within [daily_min, daily_max]) that sum exactly to the target.
+        'mode'            => 'flat',
+        'monthly_target'  => 12.0,  // % per month (monthly_target mode)
+        'daily_min'       => 0.30,  // min daily % (monthly_target mode)
+        'daily_max'       => 0.60,  // max daily % (monthly_target mode)
     ],
 
     // Deposit / withdrawal / transfer limits

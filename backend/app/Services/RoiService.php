@@ -26,15 +26,27 @@ class RoiService
         protected WalletService $wallets,
         protected MatchingBonusService $matching,
         protected SettingsService $settings,
+        protected RoiScheduleService $schedule,
     ) {}
 
     /**
      * Run ROI for a date (default today). $percent overrides the configured
      * daily rate for this run only (admin manual rate). Returns summary stats.
+     *
+     * When no explicit $percent is given AND the ROI mode is 'monthly_target',
+     * the daily rate comes from the pre-generated monthly schedule (which
+     * fluctuates day-to-day but sums to the monthly target). Otherwise the flat
+     * `roi_daily_percent` setting is used (classic behaviour, unchanged).
      */
     public function runForDate(?Carbon $date = null, ?float $percent = null): array
     {
-        $date    = ($date ?? Carbon::today())->toDateString();
+        $dateObj = $date ?? Carbon::today();
+        $date    = $dateObj->toDateString();
+
+        if ($percent === null && $this->schedule->isMonthlyMode()) {
+            $this->schedule->ensureMonth($dateObj);
+            $percent = $this->schedule->rateFor($date);
+        }
         $percent = $percent ?? (float) $this->settings->get('roi_daily_percent');
 
         $stats = ['paid' => 0, 'amount' => '0', 'completed' => 0, 'skipped' => 0, 'percent' => $percent];

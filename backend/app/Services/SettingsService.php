@@ -19,6 +19,14 @@ class SettingsService
         return [
             'roi_daily_percent'      => ['regal.roi.daily_percent', 'number'],
             'roi_return_multiple'    => ['regal.roi.return_multiple', 'number'],
+            // Daily commission mode:
+            //   'flat'           => everyone earns roi_daily_percent each day (classic)
+            //   'monthly_target' => a monthly profit target split into fluctuating
+            //                       clean 2-dp daily %s that sum to the target.
+            'roi_mode'               => ['regal.roi.mode', 'string'],
+            'roi_monthly_target'     => ['regal.roi.monthly_target', 'number'], // % per month
+            'roi_daily_min'          => ['regal.roi.daily_min', 'number'],       // min daily %
+            'roi_daily_max'          => ['regal.roi.daily_max', 'number'],       // max daily %
             'min_deposit'            => ['regal.limits.min_deposit', 'number'],
             'min_withdrawal'         => ['regal.limits.min_withdrawal', 'number'],
             'max_withdrawal_daily'   => ['regal.limits.max_withdrawal_daily', 'number'],

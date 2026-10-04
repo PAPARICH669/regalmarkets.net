@@ -4,12 +4,18 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Services\AuditService;
+use App\Services\RoiScheduleService;
 use App\Services\SettingsService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class AdminSettingController extends Controller
 {
-    public function __construct(protected SettingsService $settings, protected AuditService $audit) {}
+    public function __construct(
+        protected SettingsService $settings,
+        protected AuditService $audit,
+        protected RoiScheduleService $roiSchedule,
+    ) {}
 
     public function index()
     {
@@ -21,6 +27,10 @@ class AdminSettingController extends Controller
         $data = $request->validate([
             'roi_daily_percent'      => ['nullable', 'numeric', 'min:0', 'max:100'],
             'roi_return_multiple'    => ['nullable', 'numeric', 'min:1', 'max:100'],
+            'roi_mode'               => ['nullable', 'in:flat,monthly_target'],
+            'roi_monthly_target'     => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'roi_daily_min'          => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'roi_daily_max'          => ['nullable', 'numeric', 'min:0', 'max:100'],
             'min_deposit'            => ['nullable', 'numeric', 'min:0'],
             'min_withdrawal'         => ['nullable', 'numeric', 'min:0'],
             'max_withdrawal_daily'   => ['nullable', 'numeric', 'min:0'],
@@ -61,7 +71,22 @@ class AdminSettingController extends Controller
             }
         }
 
+        // If the daily-commission mode is monthly_target, (re)generate the current
+        // month's daily schedule to reflect the new target/range. Preserves days
+        // already paid this month and spreads the remaining target over the rest.
+        $warning = null;
+        if ($this->settings->get('roi_mode') === 'monthly_target') {
+            $result = $this->roiSchedule->generateMonth(Carbon::today(), true);
+            if (! ($result['ok'] ?? false)) {
+                $warning = $result['error'] ?? 'Gagal menjana jadual ROI bulanan.';
+            }
+        }
+
         $this->audit->log($request, 'settings.update', null, array_keys($data));
-        return response()->json(['message' => 'Settings updated.', 'settings' => $this->settings->all()]);
+        return response()->json([
+            'message'  => 'Settings updated.',
+            'settings' => $this->settings->all(),
+            'warning'  => $warning,
+        ]);
     }
 }

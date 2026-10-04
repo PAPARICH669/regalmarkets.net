@@ -3,12 +3,27 @@
 import { useEffect, useState } from "react";
 import api, { apiError } from "@/lib/api";
 
+type SchedDay = { date: string; percent: number; locked: boolean; cumulative: number; is_today: boolean };
+type Sched = { month_name: string; days: SchedDay[]; sum: number; target: number; min: number; max: number; mode: string };
+
 export default function AdminSettings() {
   const [s, setS] = useState<Record<string, unknown> | null>(null);
   const [msg, setMsg] = useState(""); const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [sched, setSched] = useState<Sched | null>(null);
+  const [schedBusy, setSchedBusy] = useState(false);
 
-  useEffect(() => { api.get("/admin/settings").then((r) => setS(r.data)); }, []);
+  function loadSchedule() { api.get("/admin/roi/schedule").then((r) => setSched(r.data)).catch(() => {}); }
+  useEffect(() => { api.get("/admin/settings").then((r) => setS(r.data)); loadSchedule(); }, []);
+
+  async function regenerate() {
+    if (!confirm("Jana semula corak ROI harian untuk bulan ini? Hari yang sudah dibayar dikekalkan; hanya hari berbaki diubah.")) return;
+    setSchedBusy(true); setMsg(""); setError("");
+    try {
+      const { data } = await api.post("/admin/roi/schedule/regenerate", {});
+      setSched(data.schedule); setMsg("Jadual ROI bulanan dijana semula.");
+    } catch (err) { setError(apiError(err)); } finally { setSchedBusy(false); }
+  }
 
   function field(key: string, value: string) { setS((prev) => ({ ...(prev || {}), [key]: value })); }
   function setReward(rank: string, value: string) {
@@ -21,6 +36,10 @@ export default function AdminSettings() {
       const payload = {
         roi_daily_percent: Number(s?.roi_daily_percent),
         roi_return_multiple: Number(s?.roi_return_multiple),
+        roi_mode: String(s?.roi_mode ?? "flat"),
+        roi_monthly_target: Number(s?.roi_monthly_target ?? 0),
+        roi_daily_min: Number(s?.roi_daily_min ?? 0),
+        roi_daily_max: Number(s?.roi_daily_max ?? 0),
         min_deposit: Number(s?.min_deposit),
         min_withdrawal: Number(s?.min_withdrawal),
         max_withdrawal_daily: Number(s?.max_withdrawal_daily),
@@ -45,14 +64,17 @@ export default function AdminSettings() {
         rank_rewards_end: s?.rank_rewards_end ? String(s.rank_rewards_end) : null,
       };
       const { data } = await api.put("/admin/settings", payload);
-      setS(data.settings); setMsg("Settings saved.");
+      setS(data.settings);
+      setMsg("Settings saved.");
+      if (data.warning) setError(data.warning);
+      loadSchedule();
     } catch (err) { setError(apiError(err)); } finally { setSaving(false); }
   }
 
   if (!s) return <div className="text-muted py-10">Loading…</div>;
 
   const fields: [string, string, string][] = [
-    ["roi_daily_percent", "Daily Commission %", "number"],
+    ["roi_daily_percent", "Daily Commission % (flat mode)", "number"],
     ["roi_return_multiple", "Return Multiple (x)", "number"],
     ["withdrawal_fee", "Withdrawal Fee (USDT flat)", "number"],
     ["withdrawal_max_per_day", "Withdrawals per day", "number"],
@@ -79,6 +101,91 @@ export default function AdminSettings() {
               value={String(s[key] ?? "")} onChange={(e) => field(key, e.target.value)} />
           </div>
         ))}
+
+        <div className="sm:col-span-2 border-t border-[var(--line)] pt-4">
+          <p className="text-sm font-medium mb-1">📈 Daily Commission Mode</p>
+          <p className="text-xs text-muted mb-3">
+            <b>Flat</b>: everyone earns the fixed <i>Daily Commission % (flat mode)</i> above each day.{" "}
+            <b>Monthly Target</b>: set a monthly profit target — the system splits it into daily %s that fluctuate up/down within a min–max range but add up EXACTLY to the target for the month. Already-paid days this month are kept and the rest of the target is spread over the remaining days (members who join mid-month only earn from their start date).
+          </p>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div>
+              <label className="text-sm text-muted">Mode</label>
+              <select className="input-field mt-1" value={String(s.roi_mode ?? "flat")}
+                onChange={(e) => field("roi_mode", e.target.value)}>
+                <option value="flat">Flat (fixed daily %)</option>
+                <option value="monthly_target">Monthly Target</option>
+              </select>
+            </div>
+            {String(s.roi_mode ?? "flat") === "monthly_target" && (
+              <>
+                <div>
+                  <label className="text-sm text-muted">Monthly target %</label>
+                  <input type="number" step="any" className="input-field mt-1" placeholder="12"
+                    value={String(s.roi_monthly_target ?? "")} onChange={(e) => field("roi_monthly_target", e.target.value)} />
+                </div>
+                <div>
+                  <label className="text-sm text-muted">Daily min %</label>
+                  <input type="number" step="any" className="input-field mt-1" placeholder="0.30"
+                    value={String(s.roi_daily_min ?? "")} onChange={(e) => field("roi_daily_min", e.target.value)} />
+                </div>
+                <div>
+                  <label className="text-sm text-muted">Daily max %</label>
+                  <input type="number" step="any" className="input-field mt-1" placeholder="0.60"
+                    value={String(s.roi_daily_max ?? "")} onChange={(e) => field("roi_daily_max", e.target.value)} />
+                </div>
+              </>
+            )}
+          </div>
+
+          {String(s.roi_mode ?? "flat") === "monthly_target" && sched && (
+            <div className="mt-4 rounded-lg border border-[var(--line)] overflow-hidden">
+              <div className="flex items-center justify-between gap-3 px-4 py-2.5 bg-[var(--gold)]/5">
+                <div className="text-sm">
+                  <span className="font-medium">{sched.month_name}</span>
+                  <span className="text-muted"> · {sched.days.length} days · range {sched.min}%–{sched.max}%</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className={`text-sm font-semibold ${Math.abs(sched.sum - sched.target) < 0.005 ? "text-green-400" : "text-amber-400"}`}>
+                    Σ {sched.sum.toFixed(2)}% / target {sched.target.toFixed(2)}%
+                  </span>
+                  <button type="button" disabled={schedBusy} onClick={regenerate}
+                    className="text-xs px-3 py-1.5 rounded-md border border-[var(--gold)]/40 hover:bg-[var(--gold)]/10 disabled:opacity-50">
+                    {schedBusy ? "…" : "🔄 Regenerate"}
+                  </button>
+                </div>
+              </div>
+              <div className="max-h-64 overflow-y-auto">
+                <table className="w-full text-sm tabular-nums">
+                  <thead className="sticky top-0 bg-[var(--bg)]">
+                    <tr className="text-xs text-muted text-left">
+                      <th className="px-4 py-2 font-medium">Date</th>
+                      <th className="px-4 py-2 font-medium text-right">ROI %</th>
+                      <th className="px-4 py-2 font-medium text-right">Cumulative</th>
+                      <th className="px-4 py-2 font-medium text-right">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {sched.days.map((d) => (
+                      <tr key={d.date} className={`border-t border-[var(--line)] ${d.is_today ? "bg-[var(--gold)]/10" : ""}`}>
+                        <td className="px-4 py-1.5">{d.date.slice(5)}{d.is_today && <span className="text-[var(--gold)] ml-1">• today</span>}</td>
+                        <td className="px-4 py-1.5 text-right font-medium">{d.percent.toFixed(2)}%</td>
+                        <td className="px-4 py-1.5 text-right text-muted">{d.cumulative.toFixed(2)}%</td>
+                        <td className="px-4 py-1.5 text-right">
+                          {d.locked
+                            ? <span className="text-[11px] text-muted">paid</span>
+                            : <span className="text-[11px] text-green-400">scheduled</span>}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <p className="text-[11px] text-muted px-4 py-2">“paid” = already credited this month (locked). Regenerate only re-rolls the scheduled days. Saving with a new target/range also regenerates automatically.</p>
+            </div>
+          )}
+        </div>
+
         <div className="sm:col-span-2 border-t border-[var(--line)] pt-4">
           <label className="flex items-center gap-3 cursor-pointer">
             <input type="checkbox" className="w-4 h-4 accent-[var(--gold)]"

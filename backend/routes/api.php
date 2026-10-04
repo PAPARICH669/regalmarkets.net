@@ -169,6 +169,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
             Route::get('/roi/status', [\App\Http\Controllers\Admin\AdminRoiController::class, 'status']);
             Route::post('/roi/run', [\App\Http\Controllers\Admin\AdminRoiController::class, 'run']);
+            Route::get('/roi/schedule', [\App\Http\Controllers\Admin\AdminRoiController::class, 'schedule']);
+            Route::post('/roi/schedule/regenerate', [\App\Http\Controllers\Admin\AdminRoiController::class, 'regenerate']);
 
             Route::get('/announcements', [AdminAnnouncementController::class, 'index']);
             Route::post('/announcements', [AdminAnnouncementController::class, 'store']);
