@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\RoiDailyRate;
 use App\Models\RoiLog;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Monthly-target ROI schedule generator.
@@ -94,12 +95,16 @@ class RoiScheduleService
         $existing = RoiDailyRate::whereBetween('rate_date', [$start->toDateString(), $end->toDateString()])
             ->get()->keyBy(fn ($r) => Carbon::parse($r->rate_date)->day);
 
-        // Preserve the elapsed/paid days at their known rate (schedule row if any,
-        // else the flat rate that was in force before the switch).
+        // Preserve the elapsed/paid days at the rate that was ACTUALLY paid that
+        // day (derived from roi_logs), so the locked days match the real payouts
+        // and the remaining target is deducted correctly. Falls back to an
+        // existing schedule row, then the flat rate, if a day has no logs.
+        $actual = $this->actualPaidRates($start, $start->copy()->day(max($lastPaidDay, 1)));
         $fixed = [];
         $fixedSum = 0.0;
         for ($d = 1; $d <= $lastPaidDay; $d++) {
-            $rate = isset($existing[$d]) ? round((float) $existing[$d]->percent, 2) : $flat;
+            $rate = $actual[$d]
+                ?? (isset($existing[$d]) ? round((float) $existing[$d]->percent, 2) : $flat);
             $fixed[$d] = $rate;
             $fixedSum += $rate;
         }
@@ -136,6 +141,31 @@ class RoiScheduleService
             'remaining_target' => $remainingTarget,
             'generated_days'   => $remainingDays,
         ];
+    }
+
+    /**
+     * The daily ROI % that was ACTUALLY paid on each date in the range, derived
+     * from roi_logs: for an uncapped package amount = principal × rate%, so
+     * rate = amount / principal × 100. We take the MAX across that day's packages
+     * (packages near the 200% cap pay less, so the max is the true daily rate).
+     *
+     * @return array<int,float>  day-of-month => rate %
+     */
+    protected function actualPaidRates(Carbon $start, Carbon $end): array
+    {
+        $rows = DB::table('roi_logs as rl')
+            ->join('investment_packages as p', 'p.id', '=', 'rl.investment_package_id')
+            ->whereBetween('rl.roi_date', [$start->toDateString(), $end->toDateString()])
+            ->where('p.principal', '>', 0)
+            ->groupBy('rl.roi_date')
+            ->selectRaw('rl.roi_date as d, MAX(rl.amount / p.principal * 100) as pct')
+            ->get();
+
+        $map = [];
+        foreach ($rows as $r) {
+            $map[(int) Carbon::parse($r->d)->day] = round((float) $r->pct, 2);
+        }
+        return $map;
     }
 
     /** Upsert the month's rows. $fixed (locked) + $generated (future, unlocked). */
