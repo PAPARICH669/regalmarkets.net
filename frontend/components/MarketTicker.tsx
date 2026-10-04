@@ -3,9 +3,11 @@
 import { useEffect, useRef } from "react";
 
 /**
- * Live market ticker (TradingView Ticker Tape) shown across the top of the
- * member dashboard — Gold (XAUUSD), Silver, major forex pairs, and BTC/ETH.
- * Free widget, live daily prices, dark theme to match the dashboard.
+ * Live crypto ticker (TradingView Ticker Tape) shown across the top of the
+ * member dashboard — the top 20 coins by market cap (stablecoins excluded).
+ * Prices are live (Binance feed), dark theme to match the dashboard. The list
+ * is a fixed set of symbols; refresh it occasionally as market-cap ranking
+ * shifts. Free widget.
  */
 export default function MarketTicker() {
   const ref = useRef<HTMLDivElement>(null);
@@ -24,14 +26,26 @@ export default function MarketTicker() {
     script.async = true;
     script.innerHTML = JSON.stringify({
       symbols: [
-        { proName: "OANDA:XAUUSD", title: "Gold" },
-        { proName: "OANDA:XAGUSD", title: "Silver" },
-        { proName: "FX:EURUSD", title: "EUR/USD" },
-        { proName: "FX:GBPUSD", title: "GBP/USD" },
-        { proName: "FX:USDJPY", title: "USD/JPY" },
-        { proName: "FX:AUDUSD", title: "AUD/USD" },
-        { proName: "BINANCE:BTCUSDT", title: "BTC/USD" },
-        { proName: "BINANCE:ETHUSDT", title: "ETH/USD" },
+        { proName: "BINANCE:BTCUSDT", title: "BTC" },
+        { proName: "BINANCE:ETHUSDT", title: "ETH" },
+        { proName: "BINANCE:BNBUSDT", title: "BNB" },
+        { proName: "BINANCE:SOLUSDT", title: "SOL" },
+        { proName: "BINANCE:XRPUSDT", title: "XRP" },
+        { proName: "BINANCE:DOGEUSDT", title: "DOGE" },
+        { proName: "BINANCE:ADAUSDT", title: "ADA" },
+        { proName: "BINANCE:TRXUSDT", title: "TRX" },
+        { proName: "BINANCE:AVAXUSDT", title: "AVAX" },
+        { proName: "BINANCE:LINKUSDT", title: "LINK" },
+        { proName: "BINANCE:TONUSDT", title: "TON" },
+        { proName: "BINANCE:SHIBUSDT", title: "SHIB" },
+        { proName: "BINANCE:DOTUSDT", title: "DOT" },
+        { proName: "BINANCE:SUIUSDT", title: "SUI" },
+        { proName: "BINANCE:BCHUSDT", title: "BCH" },
+        { proName: "BINANCE:LTCUSDT", title: "LTC" },
+        { proName: "BINANCE:NEARUSDT", title: "NEAR" },
+        { proName: "BINANCE:POLUSDT", title: "POL" },
+        { proName: "BINANCE:APTUSDT", title: "APT" },
+        { proName: "BINANCE:XLMUSDT", title: "XLM" },
       ],
       showSymbolLogo: true,
       colorTheme: "dark",
