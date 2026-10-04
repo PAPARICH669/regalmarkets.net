@@ -46,6 +46,11 @@ class AdminSettingController extends Controller
             'deposit_network'        => ['nullable', 'string', 'max:30'],
             'coin_swap_enabled'        => ['nullable', 'boolean'],
             'coin_swap_markup_percent' => ['nullable', 'numeric', 'min:0', 'max:50'],
+            'rank_rewards_enabled' => ['nullable', 'boolean'],
+            'rank_rewards'         => ['nullable', 'array'],
+            'rank_rewards.*'       => ['nullable', 'numeric', 'min:0'],
+            'rank_rewards_start'   => ['nullable', 'date'],
+            'rank_rewards_end'     => ['nullable', 'date'],
         ], [
             'deposit_address.regex' => 'Enter a valid BEP20 address (0x…, 42 characters).',
         ]);

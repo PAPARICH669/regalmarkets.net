@@ -11,6 +11,9 @@ export default function AdminSettings() {
   useEffect(() => { api.get("/admin/settings").then((r) => setS(r.data)); }, []);
 
   function field(key: string, value: string) { setS((prev) => ({ ...(prev || {}), [key]: value })); }
+  function setReward(rank: string, value: string) {
+    setS((prev) => ({ ...(prev || {}), rank_rewards: { ...((prev?.rank_rewards as Record<string, unknown>) || {}), [rank]: value === "" ? 0 : Number(value) } }));
+  }
 
   async function save(e: React.FormEvent) {
     e.preventDefault(); setMsg(""); setError(""); setSaving(true);
@@ -36,6 +39,10 @@ export default function AdminSettings() {
         deposit_bonus_end: s?.deposit_bonus_end ? String(s.deposit_bonus_end) : null,
         deposit_address: s?.deposit_address ? String(s.deposit_address).trim() : null,
         deposit_network: String(s?.deposit_network ?? "BEP20 (BSC)"),
+        rank_rewards_enabled: !!s?.rank_rewards_enabled,
+        rank_rewards: (s?.rank_rewards as Record<string, unknown>) || {},
+        rank_rewards_start: s?.rank_rewards_start ? String(s.rank_rewards_start) : null,
+        rank_rewards_end: s?.rank_rewards_end ? String(s.rank_rewards_end) : null,
       };
       const { data } = await api.put("/admin/settings", payload);
       setS(data.settings); setMsg("Settings saved.");
@@ -125,6 +132,35 @@ export default function AdminSettings() {
               <label className="text-sm text-muted">End date</label>
               <input type="date" className="input-field mt-1"
                 value={String(s.deposit_bonus_end ?? "")} onChange={(e) => field("deposit_bonus_end", e.target.value)} />
+            </div>
+          </div>
+        </div>
+        <div className="sm:col-span-2 border-t border-[var(--line)] pt-4">
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input type="checkbox" className="w-4 h-4 accent-[var(--gold)]"
+              checked={!!s.rank_rewards_enabled} onChange={(e) => setS((p) => ({ ...(p || {}), rank_rewards_enabled: e.target.checked }))} />
+            <span className="text-sm font-medium">🏆 Rank Rewards Campaign</span>
+          </label>
+          <p className="text-xs text-muted mt-1 ml-7 mb-3">When on, a member PROMOTED to a rank gets the USDT reward below credited to their E-Wallet — once per rank, forward-only (members already at a rank are not paid). Leave an amount at 0 for no reward. Dates are optional.</p>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 ml-7">
+            {["FAN", "SENIOR", "TEAM LEADER", "GROUP LEADER"].map((rk) => (
+              <div key={rk}>
+                <label className="text-sm text-muted">{rk} reward (USDT)</label>
+                <input type="number" step="any" className="input-field mt-1" placeholder="0"
+                  value={String(((s.rank_rewards as Record<string, unknown>) || {})[rk] ?? "")} onChange={(e) => setReward(rk, e.target.value)} />
+              </div>
+            ))}
+          </div>
+          <div className="grid sm:grid-cols-2 gap-4 ml-7 mt-4">
+            <div>
+              <label className="text-sm text-muted">Start date (optional)</label>
+              <input type="date" className="input-field mt-1"
+                value={String(s.rank_rewards_start ?? "")} onChange={(e) => field("rank_rewards_start", e.target.value)} />
+            </div>
+            <div>
+              <label className="text-sm text-muted">End date (optional)</label>
+              <input type="date" className="input-field mt-1"
+                value={String(s.rank_rewards_end ?? "")} onChange={(e) => field("rank_rewards_end", e.target.value)} />
             </div>
           </div>
         </div>

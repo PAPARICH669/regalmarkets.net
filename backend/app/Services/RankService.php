@@ -80,6 +80,12 @@ class RankService
                     ]);
                 });
                 $changed++;
+
+                // Rank Rewards Campaign — pay a one-time USDT reward when the rank
+                // actually RISES (forward-only; never on the initial USER rank).
+                if ($targetLevel > $currentLevel) {
+                    $this->payRankReward($u->id, $targetRank);
+                }
             }
         }
 
@@ -107,6 +113,65 @@ class RankService
             $fund[$d->id]  = (float) $d->total_invested;
         }
         return $this->meets($rank, (float) $user->total_invested, $directs->pluck('id')->all(), $level, [], $fund);
+    }
+
+    /**
+     * Rank Rewards Campaign: credit a one-time USDT reward to the member's E-WALLET
+     * when they are promoted to a rank that has a configured reward. Idempotent
+     * (one payout per member per rank) and never breaks rank processing on error.
+     */
+    protected function payRankReward(int $userId, Rank $rank): void
+    {
+        $settings = app(SettingsService::class);
+        if (! $settings->get('rank_rewards_enabled')) {
+            return;
+        }
+        $rewards = (array) ($settings->get('rank_rewards') ?: []);
+        $amount  = (float) ($rewards[$rank->name] ?? 0);
+        if ($amount <= 0) {
+            return;
+        }
+        // Optional campaign window (Y-m-d, inclusive).
+        $tz    = config('app.timezone');
+        $now   = \Carbon\Carbon::now($tz);
+        $start = $settings->get('rank_rewards_start');
+        $end   = $settings->get('rank_rewards_end');
+        if ($start && $now->lt(\Carbon\Carbon::parse($start, $tz)->startOfDay())) {
+            return;
+        }
+        if ($end && $now->gt(\Carbon\Carbon::parse($end, $tz)->endOfDay())) {
+            return;
+        }
+        // One reward per member per rank.
+        if (\App\Models\RankRewardPayout::where('user_id', $userId)->where('rank_id', $rank->id)->exists()) {
+            return;
+        }
+        $user = User::find($userId);
+        if (! $user) {
+            return;
+        }
+        try {
+            DB::transaction(function () use ($user, $rank, $amount) {
+                \App\Models\RankRewardPayout::create([
+                    'user_id' => $user->id,
+                    'rank_id' => $rank->id,
+                    'amount'  => $amount,
+                    'paid_at' => now(),
+                ]);
+                app(WalletService::class)->credit(
+                    $user, 'E', $amount, 'rank_reward', null,
+                    ['rank' => $rank->name, 'rank_id' => $rank->id],
+                    'Rank reward: ' . $rank->name
+                );
+            });
+            app(TelegramService::class)->notify('🏆 Rank Reward Paid', [
+                'User'   => '@' . $user->username,
+                'Rank'   => $rank->name,
+                'Reward' => number_format($amount, 2) . ' USDT → E-Wallet',
+            ]);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Rank reward failed for user ' . $userId . ': ' . $e->getMessage());
+        }
     }
 
     /** Highest rank level a user qualifies for given current snapshot. */

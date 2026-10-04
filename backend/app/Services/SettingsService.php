@@ -48,6 +48,12 @@ class SettingsService
             // Coin-swap withdrawals (receive BTC/ETH/SOL instead of USDT).
             'coin_swap_enabled'        => [null, 'bool'],   // whole feature toggle, default ON
             'coin_swap_markup_percent' => ['regal.coin_swap.markup_percent', 'number'], // system rate uplift over CoinGecko
+            // Rank Rewards Campaign — one-time USDT reward (to E-WALLET) when a
+            // member is promoted TO a rank, forward-only. Default OFF.
+            'rank_rewards_enabled' => [null, 'bool'],
+            'rank_rewards'         => [null, 'json'],   // {"FAN":5,"SENIOR":20,...} USDT per rank
+            'rank_rewards_start'   => [null, 'string'], // Y-m-d (optional campaign window)
+            'rank_rewards_end'     => [null, 'string'], // Y-m-d
         ];
     }
 
