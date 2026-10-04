@@ -45,6 +45,27 @@ class MailService
         return true;
     }
 
+    /** Congratulations email when a Rank Rewards Campaign reward is credited. */
+    public function sendRankReward(string $toEmail, ?string $toName, string $rankName, string $amount): bool
+    {
+        $html = <<<HTML
+        <div style="font-family:Arial,sans-serif;background:#04102a;padding:32px;color:#eef3fc">
+          <div style="max-width:520px;margin:auto;background:#0a1c40;border:1px solid rgba(201,162,39,.3);border-radius:14px;padding:28px">
+            <h2 style="color:#e7c873;margin:0 0 10px">Regal Markets</h2>
+            <p style="margin:0 0 6px;font-size:20px;font-weight:bold;color:#e7c873">🎉 Congratulations!</p>
+            <p style="margin:0 0 18px;color:#9fb1d4">You have reached the rank of <b style="color:#eef3fc">{$rankName}</b>. Well done on your achievement with Regal Markets!</p>
+            <div style="background:#04102a;border:1px solid rgba(201,162,39,.3);border-radius:10px;padding:16px;margin:0 0 18px">
+              <p style="margin:0;color:#9fb1d4;font-size:13px">Rank Reward credited to your E-Wallet</p>
+              <p style="margin:6px 0 0;font-size:28px;font-weight:bold;color:#6cc79a">{$amount} USDT</p>
+            </div>
+            <p style="margin:0;color:#9fb1d4;font-size:13px">Your reward is now available in your <b style="color:#eef3fc">E-Wallet</b> and can be withdrawn under the usual withdrawal terms. Keep building your team to reach the next rank!</p>
+            <p style="margin:18px 0 0;color:#6b7a99;font-size:12px">This is an automated message from Regal Markets. If you did not expect this, please contact support.</p>
+          </div>
+        </div>
+        HTML;
+        return $this->send($toEmail, $toName, "Congratulations — you reached {$rankName}!", $html);
+    }
+
     /** Branded password-reset email. */
     public function sendPasswordReset(string $toEmail, ?string $toName, string $resetUrl): bool
     {

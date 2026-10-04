@@ -169,6 +169,14 @@ class RankService
                 'Rank'   => $rank->name,
                 'Reward' => number_format($amount, 2) . ' USDT → E-Wallet',
             ]);
+            // Congratulations email to the member — failure must not affect the reward.
+            try {
+                app(MailService::class)->sendRankReward(
+                    $user->email, $user->name ?: $user->username, $rank->name, number_format($amount, 2)
+                );
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning('Rank reward email failed for user ' . $user->id . ': ' . $e->getMessage());
+            }
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::warning('Rank reward failed for user ' . $userId . ': ' . $e->getMessage());
         }
