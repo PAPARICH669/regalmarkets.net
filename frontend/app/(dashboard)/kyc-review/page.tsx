@@ -44,7 +44,7 @@ export default function StaffKycPage() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <h1 className="text-2xl font-bold">KYC Verification</h1>
         <div className="flex items-center gap-2 flex-wrap">
-        <input className="input-field w-56" placeholder="Cari username / nama / email…" value={search} onChange={(e) => setSearch(e.target.value)} />
+        <input className="input-field w-56" placeholder="Search username / name / email…" value={search} onChange={(e) => setSearch(e.target.value)} />
         <select className="input-field w-auto" value={filter} onChange={(e) => setFilter(e.target.value)}>
           <option value="pending">Pending</option>
           <option value="unsubmitted">Unsubmitted</option>

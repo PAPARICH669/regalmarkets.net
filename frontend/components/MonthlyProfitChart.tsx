@@ -53,8 +53,8 @@ export default function MonthlyProfitChart() {
                 style={{ height: `${h}px`, background: bg }}
                 title={
                   m.future
-                    ? `${m.label}: belum bermula`
-                    : `${m.label}: ${m.value.toFixed(1)}%${m.current ? " (bulan semasa — naik setiap hari)" : ""}`
+                    ? `${m.label}: not started yet`
+                    : `${m.label}: ${m.value.toFixed(1)}%${m.current ? " (current month — rises daily)" : ""}`
                 }
               />
               <span className={`text-[10px] whitespace-nowrap ${m.future ? "text-muted/50" : "text-muted"}`}>{m.label}</span>
@@ -64,9 +64,9 @@ export default function MonthlyProfitChart() {
       </div>
 
       <div className="mt-3 flex items-center gap-4 flex-wrap text-[10px] text-muted">
-        <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm" style={{ background: "#e7c873" }} /> Selesai</span>
-        <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm" style={{ background: "#f2d98a" }} /> Bulan semasa (naik harian)</span>
-        <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm" style={{ background: "rgba(255,255,255,0.12)" }} /> Belum bermula</span>
+        <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm" style={{ background: "#e7c873" }} /> Completed</span>
+        <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm" style={{ background: "#f2d98a" }} /> Current month (rises daily)</span>
+        <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm" style={{ background: "rgba(255,255,255,0.12)" }} /> Not started yet</span>
       </div>
     </div>
   );

@@ -95,7 +95,7 @@ class AdminRoiController extends Controller
         $result = $this->schedule->generateMonth($month, true);
 
         if (! ($result['ok'] ?? false)) {
-            return response()->json(['message' => $result['error'] ?? 'Gagal menjana jadual.'], 422);
+            return response()->json(['message' => $result['error'] ?? 'Failed to generate the schedule.'], 422);
         }
 
         $this->audit->log($request, 'roi.schedule.regenerate', null, [
@@ -103,7 +103,7 @@ class AdminRoiController extends Controller
         ]);
 
         return response()->json([
-            'message'  => 'Jadual ROI bulanan dijana semula.',
+            'message'  => 'Monthly ROI schedule regenerated.',
             'result'   => $result,
             'schedule' => $this->schedule->currentMonthPreview($month),
         ]);

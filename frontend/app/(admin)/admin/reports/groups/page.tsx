@@ -9,7 +9,7 @@ interface Bucket { form: number; adjust: number; ld: number; total: number; }
 interface Group { leader: string; members: number; monthly: Record<string, Bucket>; total: Bucket; }
 interface View { parent: string; months: string[]; groups: Group[]; generated_at: string; }
 
-const BULAN = ["Januari", "Februari", "Mac", "April", "Mei", "Jun", "Julai", "Ogos", "September", "Oktober", "November", "Disember"];
+const BULAN = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 const monthLabel = (ym: string) => { const [y, m] = ym.split("-"); return `${BULAN[Number(m) - 1] ?? m} ${y}`; };
 const fmt = (n: number) => Number(n || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const ZERO: Bucket = { form: 0, adjust: 0, ld: 0, total: 0 };
@@ -23,7 +23,7 @@ export default function GroupDepositPrint() {
 
   async function load() {
     const p = parent.trim();
-    if (!p) { setError("Masukkan username parent (cth. KOMANDO)."); return; }
+    if (!p) { setError("Enter the parent username (e.g. KOMANDO)."); return; }
     setError(""); setBusy(true);
     try {
       const res = await api.get("/admin/reports/group-deposits-view", { params: { parent: p } });
@@ -72,10 +72,10 @@ export default function GroupDepositPrint() {
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3 print:hidden">
-        <input className="input-field flex-1" placeholder="Username parent (cth. KOMANDO)" value={parent}
+        <input className="input-field flex-1" placeholder="Parent username (e.g. KOMANDO)" value={parent}
           onChange={(e) => setParent(e.target.value)} onKeyDown={(e) => e.key === "Enter" && load()} />
         <button onClick={load} disabled={busy} className="btn-gold px-5 py-2.5 flex items-center justify-center gap-2 shrink-0">
-          <Search size={16} /> {busy ? "Memuatkan…" : "Papar"}
+          <Search size={16} /> {busy ? "Loading…" : "View"}
         </button>
       </div>
 
@@ -85,7 +85,7 @@ export default function GroupDepositPrint() {
         <>
           {/* Month selector */}
           <div className="flex flex-wrap gap-2 print:hidden">
-            <button onClick={() => setMonth("all")} className={`px-3 py-1.5 rounded-lg text-sm ${month === "all" ? "btn-gold" : "btn-ghost"}`}>Semua bulan</button>
+            <button onClick={() => setMonth("all")} className={`px-3 py-1.5 rounded-lg text-sm ${month === "all" ? "btn-gold" : "btn-ghost"}`}>All months</button>
             {data.months.map((ym) => (
               <button key={ym} onClick={() => setMonth(ym)} className={`px-3 py-1.5 rounded-lg text-sm ${month === ym ? "btn-gold" : "btn-ghost"}`}>{monthLabel(ym)}</button>
             ))}
@@ -93,24 +93,24 @@ export default function GroupDepositPrint() {
 
           {/* Print header */}
           <div className="hidden print:block mb-3">
-            <h1 className="text-xl font-bold">Regal Markets — Laporan Deposit Group</h1>
-            <p className="text-sm">Parent: @{data.parent} · Tempoh: {month === "all" ? "Semua bulan" : monthLabel(month)} · Dijana: {data.generated_at} · Akaun dummy dikecualikan</p>
+            <h1 className="text-xl font-bold">Regal Markets — Group Deposit Report</h1>
+            <p className="text-sm">Parent: @{data.parent} · Period: {month === "all" ? "All months" : monthLabel(month)} · Generated: {data.generated_at} · Dummy accounts excluded</p>
           </div>
 
           <div className="glass p-4 sm:p-6 overflow-x-auto print:bg-white print:text-black">
             <div className="text-sm font-medium mb-3 print:hidden">
-              Group di bawah <b className="text-gold-light">@{data.parent}</b> · {month === "all" ? "Semua bulan" : monthLabel(month)}
+              Group under <b className="text-gold-light">@{data.parent}</b> · {month === "all" ? "All months" : monthLabel(month)}
             </div>
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-left text-gold-light print:text-black border-b border-[var(--line)]">
                   <th className="py-2 pr-2">#</th>
                   <th className="py-2 pr-3">Group (leader)</th>
-                  <th className="py-2 px-3 text-right">Ahli</th>
-                  <th className="py-2 px-3 text-right">Deposit borang</th>
-                  <th className="py-2 px-3 text-right">Adjust admin</th>
-                  <th className="py-2 px-3 text-right">Transfer LD</th>
-                  <th className="py-2 pl-3 text-right">Jumlah (USDT)</th>
+                  <th className="py-2 px-3 text-right">Members</th>
+                  <th className="py-2 px-3 text-right">Form deposit</th>
+                  <th className="py-2 px-3 text-right">Admin adjust</th>
+                  <th className="py-2 px-3 text-right">LD transfer</th>
+                  <th className="py-2 pl-3 text-right">Total (USDT)</th>
                 </tr>
               </thead>
               <tbody>
@@ -128,7 +128,7 @@ export default function GroupDepositPrint() {
                     </tr>
                   );
                 })}
-                {rows.length === 0 && <tr><td colSpan={7} className="py-6 text-center text-muted">Tiada group.</td></tr>}
+                {rows.length === 0 && <tr><td colSpan={7} className="py-6 text-center text-muted">No groups.</td></tr>}
               </tbody>
               {rows.length > 0 && (
                 <tfoot>

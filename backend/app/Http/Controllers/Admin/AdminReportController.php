@@ -111,7 +111,7 @@ class AdminReportController extends Controller
         $months = array_keys($allMonths);
         usort($data, fn ($a, $b) => $b['total'] <=> $a['total']);
 
-        $headers = array_merge(['Group Leader', 'Ahli'], $months, ['Jumlah (USDT)']);
+        $headers = array_merge(['Group Leader', 'Members'], $months, ['Total (USDT)']);
         $rows = [];
         $colTotals = array_fill_keys($months, 0.0); $grand = 0.0; $totalMembers = 0;
         foreach ($data as $d) {

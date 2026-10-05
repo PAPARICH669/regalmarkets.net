@@ -80,7 +80,7 @@ class AdminFinancialController extends Controller
     public function export(Request $request): StreamedResponse
     {
         [$rows] = $this->rows($request->query('q'));
-        $headers = ['Username', 'Name', 'Modal Aktif (Invested)', 'Total Withdraw', 'Baki A-Wallet', 'Baki E-Wallet'];
+        $headers = ['Username', 'Name', 'Active Capital (Invested)', 'Total Withdraw', 'A-Wallet Balance', 'E-Wallet Balance'];
         $filename = 'regal_member_financials_' . now()->format('Ymd') . '.csv';
 
         return response()->streamDownload(function () use ($headers, $rows) {

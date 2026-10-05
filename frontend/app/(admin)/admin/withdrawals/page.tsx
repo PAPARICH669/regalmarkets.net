@@ -103,16 +103,16 @@ export default function AdminWithdrawals() {
         <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4" onClick={() => !busy && setConfirming(null)}>
           <div className="w-full max-w-md rounded-2xl border border-[var(--line)] bg-[var(--surface)]" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center gap-2 px-4 py-3 border-b border-[var(--line)]">
-              <span className="font-semibold flex-1">Sahkan Withdrawal</span>
+              <span className="font-semibold flex-1">Confirm Withdrawal</span>
               <button onClick={() => setConfirming(null)} aria-label="Close" className="btn-ghost p-2"><X size={16} /></button>
             </div>
             <div className="p-4 space-y-3">
               <div className="rounded-lg bg-amber-500/10 border border-amber-500/30 px-3 py-2 text-xs text-amber-300 flex items-start gap-2">
-                <AlertTriangle size={14} className="mt-0.5 shrink-0" /> Semak butiran betul-betul sebelum sahkan. Selepas approve, bayaran dianggap dibuat.
+                <AlertTriangle size={14} className="mt-0.5 shrink-0" /> Review the details carefully before confirming. Once approved, the payment is considered made.
               </div>
               <div className="space-y-1.5 text-sm bg-black/30 rounded-lg p-3">
                 <Row k="Member" v={`@${confirming.user?.username}`} />
-                <Row k="Amount (kasar)" v={`${usdt(confirming.amount)} USDT`} />
+                <Row k="Amount (gross)" v={`${usdt(confirming.amount)} USDT`} />
                 {isSwap(confirming) ? (
                   <>
                     <Row k="Receive in" v={`${confirming.coin} (${confirming.network})`} />
@@ -123,28 +123,28 @@ export default function AdminWithdrawals() {
                 ) : (
                   <>
                     <Row k="Fee" v={`${usdt(confirming.fee)} USDT`} />
-                    <Row k="Net (dibayar)" v={`${usdt(confirming.net_amount)} USDT`} bold />
+                    <Row k="Net (paid)" v={`${usdt(confirming.net_amount)} USDT`} bold />
                   </>
                 )}
               </div>
               <div>
-                <span className="text-xs text-muted">Alamat payout ({confirming.network || "BEP20"})</span>
+                <span className="text-xs text-muted">Payout address ({confirming.network || "BEP20"})</span>
                 <div className="font-mono text-xs break-all bg-black/30 rounded-lg p-2 mt-1">{confirming.coin_address || confirming.wallet_address}</div>
               </div>
               {isSwap(confirming) && (
                 <div>
-                  <label className="text-xs text-muted">Jumlah {confirming.coin} SEBENAR dihantar <span className="text-gold-light">(muktamad)</span></label>
-                  <input className="input-field mt-1 font-mono text-sm" value={coinActual} onChange={(e) => setCoinActual(e.target.value)} placeholder={`cth ${trimCoin(confirming.coin_amount_est)}`} inputMode="decimal" />
-                  <p className="text-[11px] text-muted mt-1">Masukkan jumlah coin sebenar yang kau hantar. Ini jadi rekod muktamad.</p>
+                  <label className="text-xs text-muted">ACTUAL {confirming.coin} amount sent <span className="text-gold-light">(final)</span></label>
+                  <input className="input-field mt-1 font-mono text-sm" value={coinActual} onChange={(e) => setCoinActual(e.target.value)} placeholder={`e.g. ${trimCoin(confirming.coin_amount_est)}`} inputMode="decimal" />
+                  <p className="text-[11px] text-muted mt-1">Enter the actual coin amount you sent. This becomes the final record.</p>
                 </div>
               )}
               <div>
-                <label className="text-xs text-muted">Payout TXID (pilihan — hash transaksi bayaran)</label>
-                <input className="input-field mt-1 font-mono text-sm" value={txid} onChange={(e) => setTxid(e.target.value)} placeholder="0x… (jika ada)" />
+                <label className="text-xs text-muted">Payout TXID (optional — payment transaction hash)</label>
+                <input className="input-field mt-1 font-mono text-sm" value={txid} onChange={(e) => setTxid(e.target.value)} placeholder="0x… (if any)" />
               </div>
               <div className="flex gap-2 pt-1">
-                <button onClick={() => setConfirming(null)} disabled={busy} className="btn-ghost flex-1 py-2.5 text-sm">Batal</button>
-                <button onClick={confirmApprove} disabled={busy} className="btn-gold flex-[2] py-2.5 text-sm">{busy ? "Memproses…" : "✓ Sahkan & Approve"}</button>
+                <button onClick={() => setConfirming(null)} disabled={busy} className="btn-ghost flex-1 py-2.5 text-sm">Cancel</button>
+                <button onClick={confirmApprove} disabled={busy} className="btn-gold flex-[2] py-2.5 text-sm">{busy ? "Processing…" : "✓ Confirm & Approve"}</button>
               </div>
             </div>
           </div>

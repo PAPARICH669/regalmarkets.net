@@ -114,7 +114,7 @@ export default function AdminMembers() {
                     <button onClick={() => editContact(m.id, m.email, m.phone || "")} className="btn-ghost px-2 py-1 text-xs">Contact</button>
                     {isAdmin && (<>
                       {!m.email_verified_at && (
-                      <button onClick={() => verifyEmail(m.id, m.username)} className="px-2 py-1 text-xs rounded bg-green-500/20 text-green-300" title="Email belum verify — tekan untuk sahkan manual">✓ Verify Email</button>
+                      <button onClick={() => verifyEmail(m.id, m.username)} className="px-2 py-1 text-xs rounded bg-green-500/20 text-green-300" title="Email not verified — click to verify manually">✓ Verify Email</button>
                     )}
                     <button onClick={() => freeze(m.id)} className="btn-ghost px-2 py-1 text-xs">{m.is_frozen ? "Unfreeze" : "Freeze"}</button>
                       <button onClick={() => adjust(m.id)} className="btn-ghost px-2 py-1 text-xs">Adjust</button>

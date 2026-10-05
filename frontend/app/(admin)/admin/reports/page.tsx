@@ -36,18 +36,18 @@ export default function AdminReports() {
           <span className="grid place-items-center w-11 h-11 rounded-xl gold-gradient text-black shrink-0"><CalendarRange size={18} /></span>
           <div>
             <p className="font-semibold">Monthly Deposit Report</p>
-            <p className="text-xs text-muted mt-1">Deposit per bulan (borang + adjust admin + LD) — untuk print / semak.</p>
+            <p className="text-xs text-muted mt-1">Deposit per month (form + admin adjust + LD) — for printing / review.</p>
           </div>
         </Link>
       </div>
 
       <div>
-        <p className="text-muted text-sm mb-3">Group deposit — paparan boleh print + CSV.</p>
+        <p className="text-muted text-sm mb-3">Group deposit — printable view + CSV.</p>
         <Link href="/admin/reports/groups" className="glass card-hover p-6 flex items-center gap-4">
           <span className="grid place-items-center w-11 h-11 rounded-xl gold-gradient text-black shrink-0"><Users size={18} /></span>
           <div>
             <p className="font-semibold">Group Deposit Report</p>
-            <p className="text-xs text-muted mt-1">Banding group ikut bulan (borang + adjust + LD), ranked — print / save PDF / download CSV.</p>
+            <p className="text-xs text-muted mt-1">Compare groups by month (form + adjust + LD), ranked — print / save PDF / download CSV.</p>
           </div>
         </Link>
       </div>

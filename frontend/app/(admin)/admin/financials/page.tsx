@@ -44,14 +44,14 @@ export default function AdminFinancials() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold">Member Financials</h1>
-          <p className="text-muted text-sm">Modal aktif, jumlah withdraw &amp; baki wallet setiap ahli.</p>
+          <p className="text-muted text-sm">Active capital, total withdrawals &amp; wallet balances per member.</p>
         </div>
         <button onClick={exportCsv} className="btn-ghost px-4 py-2 flex items-center gap-2"><Download size={16} /> Export CSV</button>
       </div>
 
       <div className="relative max-w-md">
         <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
-        <input className="input-field pl-9" placeholder="Cari username / nama…" value={q} onChange={(e) => setQ(e.target.value)} />
+        <input className="input-field pl-9" placeholder="Search username / name…" value={q} onChange={(e) => setQ(e.target.value)} />
       </div>
 
       {error && <div className="text-sm text-red-400 bg-red-500/10 border border-red-500/30 rounded-lg px-4 py-3">{error}</div>}
@@ -60,11 +60,11 @@ export default function AdminFinancials() {
         <table className="w-full text-sm">
           <thead className="bg-white/5 text-gold-light text-left">
             <tr>
-              <th className="px-4 py-3">Ahli</th>
-              <th className="text-right">Modal aktif</th>
+              <th className="px-4 py-3">Member</th>
+              <th className="text-right">Active capital</th>
               <th className="text-right">Total Withdraw</th>
-              <th className="text-right">Baki A</th>
-              <th className="text-right">Baki E</th>
+              <th className="text-right">Balance A</th>
+              <th className="text-right">Balance E</th>
             </tr>
           </thead>
           <tbody>
@@ -78,12 +78,12 @@ export default function AdminFinancials() {
               </tr>
             ))}
             {loading && <tr><td colSpan={5} className="py-6 text-center text-muted">Loading…</td></tr>}
-            {!loading && rows.length === 0 && <tr><td colSpan={5} className="py-6 text-center text-muted">Tiada ahli.</td></tr>}
+            {!loading && rows.length === 0 && <tr><td colSpan={5} className="py-6 text-center text-muted">No members.</td></tr>}
           </tbody>
           {totals && rows.length > 0 && (
             <tfoot>
               <tr className="border-t-2 border-[var(--line)] font-bold">
-                <td className="px-4 py-3">JUMLAH · {totals.count} ahli</td>
+                <td className="px-4 py-3">TOTAL · {totals.count} members</td>
                 <td className="text-right">{usdt(totals.invested)}</td>
                 <td className="text-right text-red-400">{usdt(totals.withdrawn)}</td>
                 <td className="text-right">{usdt(totals.wallet_a)}</td>
@@ -134,7 +134,7 @@ function DetailModal({ row, onClose, onChanged }: { row: Row; onClose: () => voi
     setErr(""); setMsg(""); setBusy(true);
     try {
       await api.post(`/admin/members/${row.id}/adjust-wallet`, { type, direction, amount: Number(amount), note: note.trim() || undefined, free: direction === "credit" ? free : false });
-      setMsg(`Berjaya ${direction === "credit" ? (free ? "credit FREE" : "credit") : "debit"} ${usdt(amount)} ke ${type}-Wallet.`);
+      setMsg(`Successfully ${direction === "credit" ? (free ? "credit FREE" : "credit") : "debit"} ${usdt(amount)} to ${type}-Wallet.`);
       setAmount(""); setNote(""); setFree(false); setConfirming(false);
       await loadDetail(); onChanged();
     } catch (e) { setErr(apiError(e)); } finally { setBusy(false); }
@@ -152,9 +152,9 @@ function DetailModal({ row, onClose, onChanged }: { row: Row; onClose: () => voi
         </div>
 
         <div className="p-4 grid grid-cols-3 gap-3">
-          <Stat label="Modal aktif" value={usdt(row.invested)} />
-          <Stat label="Baki A" value={usdt(balA)} />
-          <Stat label="Baki E" value={usdt(balE)} />
+          <Stat label="Active capital" value={usdt(row.invested)} />
+          <Stat label="Balance A" value={usdt(balA)} />
+          <Stat label="Balance E" value={usdt(balE)} />
         </div>
 
         {/* Adjust wallet */}
@@ -166,37 +166,37 @@ function DetailModal({ row, onClose, onChanged }: { row: Row; onClose: () => voi
             <div>
               <label className="text-xs text-muted">Wallet</label>
               <select className="input-field mt-1" value={type} onChange={(e) => { setType(e.target.value as "A" | "E" | "L"); setConfirming(false); }}>
-                <option value="A">A-Wallet (modal)</option>
+                <option value="A">A-Wallet (capital)</option>
                 <option value="E">E-Wallet (earning)</option>
                 <option value="L">LD Wallet</option>
               </select>
             </div>
             <div>
-              <label className="text-xs text-muted">Jenis</label>
+              <label className="text-xs text-muted">Type</label>
               <select className="input-field mt-1" value={direction} onChange={(e) => { setDirection(e.target.value as "credit" | "debit"); setConfirming(false); }}>
-                <option value="credit">Credit (+ tambah)</option>
-                <option value="debit">Debit (− tolak)</option>
+                <option value="credit">Credit (+ add)</option>
+                <option value="debit">Debit (− deduct)</option>
               </select>
             </div>
           </div>
           <div className="mt-3">
-            <label className="text-xs text-muted">Jumlah (USDT)</label>
+            <label className="text-xs text-muted">Amount (USDT)</label>
             <input type="number" step="0.01" min="0" className="input-field mt-1" value={amount} onChange={(e) => { setAmount(e.target.value); setConfirming(false); }} placeholder="0.00" />
           </div>
           <div className="mt-3">
-            <label className="text-xs text-muted">Nota (sebab)</label>
-            <input type="text" className="input-field mt-1" value={note} onChange={(e) => setNote(e.target.value)} placeholder="cth: pelarasan manual / bonus" maxLength={255} />
+            <label className="text-xs text-muted">Note (reason)</label>
+            <input type="text" className="input-field mt-1" value={note} onChange={(e) => setNote(e.target.value)} placeholder="e.g. manual adjustment / bonus" maxLength={255} />
           </div>
           {direction === "credit" && (
             <label className="mt-3 flex items-start gap-2 cursor-pointer text-xs">
               <input type="checkbox" className="w-4 h-4 mt-0.5 accent-[var(--gold)]" checked={free} onChange={(e) => { setFree(e.target.checked); setConfirming(false); }} />
-              <span>Kredit <b className="text-gold-light">FREE</b> (promosi / hadiah) — <b>jangan kira sebagai deposit</b> dalam laporan.</span>
+              <span>Credit <b className="text-gold-light">FREE</b> (promo / gift) — <b>do not count as a deposit</b> in reports.</span>
             </label>
           )}
           {Number(amount) > 0 && type !== "L" && (
             <div className="mt-3 text-xs bg-black/30 rounded-lg px-3 py-2">
-              Baki {type}: <b>{usdt(curBal)}</b> → <b className={newBal < 0 ? "text-red-400" : "text-gold-light"}>{usdt(newBal)}</b> selepas {direction} {usdt(amount)}
-              {newBal < 0 && <span className="text-red-400"> (baki tak cukup!)</span>}
+              Balance {type}: <b>{usdt(curBal)}</b> → <b className={newBal < 0 ? "text-red-400" : "text-gold-light"}>{usdt(newBal)}</b> after {direction} {usdt(amount)}
+              {newBal < 0 && <span className="text-red-400"> (insufficient balance!)</span>}
             </div>
           )}
           {!confirming ? (
@@ -204,20 +204,20 @@ function DetailModal({ row, onClose, onChanged }: { row: Row; onClose: () => voi
               className="btn-gold w-full py-2.5 text-sm mt-3 disabled:opacity-50">Adjust {direction === "credit" ? "credit" : "debit"} {amount ? usdt(amount) : ""}</button>
           ) : (
             <div className="mt-3 space-y-2">
-              <p className="text-xs text-yellow-400">Sahkan: <b>{direction === "credit" ? "CREDIT" : "DEBIT"} {usdt(amount)}</b> ke <b>{type}-Wallet @{row.username}</b>?</p>
+              <p className="text-xs text-yellow-400">Confirm: <b>{direction === "credit" ? "CREDIT" : "DEBIT"} {usdt(amount)}</b> to <b>{type}-Wallet @{row.username}</b>?</p>
               <div className="flex gap-2">
-                <button onClick={() => setConfirming(false)} className="btn-ghost flex-1 py-2 text-sm">Batal</button>
-                <button disabled={busy} onClick={doAdjust} className="btn-gold flex-[2] py-2 text-sm">{busy ? "Memproses…" : "Ya, laksana"}</button>
+                <button onClick={() => setConfirming(false)} className="btn-ghost flex-1 py-2 text-sm">Cancel</button>
+                <button disabled={busy} onClick={doAdjust} className="btn-gold flex-[2] py-2 text-sm">{busy ? "Processing…" : "Yes, proceed"}</button>
               </div>
             </div>
           )}
         </div>
 
         <div className="px-4 pb-4">
-          <h4 className="text-sm font-semibold text-gold-light mb-2">Pakej (modal)</h4>
+          <h4 className="text-sm font-semibold text-gold-light mb-2">Packages (principal)</h4>
           <div className="overflow-x-auto mb-5">
             <table className="w-full text-xs">
-              <thead className="text-muted text-left"><tr><th className="py-1">#</th><th>Modal</th><th>Dibayar / Jumlah</th><th>Status</th><th>Tarikh</th></tr></thead>
+              <thead className="text-muted text-left"><tr><th className="py-1">#</th><th>Principal</th><th>Paid / Total</th><th>Status</th><th>Date</th></tr></thead>
               <tbody>
                 {packages.map((p) => (
                   <tr key={p.id} className="border-t border-[var(--line)]">
@@ -228,7 +228,7 @@ function DetailModal({ row, onClose, onChanged }: { row: Row; onClose: () => voi
                     <td className="text-muted">{p.activated_at ? shortDate(p.activated_at) : "—"}</td>
                   </tr>
                 ))}
-                {!loading && packages.length === 0 && <tr><td colSpan={5} className="py-3 text-center text-muted">Tiada pakej.</td></tr>}
+                {!loading && packages.length === 0 && <tr><td colSpan={5} className="py-3 text-center text-muted">No packages.</td></tr>}
               </tbody>
             </table>
           </div>
@@ -236,7 +236,7 @@ function DetailModal({ row, onClose, onChanged }: { row: Row; onClose: () => voi
           <h4 className="text-sm font-semibold text-gold-light mb-2">Withdraw</h4>
           <div className="overflow-x-auto">
             <table className="w-full text-xs">
-              <thead className="text-muted text-left"><tr><th className="py-1">Jumlah</th><th>Fee</th><th>Net</th><th>Status</th><th>Tarikh</th></tr></thead>
+              <thead className="text-muted text-left"><tr><th className="py-1">Amount</th><th>Fee</th><th>Net</th><th>Status</th><th>Date</th></tr></thead>
               <tbody>
                 {withdrawals.map((w) => (
                   <tr key={w.id} className="border-t border-[var(--line)]">
@@ -247,7 +247,7 @@ function DetailModal({ row, onClose, onChanged }: { row: Row; onClose: () => voi
                     <td className="text-muted">{shortDate(w.created_at)}</td>
                   </tr>
                 ))}
-                {!loading && withdrawals.length === 0 && <tr><td colSpan={5} className="py-3 text-center text-muted">Tiada withdraw.</td></tr>}
+                {!loading && withdrawals.length === 0 && <tr><td colSpan={5} className="py-3 text-center text-muted">No withdrawals.</td></tr>}
                 {loading && <tr><td colSpan={5} className="py-3 text-center text-muted">Loading…</td></tr>}
               </tbody>
             </table>

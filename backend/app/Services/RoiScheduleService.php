@@ -84,7 +84,7 @@ class RoiScheduleService
         $flat   = round((float) $this->settings->get('roi_daily_percent'), 2);
 
         if ($min > $max) {
-            return ['ok' => false, 'error' => 'Min harian tidak boleh melebihi max harian.'];
+            return ['ok' => false, 'error' => 'Daily min cannot exceed daily max.'];
         }
 
         // Last date ROI actually ran this month (global) → everything up to and
@@ -120,7 +120,7 @@ class RoiScheduleService
         }
 
         if ($remainingTarget < 0) {
-            return ['ok' => false, 'error' => "Sudah dibayar {$fixedSum}% bulan ini melebihi target {$target}%."];
+            return ['ok' => false, 'error' => "Already paid {$fixedSum}% this month, which exceeds the target of {$target}%."];
         }
 
         $generated = $this->generate($remainingTarget, $min, $max, $remainingDays);
@@ -128,7 +128,7 @@ class RoiScheduleService
             $loBound = round($min * $remainingDays, 2);
             $hiBound = round($max * $remainingDays, 2);
             return ['ok' => false, 'error' =>
-                "Baki target {$remainingTarget}% untuk {$remainingDays} hari mesti antara {$loBound}% (min×hari) dan {$hiBound}% (max×hari). Laraskan target atau julat min/max.",
+                "Remaining target {$remainingTarget}% over {$remainingDays} days must be between {$loBound}% (min×days) and {$hiBound}% (max×days). Adjust the target or the min/max range.",
             ];
         }
 

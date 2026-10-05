@@ -14,7 +14,7 @@ interface Report {
   ld_total: number; adjustment_setting: number; generated_at: string;
 }
 
-const BULAN = ["Januari", "Februari", "Mac", "April", "Mei", "Jun", "Julai", "Ogos", "September", "Oktober", "November", "Disember"];
+const BULAN = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 const monthLabel = (ym: string) => {
   const [y, m] = ym.split("-");
   return `${BULAN[Number(m) - 1] ?? m} ${y}`;
@@ -43,19 +43,19 @@ export default function DepositMonthlyReport() {
 
       {/* Print header — only meaningful on paper */}
       <div className="hidden print:block mb-4">
-        <h1 className="text-xl font-bold">Regal Markets — Laporan Deposit Bulanan</h1>
-        {data && <p className="text-sm">Dijana: {data.generated_at} · Mata wang: USDT · Akaun dummy dikecualikan</p>}
+        <h1 className="text-xl font-bold">Regal Markets — Monthly Deposit Report</h1>
+        {data && <p className="text-sm">Generated: {data.generated_at} · Currency: USDT · Dummy accounts excluded</p>}
       </div>
 
       <div className="glass p-4 sm:p-6 overflow-x-auto print:bg-white print:text-black">
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left text-gold-light print:text-black border-b border-[var(--line)]">
-              <th className="py-2 pr-3">Bulan</th>
-              <th className="py-2 px-3 text-right">Deposit borang</th>
-              <th className="py-2 px-3 text-right">Adjust admin</th>
-              <th className="py-2 px-3 text-right">Transfer LD</th>
-              <th className="py-2 pl-3 text-right">Jumlah (USDT)</th>
+              <th className="py-2 pr-3">Month</th>
+              <th className="py-2 px-3 text-right">Form deposit</th>
+              <th className="py-2 px-3 text-right">Admin adjust</th>
+              <th className="py-2 px-3 text-right">LD transfer</th>
+              <th className="py-2 pl-3 text-right">Total (USDT)</th>
             </tr>
           </thead>
           <tbody>
@@ -68,12 +68,12 @@ export default function DepositMonthlyReport() {
                 <td className="py-2 pl-3 text-right font-semibold">{fmt(r.total)}</td>
               </tr>
             ))}
-            {data && data.rows.length === 0 && <tr><td colSpan={5} className="py-6 text-center text-muted">Tiada deposit lagi.</td></tr>}
+            {data && data.rows.length === 0 && <tr><td colSpan={5} className="py-6 text-center text-muted">No deposits yet.</td></tr>}
           </tbody>
           {data && data.rows.length > 0 && (
             <tfoot>
               <tr className="border-t-2 border-[var(--line)] font-bold">
-                <td className="py-3 pr-3">JUMLAH</td>
+                <td className="py-3 pr-3">TOTAL</td>
                 <td className="py-3 px-3 text-right">{fmt(data.form_total)}</td>
                 <td className="py-3 px-3 text-right">{fmt(data.adjust_total)}</td>
                 <td className="py-3 px-3 text-right">{fmt(data.ld_total)}</td>
@@ -86,10 +86,10 @@ export default function DepositMonthlyReport() {
 
       {data && (
         <div className="text-xs text-muted space-y-1 print:text-black">
-          <p>• <b>Deposit borang</b> = deposit USDT yang diluluskan (paling telus, boleh sahkan di blockchain).</p>
-          <p>• <b>Adjust admin</b> = kredit manual admin ke A-Wallet. <b>Transfer LD</b> = kredit dari LD-Wallet ke member.</p>
+          <p>• <b>Form deposit</b> = approved USDT deposits (most transparent, verifiable on-chain).</p>
+          <p>• <b>Admin adjust</b> = admin manual credit to A-Wallet. <b>LD transfer</b> = credit from LD-Wallet to member.</p>
           {data.adjustment_setting > 0 && (
-            <p>• Nota: ada pelarasan <b>{fmt(data.adjustment_setting)} USDT</b> (seed/bukan-deposit) yang ditolak pada paparan Total Deposit dashboard, tidak ditolak dalam jadual ini.</p>
+            <p>• Note: there is a <b>{fmt(data.adjustment_setting)} USDT</b> adjustment (seed/non-deposit) deducted on the dashboard Total Deposit display, not deducted in this table.</p>
           )}
         </div>
       )}

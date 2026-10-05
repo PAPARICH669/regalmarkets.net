@@ -78,7 +78,7 @@ class AdminSettingController extends Controller
         if ($this->settings->get('roi_mode') === 'monthly_target') {
             $result = $this->roiSchedule->generateMonth(Carbon::today(), true);
             if (! ($result['ok'] ?? false)) {
-                $warning = $result['error'] ?? 'Gagal menjana jadual ROI bulanan.';
+                $warning = $result['error'] ?? 'Failed to generate the monthly ROI schedule.';
             }
         }
 

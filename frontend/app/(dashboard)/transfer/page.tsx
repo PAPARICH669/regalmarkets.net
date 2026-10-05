@@ -32,7 +32,7 @@ export default function TransferPage() {
       if (!amt || amt < 1) { setErr("Minimum transfer is 1 USDT."); setLoading(false); return; }
       const { data } = await api.post("/ld/transfer/init", { username: username.trim(), amount: amt });
       setRecipient(data.recipient); setPassword(""); setStep("confirm"); setMsg("");
-    } catch (e) { setErr(apiError(e, "Penerima tidak dijumpai.")); } finally { setLoading(false); }
+    } catch (e) { setErr(apiError(e, "Recipient not found.")); } finally { setLoading(false); }
   }
 
   async function confirmTransfer() {
@@ -54,8 +54,8 @@ export default function TransferPage() {
             <span className="text-sm text-gold-light flex items-center gap-2"><Wallet size={16} /> LD WALLET</span>
             <span className="text-lg font-bold gold-text">{usdt(user?.wallet_l ?? 0)}</span>
           </div>
-          <div className="flex items-center gap-2 mt-4"><ArrowLeftRight size={18} className="text-gold-light" /><h3 className="font-semibold">Transfer kredit</h3></div>
-          <p className="text-sm text-muted mt-1">Dari LD WALLET ke A-WALLET ahli. Minimum 1 USDT. Setiap transfer perlu kata laluan anda.</p>
+          <div className="flex items-center gap-2 mt-4"><ArrowLeftRight size={18} className="text-gold-light" /><h3 className="font-semibold">Transfer credit</h3></div>
+          <p className="text-sm text-muted mt-1">From LD WALLET to a member&apos;s A-WALLET. Minimum 1 USDT. Each transfer requires your password.</p>
 
           {msg && <div className="mt-4 text-sm text-green-400 bg-green-500/10 border border-green-500/30 rounded-lg px-4 py-3">{msg}</div>}
           {err && <div className="mt-4 text-sm text-red-400 bg-red-500/10 border border-red-500/30 rounded-lg px-4 py-3">{err}</div>}
@@ -63,19 +63,19 @@ export default function TransferPage() {
           {step === "idle" ? (
             <form onSubmit={startTransfer} className="mt-5 space-y-4">
               <div>
-                <label className="text-sm text-muted">Username atau nama ahli</label>
-                <input type="text" className="input-field mt-1" value={username} onChange={(e) => setUsername(e.target.value)} placeholder="cth: KOMANDO atau nama penuh" required />
-                <p className="text-xs text-muted mt-1">Boleh guna username atau nickname/nama ahli. Kalau nama sama ada pada beberapa akaun, guna username.</p>
+                <label className="text-sm text-muted">Member username or name</label>
+                <input type="text" className="input-field mt-1" value={username} onChange={(e) => setUsername(e.target.value)} placeholder="e.g. KOMANDO or full name" required />
+                <p className="text-xs text-muted mt-1">You can use a username or a member&apos;s nickname/name. If the name matches several accounts, use the username.</p>
               </div>
               <div>
-                <label className="text-sm text-muted">Jumlah (USDT)</label>
-                <input type="number" step="0.01" min="1" className="input-field mt-1" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="cth: 100" required />
+                <label className="text-sm text-muted">Amount (USDT)</label>
+                <input type="number" step="0.01" min="1" className="input-field mt-1" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="e.g. 100" required />
               </div>
-              <button disabled={loading} className="btn-gold w-full py-2.5">{loading ? "Menyemak…" : "Continue"}</button>
+              <button disabled={loading} className="btn-gold w-full py-2.5">{loading ? "Checking…" : "Continue"}</button>
             </form>
           ) : (
             <div className="mt-5 border border-[var(--line)] rounded-lg p-4 bg-black/20">
-              <p className="text-sm font-semibold mb-3">Sahkan butiran transfer</p>
+              <p className="text-sm font-semibold mb-3">Confirm transfer details</p>
               <div className="flex items-center gap-3 mb-3">
                 <div className="w-10 h-10 rounded-full bg-gold-light/15 grid place-items-center text-gold-light font-semibold">
                   {(recipient?.name || recipient?.username || "?").slice(0, 2).toUpperCase()}
@@ -87,16 +87,16 @@ export default function TransferPage() {
               </div>
               <div className="space-y-1 text-sm border-t border-[var(--line)] pt-2 mb-3">
                 <div className="flex justify-between"><span className="text-muted">Username</span><span className="font-medium">@{recipient?.username}</span></div>
-                <div className="flex justify-between"><span className="text-muted">Nama</span><span className="font-medium">{recipient?.name}</span></div>
-                <div className="flex justify-between"><span className="text-muted">Jumlah masuk A-WALLET</span><span className="font-bold gold-text">{usdt(amount)}</span></div>
+                <div className="flex justify-between"><span className="text-muted">Name</span><span className="font-medium">{recipient?.name}</span></div>
+                <div className="flex justify-between"><span className="text-muted">Amount into A-WALLET</span><span className="font-bold gold-text">{usdt(amount)}</span></div>
               </div>
-              <label className="text-xs text-muted flex items-center gap-1 mb-1"><Lock size={13} /> Kata laluan anda</label>
+              <label className="text-xs text-muted flex items-center gap-1 mb-1"><Lock size={13} /> Your password</label>
               <input type="password" autoComplete="current-password" className="input-field"
-                placeholder="Masukkan kata laluan" value={password} onChange={(e) => setPassword(e.target.value)}
+                placeholder="Enter your password" value={password} onChange={(e) => setPassword(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter" && password) confirmTransfer(); }} />
               <div className="flex gap-2 mt-3">
-                <button onClick={() => { setStep("idle"); setRecipient(null); setPassword(""); setMsg(""); setErr(""); }} className="btn-ghost flex-1 py-2 text-sm">Batal</button>
-                <button onClick={confirmTransfer} disabled={loading || !password} className="btn-gold flex-[2] py-2 text-sm">{loading ? "Menghantar…" : "Confirm"}</button>
+                <button onClick={() => { setStep("idle"); setRecipient(null); setPassword(""); setMsg(""); setErr(""); }} className="btn-ghost flex-1 py-2 text-sm">Cancel</button>
+                <button onClick={confirmTransfer} disabled={loading || !password} className="btn-gold flex-[2] py-2 text-sm">{loading ? "Sending…" : "Confirm"}</button>
               </div>
             </div>
           )}
@@ -117,7 +117,7 @@ export default function TransferPage() {
                 </div>
               );
             })}
-            {history.length === 0 && <p className="text-sm text-muted text-center py-4">Belum ada transaksi LD WALLET.</p>}
+            {history.length === 0 && <p className="text-sm text-muted text-center py-4">No LD WALLET transactions yet.</p>}
           </div>
         </div>
       </div>

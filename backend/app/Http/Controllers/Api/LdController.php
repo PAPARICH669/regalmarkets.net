@@ -50,14 +50,14 @@ class LdController extends Controller
             $matches = User::where('nickname', $term)->orWhere('name', $term)->get();
             if ($matches->count() > 1) {
                 throw ValidationException::withMessages([
-                    'username' => 'Beberapa akaun menggunakan nama ini. Sila masukkan username tepat.',
+                    'username' => 'Several accounts use this name. Please enter the exact username.',
                 ]);
             }
             $target = $matches->first();
         }
         if (! $target) {
             throw ValidationException::withMessages([
-                'username' => 'Penerima tidak dijumpai. Semak username atau nama.',
+                'username' => 'Recipient not found. Check the username or name.',
             ]);
         }
         if ($target->id === $ld->id) {
@@ -79,7 +79,7 @@ class LdController extends Controller
         ]);
 
         return response()->json([
-            'message'   => 'Sila semak butiran dan masukkan kata laluan anda untuk sahkan.',
+            'message'   => 'Please review the details and enter your password to confirm.',
             'recipient' => ['id' => $target->id, 'username' => $target->username, 'name' => $target->name ?: $target->username],
             'amount'    => $amount,
         ]);
@@ -93,7 +93,7 @@ class LdController extends Controller
         $ld   = $request->user();
 
         if (! \Illuminate\Support\Facades\Hash::check($data['password'], $ld->password)) {
-            throw ValidationException::withMessages(['password' => 'Kata laluan salah.']);
+            throw ValidationException::withMessages(['password' => 'Incorrect password.']);
         }
 
         $pending = $ld->ld_tac_member_id
@@ -102,7 +102,7 @@ class LdController extends Controller
             && now()->lessThanOrEqualTo($ld->ld_tac_expires_at);
 
         if (! $pending) {
-            throw ValidationException::withMessages(['password' => 'Sesi tamat tempoh. Sila mula semula.']);
+            throw ValidationException::withMessages(['password' => 'Session expired. Please start again.']);
         }
 
         $target = User::find($ld->ld_tac_member_id);
@@ -131,7 +131,7 @@ class LdController extends Controller
         });
 
         return response()->json([
-            'message'  => 'Berjaya transfer ' . number_format((float) $amount, 2) . ' USDT ke A-WALLET ' . ($target->name ?: $target->username) . '.',
+            'message'  => 'Successfully transferred ' . number_format((float) $amount, 2) . ' USDT to the A-WALLET of ' . ($target->name ?: $target->username) . '.',
             'transfer' => $transfer,
         ], 201);
     }

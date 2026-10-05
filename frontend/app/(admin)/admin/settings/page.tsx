@@ -17,11 +17,11 @@ export default function AdminSettings() {
   useEffect(() => { api.get("/admin/settings").then((r) => setS(r.data)); loadSchedule(); }, []);
 
   async function regenerate() {
-    if (!confirm("Jana semula corak ROI harian untuk bulan ini? Hari yang sudah dibayar dikekalkan; hanya hari berbaki diubah.")) return;
+    if (!confirm("Regenerate the daily ROI pattern for this month? Already-paid days are kept; only the remaining days are changed.")) return;
     setSchedBusy(true); setMsg(""); setError("");
     try {
       const { data } = await api.post("/admin/roi/schedule/regenerate", {});
-      setSched(data.schedule); setMsg("Jadual ROI bulanan dijana semula.");
+      setSched(data.schedule); setMsg("Monthly ROI schedule regenerated.");
     } catch (err) { setError(apiError(err)); } finally { setSchedBusy(false); }
   }
 
@@ -196,12 +196,12 @@ export default function AdminSettings() {
         </div>
         <div className="sm:col-span-2 border-t border-[var(--line)] pt-4">
           <p className="text-sm font-medium mb-1">💳 USDT Deposit Address (BEP20)</p>
-          <p className="text-xs text-muted mb-3">Alamat yang member hantar USDT untuk deposit. QR dijana automatik dari alamat ini di halaman Deposit member.</p>
+          <p className="text-xs text-muted mb-3">The address members send USDT to for deposits. The QR is generated automatically from this address on the member Deposit page.</p>
           <div className="grid sm:grid-cols-2 gap-4">
             <div>
               <label className="text-sm text-muted">Deposit address</label>
               <input type="text" className="input-field mt-1 font-mono text-sm" value={String(s.deposit_address ?? "")}
-                onChange={(e) => field("deposit_address", e.target.value)} placeholder="0x… (42 aksara)" />
+                onChange={(e) => field("deposit_address", e.target.value)} placeholder="0x… (42 characters)" />
             </div>
             <div>
               <label className="text-sm text-muted">Network label</label>
