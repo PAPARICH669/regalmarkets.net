@@ -11,7 +11,15 @@ interface Withdrawal {
   status: string; created_at: string; user?: { username: string; email: string };
   coin?: string; network?: string; coin_address?: string; system_rate?: string;
   coin_fee?: string; coin_amount_est?: string; coin_amount_actual?: string | null;
+  note?: string | null;
 }
+
+const QUICK_REASONS = [
+  "Wallet address is invalid or does not match the selected network.",
+  "KYC verification is incomplete.",
+  "Suspicious activity detected — please contact support.",
+  "Duplicate withdrawal request.",
+];
 
 function trimCoin(v: string | number | null | undefined, dp = 8) {
   const n = Number(v ?? 0);
@@ -27,6 +35,8 @@ export default function AdminWithdrawals() {
   const [txid, setTxid] = useState("");
   const [coinActual, setCoinActual] = useState("");
   const [busy, setBusy] = useState(false);
+  const [rejecting, setRejecting] = useState<Withdrawal | null>(null);
+  const [reason, setReason] = useState("");
 
   const load = useCallback(() => {
     api.get(`/admin/withdrawals${filter ? `?status=${filter}` : ""}`).then((r) => setItems(r.data.data)).catch((e) => setError(apiError(e)));
@@ -48,11 +58,17 @@ export default function AdminWithdrawals() {
       setConfirming(null); setTxid(""); setCoinActual(""); load();
     } catch (err) { setError(apiError(err)); } finally { setBusy(false); }
   }
-  async function reject(id: number) {
-    setError("");
-    if (!window.confirm("Reject this withdrawal? The held amount is returned to the member's E-Wallet.")) return;
-    try { await api.post(`/admin/withdrawals/${id}/reject`, { note: "Rejected by admin" }); load(); }
-    catch (err) { setError(apiError(err)); }
+  function openReject(w: Withdrawal) {
+    setRejecting(w); setReason(""); setError("");
+  }
+
+  async function confirmReject() {
+    if (!rejecting || reason.trim().length < 3) return;
+    setError(""); setBusy(true);
+    try {
+      await api.post(`/admin/withdrawals/${rejecting.id}/reject`, { note: reason.trim() });
+      setRejecting(null); setReason(""); load();
+    } catch (err) { setError(apiError(err)); } finally { setBusy(false); }
   }
 
   return (
@@ -82,12 +98,15 @@ export default function AdminWithdrawals() {
                   ) : usdt(w.net_amount)}
                 </td>
                 <td className="text-xs text-muted truncate max-w-[140px]">{w.coin_address || w.wallet_address}</td>
-                <td><StatusPill status={w.status} /></td>
+                <td>
+                  <StatusPill status={w.status} />
+                  {w.status === "rejected" && w.note && <div className="text-[11px] text-red-300/80 mt-1 max-w-[200px] break-words">{w.note}</div>}
+                </td>
                 <td>
                   {w.status === "pending" ? (
                     <div className="flex gap-2">
                       <button onClick={() => openApprove(w)} className="btn-gold px-3 py-1 text-xs">Approve</button>
-                      <button onClick={() => reject(w.id)} className="btn-ghost px-3 py-1 text-xs text-red-400">Reject</button>
+                      <button onClick={() => openReject(w)} className="btn-ghost px-3 py-1 text-xs text-red-400">Reject</button>
                     </div>
                   ) : <span className="text-xs text-muted">—</span>}
                 </td>
@@ -145,6 +164,42 @@ export default function AdminWithdrawals() {
               <div className="flex gap-2 pt-1">
                 <button onClick={() => setConfirming(null)} disabled={busy} className="btn-ghost flex-1 py-2.5 text-sm">Cancel</button>
                 <button onClick={confirmApprove} disabled={busy} className="btn-gold flex-[2] py-2.5 text-sm">{busy ? "Processing…" : "✓ Confirm & Approve"}</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reject with reason */}
+      {rejecting && (
+        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4" onClick={() => !busy && setRejecting(null)}>
+          <div className="w-full max-w-md rounded-2xl border border-[var(--line)] bg-[var(--surface)]" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center gap-2 px-4 py-3 border-b border-[var(--line)]">
+              <span className="font-semibold flex-1">Reject Withdrawal</span>
+              <button onClick={() => setRejecting(null)} aria-label="Close" className="btn-ghost p-2"><X size={16} /></button>
+            </div>
+            <div className="p-4 space-y-3">
+              <div className="space-y-1.5 text-sm bg-black/30 rounded-lg p-3">
+                <Row k="Member" v={`@${rejecting.user?.username}`} />
+                <Row k="Amount (gross)" v={`${usdt(rejecting.amount)} USDT`} />
+              </div>
+              <p className="text-xs text-muted">The held amount is returned to the member&apos;s E-Wallet. The reason below is shown to the member and sent to them by email.</p>
+              <div>
+                <label className="text-xs text-muted">Reason for rejection <span className="text-red-400">*</span></label>
+                <textarea className="input-field mt-1 text-sm min-h-[90px]" value={reason} maxLength={255}
+                  onChange={(e) => setReason(e.target.value)} placeholder="Explain why this withdrawal is rejected…" />
+                <div className="text-[11px] text-muted text-right">{reason.length}/255</div>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {QUICK_REASONS.map((r) => (
+                  <button key={r} type="button" onClick={() => setReason(r)}
+                    className="text-[11px] px-2 py-1 rounded-md border border-[var(--line)] text-muted hover:text-gold-light text-left">{r}</button>
+                ))}
+              </div>
+              <div className="flex gap-2 pt-1">
+                <button onClick={() => setRejecting(null)} disabled={busy} className="btn-ghost flex-1 py-2.5 text-sm">Cancel</button>
+                <button onClick={confirmReject} disabled={busy || reason.trim().length < 3}
+                  className="flex-[2] py-2.5 text-sm rounded-lg bg-red-500/80 hover:bg-red-500 text-white font-semibold disabled:opacity-50">{busy ? "Processing…" : "Reject & Refund"}</button>
               </div>
             </div>
           </div>

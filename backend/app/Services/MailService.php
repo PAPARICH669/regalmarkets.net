@@ -177,6 +177,22 @@ class MailService
         return $this->send($toEmail, $toName, 'Confirm your LD transfer (TAC) — Regal Markets', $this->shell('LD Transfer Code', $inner));
     }
 
+    /** Withdrawal rejected notification (with admin reason); the held amount is refunded. */
+    public function sendWithdrawalRejected(string $toEmail, ?string $toName, string $amount, string $reason): bool
+    {
+        $name    = $toName ?: 'there';
+        $reasonE = htmlspecialchars($reason, ENT_QUOTES);
+        $inner = <<<HTML
+        <p style="margin:0 0 14px;color:#9fb1d4">Hi {$name},</p>
+        <p style="margin:0 0 14px">⚠️ Your withdrawal request of <b style="color:#e7c873">{$amount} USDT</b> was <b style="color:#ff8a8a">rejected</b>.</p>
+        <p style="margin:0 0 8px;color:#9fb1d4">Reason:</p>
+        <p style="margin:0 0 14px;padding:10px 12px;background:#0f2347;border-radius:8px">{$reasonE}</p>
+        <p style="margin:0 0 14px;color:#9fb1d4">The full amount has been returned to your <b>E-WALLET</b>. You may submit a new request once the issue is resolved.</p>
+        HTML;
+
+        return $this->send($toEmail, $toName, 'Withdrawal rejected — Regal Markets', $this->shell('Withdrawal Rejected', $inner));
+    }
+
     /** KYC rejected notification (with admin reason). */
     public function sendKycRejected(string $toEmail, ?string $toName, ?string $reason): bool
     {
