@@ -59,9 +59,29 @@ class AdminWithdrawalController extends Controller
 
     public function reject(Request $request, Withdrawal $withdrawal)
     {
-        $data = $request->validate(['note' => ['nullable', 'string', 'max:255']]);
-        $withdrawal = $this->withdrawals->reject($withdrawal, $request->user(), $data['note'] ?? null);
-        $this->audit->log($request, 'withdrawal.reject', $withdrawal);
+        $data = $request->validate(
+            ['note' => ['required', 'string', 'max:255']],
+            ['note.required' => 'Please enter a reason for rejecting this withdrawal.']
+        );
+        $wasPending = $withdrawal->status === 'pending';
+        $withdrawal = $this->withdrawals->reject($withdrawal, $request->user(), $data['note']);
+        $this->audit->log($request, 'withdrawal.reject', $withdrawal, ['reason' => $data['note']]);
+
+        // Notify the member by email on a real rejection (failure must not block it).
+        if ($wasPending && $withdrawal->status === 'rejected') {
+            try {
+                $u = $withdrawal->user;
+                app(\App\Services\MailService::class)->sendWithdrawalRejected(
+                    $u->email,
+                    $u->name ?: $u->username,
+                    number_format((float) $withdrawal->amount, 2),
+                    $withdrawal->note
+                );
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning('Withdrawal rejected email failed: ' . $e->getMessage());
+            }
+        }
+
         return response()->json(['message' => 'Withdrawal rejected and refunded.', 'withdrawal' => $withdrawal]);
     }
 }

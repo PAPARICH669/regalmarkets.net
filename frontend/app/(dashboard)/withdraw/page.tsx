@@ -11,7 +11,7 @@ import KycBanner from "@/components/KycBanner";
 
 interface Withdrawal {
   id: number; amount: string; net_amount: string; wallet_address: string;
-  txid: string | null; status: string; created_at: string;
+  txid: string | null; status: string; created_at: string; note?: string | null;
   coin?: string; network?: string; coin_amount_est?: string; coin_amount_actual?: string | null;
 }
 interface NetInfo { network: string; fee: number; type: string; address_key: string; }
@@ -220,7 +220,12 @@ export default function WithdrawPage() {
                         ? usdt(w.net_amount)
                         : <span>{trimCoin(Number(w.coin_amount_actual ?? w.coin_amount_est ?? 0), 8)} {w.coin}<span className="text-xs text-muted"> {w.network}{w.coin_amount_actual ? "" : " · est"}</span></span>}
                     </td>
-                    <td><StatusPill status={w.status} /></td>
+                    <td>
+                      <StatusPill status={w.status} />
+                      {w.status === "rejected" && w.note && (
+                        <div className="text-[11px] text-red-400 mt-1 max-w-[200px] whitespace-normal">Reason: {w.note}</div>
+                      )}
+                    </td>
                     <td className="text-muted text-xs">{shortDate(w.created_at)}</td>
                   </tr>
                 ))}

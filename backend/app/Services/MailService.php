@@ -133,6 +133,23 @@ class MailService
         return $this->send($toEmail, $toName, 'Withdrawal approved — Regal Markets', $this->shell('Withdrawal Successful', $inner));
     }
 
+    /** Withdrawal rejected notification (with admin reason + refund note). */
+    public function sendWithdrawalRejected(string $toEmail, ?string $toName, string $amount, ?string $reason): bool
+    {
+        $name    = $toName ?: 'there';
+        $reason  = $reason ?: 'Your withdrawal request could not be processed.';
+        $reasonE = htmlspecialchars($reason, ENT_QUOTES);
+        $inner   = <<<HTML
+        <p style="margin:0 0 14px;color:#9fb1d4">Hi {$name},</p>
+        <p style="margin:0 0 14px">⚠️ Your withdrawal request of <b style="color:#e7c873">{$amount} USDT</b> was <b style="color:#ff8a8a">not approved</b>.</p>
+        <p style="margin:0 0 8px;color:#9fb1d4">Reason:</p>
+        <p style="margin:0 0 14px;padding:10px 12px;background:#0f2347;border-radius:8px">{$reasonE}</p>
+        <p style="margin:0 0 14px;color:#9fb1d4">The full amount has been <b style="color:#6cc79a">refunded to your E-WALLET</b> and is available for a new withdrawal. If you believe this is a mistake, please contact support.</p>
+        HTML;
+
+        return $this->send($toEmail, $toName, 'Withdrawal not approved — Regal Markets', $this->shell('Withdrawal Rejected', $inner));
+    }
+
     /** Deposit approved notification. */
     public function sendDepositApproved(string $toEmail, ?string $toName, string $amount): bool
     {

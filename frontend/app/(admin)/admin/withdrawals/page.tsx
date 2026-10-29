@@ -19,6 +19,14 @@ function trimCoin(v: string | number | null | undefined, dp = 8) {
 }
 const isSwap = (w: Withdrawal) => !!w.coin && w.coin !== "USDT";
 
+const REJECT_REASONS = [
+  "Payout address is incorrect or invalid",
+  "KYC not completed / verification required",
+  "Suspicious or fraudulent activity",
+  "Duplicate or mistaken request",
+  "Does not meet withdrawal terms",
+];
+
 export default function AdminWithdrawals() {
   const [items, setItems] = useState<Withdrawal[]>([]);
   const [filter, setFilter] = useState("pending");
@@ -26,6 +34,8 @@ export default function AdminWithdrawals() {
   const [confirming, setConfirming] = useState<Withdrawal | null>(null);
   const [txid, setTxid] = useState("");
   const [coinActual, setCoinActual] = useState("");
+  const [rejecting, setRejecting] = useState<Withdrawal | null>(null);
+  const [rejectReason, setRejectReason] = useState("");
   const [busy, setBusy] = useState(false);
 
   const load = useCallback(() => {
@@ -48,11 +58,18 @@ export default function AdminWithdrawals() {
       setConfirming(null); setTxid(""); setCoinActual(""); load();
     } catch (err) { setError(apiError(err)); } finally { setBusy(false); }
   }
-  async function reject(id: number) {
-    setError("");
-    if (!window.confirm("Reject this withdrawal? The held amount is returned to the member's E-Wallet.")) return;
-    try { await api.post(`/admin/withdrawals/${id}/reject`, { note: "Rejected by admin" }); load(); }
-    catch (err) { setError(apiError(err)); }
+  function openReject(w: Withdrawal) {
+    setRejecting(w); setRejectReason(""); setError("");
+  }
+  async function confirmReject() {
+    if (!rejecting) return;
+    const reason = rejectReason.trim();
+    if (!reason) { setError("Please enter a reason for rejecting this withdrawal."); return; }
+    setError(""); setBusy(true);
+    try {
+      await api.post(`/admin/withdrawals/${rejecting.id}/reject`, { note: reason });
+      setRejecting(null); setRejectReason(""); load();
+    } catch (err) { setError(apiError(err)); } finally { setBusy(false); }
   }
 
   return (
@@ -87,7 +104,7 @@ export default function AdminWithdrawals() {
                   {w.status === "pending" ? (
                     <div className="flex gap-2">
                       <button onClick={() => openApprove(w)} className="btn-gold px-3 py-1 text-xs">Approve</button>
-                      <button onClick={() => reject(w.id)} className="btn-ghost px-3 py-1 text-xs text-red-400">Reject</button>
+                      <button onClick={() => openReject(w)} className="btn-ghost px-3 py-1 text-xs text-red-400">Reject</button>
                     </div>
                   ) : <span className="text-xs text-muted">—</span>}
                 </td>
@@ -145,6 +162,47 @@ export default function AdminWithdrawals() {
               <div className="flex gap-2 pt-1">
                 <button onClick={() => setConfirming(null)} disabled={busy} className="btn-ghost flex-1 py-2.5 text-sm">Cancel</button>
                 <button onClick={confirmApprove} disabled={busy} className="btn-gold flex-[2] py-2.5 text-sm">{busy ? "Processing…" : "✓ Confirm & Approve"}</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reject with reason */}
+      {rejecting && (
+        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4" onClick={() => !busy && setRejecting(null)}>
+          <div className="w-full max-w-md rounded-2xl border border-[var(--line)] bg-[var(--surface)]" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center gap-2 px-4 py-3 border-b border-[var(--line)]">
+              <span className="font-semibold flex-1">Reject Withdrawal</span>
+              <button onClick={() => setRejecting(null)} aria-label="Close" className="btn-ghost p-2"><X size={16} /></button>
+            </div>
+            <div className="p-4 space-y-3">
+              <div className="rounded-lg bg-amber-500/10 border border-amber-500/30 px-3 py-2 text-xs text-amber-300 flex items-start gap-2">
+                <AlertTriangle size={14} className="mt-0.5 shrink-0" /> The held {usdt(rejecting.amount)} USDT is refunded to @{rejecting.user?.username}&apos;s E-WALLET, and the member is emailed this reason.
+              </div>
+              <div>
+                <span className="text-xs text-muted">Quick reasons</span>
+                <div className="flex flex-wrap gap-1.5 mt-1.5">
+                  {REJECT_REASONS.map((r) => (
+                    <button key={r} type="button" onClick={() => setRejectReason(r)}
+                      className={`text-[11px] px-2 py-1 rounded-full border transition-colors ${rejectReason === r ? "border-gold-light text-gold-light bg-gold-light/10" : "border-[var(--line)] text-muted hover:text-white"}`}>
+                      {r}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label className="text-xs text-muted">Reason (shown to the member)</label>
+                <textarea className="input-field mt-1 w-full" rows={3} maxLength={255} value={rejectReason}
+                  onChange={(e) => setRejectReason(e.target.value)} placeholder="Enter the reason for rejecting this withdrawal…" />
+                <p className="text-[11px] text-muted mt-1 text-right">{rejectReason.length}/255</p>
+              </div>
+              <div className="flex gap-2 pt-1">
+                <button onClick={() => setRejecting(null)} disabled={busy} className="btn-ghost flex-1 py-2.5 text-sm">Cancel</button>
+                <button onClick={confirmReject} disabled={busy || !rejectReason.trim()}
+                  className="flex-[2] py-2.5 text-sm rounded-lg bg-red-500/90 hover:bg-red-500 text-white font-semibold disabled:opacity-50">
+                  {busy ? "Processing…" : "Reject & Refund"}
+                </button>
               </div>
             </div>
           </div>
