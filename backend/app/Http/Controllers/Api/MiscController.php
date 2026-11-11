@@ -161,6 +161,55 @@ class MiscController extends Controller
             ]);
     }
 
+    /**
+     * Combined community feed for the member dashboard: approved deposits and
+     * EARNED (auto) rank promotions to FAN+ within the last 7 days, newest first.
+     * Manual admin rank changes and dummy/test accounts are excluded.
+     */
+    public function recentActivity()
+    {
+        $since = now()->subDays(7);
+
+        $deposits = \App\Models\Deposit::where('deposits.status', 'approved')
+            ->whereNotNull('deposits.approved_at')
+            ->where('deposits.approved_at', '>=', $since)
+            ->join('users', 'users.id', '=', 'deposits.user_id')
+            ->where('users.is_dummy', false)
+            ->where('users.exclude_from_stats', false)
+            ->orderByDesc('deposits.approved_at')
+            ->limit(40)
+            ->get(['users.username', 'users.country', 'deposits.amount', 'deposits.approved_at as ts'])
+            ->map(fn ($d) => [
+                'type'     => 'deposit',
+                'username' => $d->username,
+                'country'  => $d->country,
+                'amount'   => (float) $d->amount,
+                'at'       => \Carbon\Carbon::parse($d->ts)->toIso8601String(),
+            ]);
+
+        $ranks = \App\Models\RankHistory::where('rank_histories.reason', 'auto rank engine')
+            ->where('rank_histories.created_at', '>=', $since)
+            ->join('users', 'users.id', '=', 'rank_histories.user_id')
+            ->join('ranks', 'ranks.id', '=', 'rank_histories.to_rank_id')
+            ->where('ranks.level', '>', 1)
+            ->where('users.is_dummy', false)
+            ->where('users.exclude_from_stats', false)
+            ->orderByDesc('rank_histories.created_at')
+            ->limit(40)
+            ->get(['users.username', 'users.country', 'ranks.name as rank_name', 'rank_histories.created_at as ts'])
+            ->map(fn ($r) => [
+                'type'     => 'rank',
+                'username' => $r->username,
+                'country'  => $r->country,
+                'rank'     => $r->rank_name,
+                'at'       => \Carbon\Carbon::parse($r->ts)->toIso8601String(),
+            ]);
+
+        $merged = $deposits->concat($ranks)->sortByDesc('at')->values()->take(25);
+
+        return response()->json($merged);
+    }
+
     public function maintenanceStatus(MaintenanceService $maintenance)
     {
         return response()->json($maintenance->status());

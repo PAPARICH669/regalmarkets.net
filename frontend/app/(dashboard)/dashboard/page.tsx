@@ -8,6 +8,7 @@ import StatCard from "@/components/StatCard";
 import RankCard from "@/components/RankCard";
 import Leaderboard from "@/components/Leaderboard";
 import WelcomeFeed from "@/components/WelcomeFeed";
+import CommunityFeed from "@/components/CommunityFeed";
 import MonthlyProfitChart from "@/components/MonthlyProfitChart";
 import api from "@/lib/api";
 import { useAuth } from "@/lib/auth";
@@ -78,6 +79,9 @@ export default function DashboardPage() {
         <Leaderboard />
         <WelcomeFeed />
       </div>
+
+      {/* Community activity — deposits & rank achievements (last 7 days) */}
+      <CommunityFeed />
 
       {/* Referral */}
       <div className="glass p-5">
