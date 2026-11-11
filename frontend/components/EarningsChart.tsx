@@ -48,7 +48,7 @@ function ChartTooltip({ active, payload, dataKey = "total" }: TooltipProps) {
       </div>
       {dataKey === "roi" && p.roi_percent !== undefined && (
         <div style={{ fontSize: 12, color: "#9fb1d4", marginTop: 2 }}>
-          Commission rate: <span style={{ color: "#e7c873" }}>{p.roi_percent}%</span>
+          Commission rate: <span style={{ color: "#e7c873" }}>{Number(p.roi_percent).toFixed(2)}%</span>
         </div>
       )}
     </div>
