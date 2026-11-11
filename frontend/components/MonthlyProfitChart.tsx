@@ -46,7 +46,7 @@ export default function MonthlyProfitChart() {
           return (
             <div key={m.label} className="flex-1 min-w-0 flex flex-col items-center justify-end h-full gap-1.5">
               <span className={`text-[10px] whitespace-nowrap ${m.current ? "font-semibold text-gold-light" : "text-gold-light"}`}>
-                {m.value > 0 ? `${m.value.toFixed(1)}%` : ""}
+                {m.value > 0 ? `${m.value.toFixed(2)}%` : ""}
               </span>
               <div
                 className="w-full rounded-t-md transition-all"
@@ -54,7 +54,7 @@ export default function MonthlyProfitChart() {
                 title={
                   m.future
                     ? `${m.label}: not started yet`
-                    : `${m.label}: ${m.value.toFixed(1)}%${m.current ? " (current month — rises daily)" : ""}`
+                    : `${m.label}: ${m.value.toFixed(2)}%${m.current ? " (current month — rises daily)" : ""}`
                 }
               />
               <span className={`text-[10px] whitespace-nowrap ${m.future ? "text-muted/50" : "text-muted"}`}>{m.label}</span>
