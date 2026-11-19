@@ -20,10 +20,11 @@ function RegisterForm() {
   const [country, setCountry] = useState(COUNTRIES[0].iso); // default Malaysia (MY)
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [refLocked, setRefLocked] = useState(false); // sponsor came from the invite link → fixed
 
   useEffect(() => {
     const ref = params.get("ref");
-    if (ref) setForm((f) => ({ ...f, referral_code: ref }));
+    if (ref) { setForm((f) => ({ ...f, referral_code: ref })); setRefLocked(true); }
   }, [params]);
 
   async function submit(e: React.FormEvent) {
@@ -95,9 +96,15 @@ function RegisterForm() {
                 onChange={(e) => setForm({ ...form, password_confirmation: e.target.value })} required />
             </div>
           </div>
-          {form.referral_code && (
-            <p className="text-xs text-gold-light">Sponsor: <b>{form.referral_code}</b> ✓</p>
-          )}
+          <div>
+            <label className="text-sm text-muted">Sponsor (referral) <span className="text-red-500">*</span></label>
+            <input className="input-field mt-1" value={form.referral_code}
+              onChange={(e) => setForm({ ...form, referral_code: e.target.value })}
+              placeholder="Sponsor username or referral code" required readOnly={refLocked} />
+            {refLocked
+              ? <p className="text-xs text-gold-light mt-1">Sponsor: <b>{form.referral_code}</b> ✓ (from your invite link)</p>
+              : <p className="text-xs text-muted mt-1">Enter the username of the member who invited you.</p>}
+          </div>
           <button disabled={loading} className="btn-gold w-full py-2.5">
             {loading ? "Creating…" : "Create Account"}
           </button>

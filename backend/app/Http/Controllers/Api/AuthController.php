@@ -48,8 +48,10 @@ class AuthController extends Controller
             'phone'          => ['required', 'string', 'max:30'],
             'country'        => ['nullable', 'string', 'size:2'],
             'password'       => ['required', 'string', 'min:6', 'confirmed'],
-            'referral_code'  => ['nullable', 'string', 'max:60'],
+            'referral_code'  => ['required', 'string', 'max:60'],
             'wallet_address' => ['nullable', 'string', 'max:120'],
+        ], [
+            'referral_code.required' => 'A sponsor (referral) is required to register.',
         ]);
 
         // Phone is REQUIRED but NOT unique — the same number may be used by more
