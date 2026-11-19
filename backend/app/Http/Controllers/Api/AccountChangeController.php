@@ -28,15 +28,15 @@ class AccountChangeController extends Controller
     {
         $user = $request->user();
         $data = $request->validate([
-            'field'     => ['required', 'in:email,wallet_address,phone,btc_address,eth_address,sol_address,btc_native_address,sol_native_address'],
+            'field'     => ['required', 'in:email,wallet_address,phone,btc_address,eth_address,sol_address,btc_native_address,sol_native_address,xaut_address'],
             'new_value' => ['required', 'string', 'max:191'],
         ]);
 
         // Payout-address fields → address type (evm = 0x, btc = native Bitcoin,
-        // sol = native Solana). EVM covers USDT + the BEP20 coin variants.
+        // sol = native Solana). EVM covers USDT + the BEP20 coin variants + XAUT (ERC20).
         $addressTypes = [
             'wallet_address'     => 'evm', 'btc_address' => 'evm', 'eth_address' => 'evm', 'sol_address' => 'evm',
-            'btc_native_address' => 'btc', 'sol_native_address' => 'sol',
+            'btc_native_address' => 'btc', 'sol_native_address' => 'sol', 'xaut_address' => 'evm',
         ];
         $addressFields = array_keys($addressTypes);
 
@@ -161,6 +161,7 @@ class AccountChangeController extends Controller
             'sol_address' => 'SOL (BEP20) withdrawal address',
             'btc_native_address' => 'BTC (Bitcoin network) withdrawal address',
             'sol_native_address' => 'SOL (Solana network) withdrawal address',
+            'xaut_address' => 'XAUT (ERC20) withdrawal address',
             default => 'USDT withdrawal address',
         };
         try {

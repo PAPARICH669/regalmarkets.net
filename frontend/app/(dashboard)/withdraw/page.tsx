@@ -15,14 +15,14 @@ interface Withdrawal {
   coin?: string; network?: string; coin_amount_est?: string; coin_amount_actual?: string | null;
 }
 interface NetInfo { network: string; fee: number; type: string; address_key: string; }
-interface CoinInfo { coin: string; name: string; dp: number; min: number; system_rate: number | null; available: boolean; networks: NetInfo[]; }
+interface CoinInfo { coin: string; name: string; dp: number; min: number; min_usdt: number; system_rate: number | null; available: boolean; networks: NetInfo[]; }
 interface Cfg {
   min: number; max_amount: number; fee_flat: number; max_per_day: number;
   processing_hours: number; window_start: string; window_end: string;
   coin_swap_enabled: boolean; coins: CoinInfo[];
 }
 
-const COIN_STYLE: Record<string, string> = { USDT: "#26a17b", BTC: "#f7931a", ETH: "#627eea", SOL: "#9945ff" };
+const COIN_STYLE: Record<string, string> = { USDT: "#26a17b", BTC: "#f7931a", ETH: "#627eea", SOL: "#9945ff", XAUT: "#e7c873" };
 const ADDR_HINT: Record<string, string> = {
   evm: "BEP20 / EVM address (0x…, 42 characters).",
   btc: "Native Bitcoin address (bc1…, 1…, or 3…).",
@@ -79,7 +79,7 @@ export default function WithdrawPage() {
     if (sel.system_rate == null) return null;
     const gross = rate > 0 ? amt / rate : 0;
     const receive = Math.max(gross - selNet.fee, 0);
-    const minUsdt = Math.max(cfg.min, (sel.min + selNet.fee) * rate);
+    const minUsdt = Math.max(cfg.min, sel.min_usdt || 0, (sel.min + selNet.fee) * rate);
     return { receive, unit: sel.coin, dp: sel.dp, feeText: `${trimCoin(selNet.fee, sel.dp)} ${sel.coin}`, gross, minUsdt };
   }, [cfg, sel, selNet, amt, rate, isUsdt]);
 

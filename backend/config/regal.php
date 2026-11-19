@@ -140,6 +140,13 @@ return [
             'ETH'  => ['name' => 'Ethereum', 'coingecko_id' => 'ethereum', 'dp' => 6, 'min' => 0.001,  'networks' => [
                 'BEP20' => ['fee' => 0.0003,   'type' => 'evm', 'field' => 'eth_address'],
             ]],
+            // XAUT (Tether Gold) — price from LBank (xaut_usdt), NOT CoinGecko.
+            // Sent on ERC20 (Ethereum); 0x address, validated like any EVM address.
+            // Because 1 XAUT ≈ gold/oz (~$3.7k), a USDT-floor (min_usdt) keeps small
+            // withdrawals from being eaten by the network fee.
+            'XAUT' => ['name' => 'Tether Gold', 'coingecko_id' => null, 'lbank_symbol' => 'xaut_usdt', 'dp' => 6, 'min' => 0, 'min_usdt' => 20, 'networks' => [
+                'ERC20' => ['fee' => 0.0008,   'type' => 'evm', 'field' => 'xaut_address'],
+            ]],
             'SOL'  => ['name' => 'Solana',   'coingecko_id' => 'solana',   'dp' => 4, 'min' => 0.02,   'networks' => [
                 'BEP20' => ['fee' => 0.01,     'type' => 'evm', 'field' => 'sol_address'],
                 'SOL'   => ['fee' => 0.01,     'type' => 'sol', 'field' => 'sol_native_address'],

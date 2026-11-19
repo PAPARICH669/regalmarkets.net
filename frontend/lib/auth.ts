@@ -19,6 +19,7 @@ export interface AuthUser {
   sol_address?: string | null;
   btc_native_address?: string | null;
   sol_native_address?: string | null;
+  xaut_address?: string | null;
   heir_name?: string | null;
   heir_phone?: string | null;
   id_type?: string | null;

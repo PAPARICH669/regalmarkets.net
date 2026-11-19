@@ -10,6 +10,7 @@ export const CR_FIELD: Record<string, string> = {
   email: "Email", phone: "Phone", wallet_address: "USDT",
   btc_address: "BTC (BEP20)", eth_address: "ETH", sol_address: "SOL (BEP20)",
   btc_native_address: "BTC (Bitcoin)", sol_native_address: "SOL (Solana)",
+  xaut_address: "XAUT (ERC20)",
 };
 
 export function CRStatus({ status }: { status: string }) {
@@ -31,7 +32,7 @@ export function CRStatus({ status }: { status: string }) {
 export function ChangeRequestForm({
   field, label, current, placeholder, inputType = "text", addrType = "evm", onDone,
 }: {
-  field: "email" | "wallet_address" | "phone" | "btc_address" | "eth_address" | "sol_address" | "btc_native_address" | "sol_native_address";
+  field: "email" | "wallet_address" | "phone" | "btc_address" | "eth_address" | "sol_address" | "btc_native_address" | "sol_native_address" | "xaut_address";
   label: string;
   current: string;
   placeholder: string;

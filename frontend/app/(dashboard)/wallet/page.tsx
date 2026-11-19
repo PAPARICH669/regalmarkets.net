@@ -6,7 +6,7 @@ import api from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { ChangeRequestForm, CRStatus, CR_FIELD, type ChangeReq } from "@/components/ChangeRequestForm";
 
-const WALLET_FIELDS = ["wallet_address", "btc_address", "btc_native_address", "eth_address", "sol_address", "sol_native_address"];
+const WALLET_FIELDS = ["wallet_address", "btc_address", "btc_native_address", "eth_address", "sol_address", "sol_native_address", "xaut_address"];
 
 export default function WalletPage() {
   const { user } = useAuth();
@@ -35,6 +35,7 @@ export default function WalletPage() {
           <ChangeRequestForm field="btc_address" label="BTC Address (BEP20)" current={user?.btc_address || "—"} placeholder="0x… (BEP20 / BSC)" onDone={loadRequests} />
           <ChangeRequestForm field="btc_native_address" label="BTC Address (Bitcoin network)" current={user?.btc_native_address || "—"} placeholder="bc1… / 1… / 3…" addrType="btc" onDone={loadRequests} />
           <ChangeRequestForm field="eth_address" label="ETH Address (BEP20)" current={user?.eth_address || "—"} placeholder="0x… (BEP20 / BSC)" onDone={loadRequests} />
+          <ChangeRequestForm field="xaut_address" label="XAUT Address (ERC20)" current={user?.xaut_address || "—"} placeholder="0x… (ERC20 / Ethereum)" onDone={loadRequests} />
           <ChangeRequestForm field="sol_address" label="SOL Address (BEP20)" current={user?.sol_address || "—"} placeholder="0x… (BEP20 / BSC)" onDone={loadRequests} />
           <ChangeRequestForm field="sol_native_address" label="SOL Address (Solana network)" current={user?.sol_native_address || "—"} placeholder="Base58 (Solana)" addrType="sol" onDone={loadRequests} />
         </div>

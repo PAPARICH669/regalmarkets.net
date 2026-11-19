@@ -82,16 +82,29 @@ class CoinSwapService
         if (is_array($cached)) {
             return $cached;
         }
-        $fresh = $this->fetchPrices();
-        if (! empty($fresh)) {
-            Cache::put(self::PRICE_KEY, $fresh, (int) config('regal.coin_swap.price_ttl', 60));
-            Cache::forever(self::PRICE_KEY_GOOD, $fresh);
-            return $fresh;
+        $lastGood = (array) Cache::get(self::PRICE_KEY_GOOD, []);
+        $fresh    = $this->fetchPrices();
+        // Overlay fresh prices on the last-good set so any coin that failed to
+        // fetch this cycle keeps its previous price instead of disappearing.
+        $merged = array_merge($lastGood, $fresh);
+        if (count($fresh) > 1) { // got at least one live price beyond USDT
+            Cache::put(self::PRICE_KEY, $merged, (int) config('regal.coin_swap.price_ttl', 60));
+            Cache::forever(self::PRICE_KEY_GOOD, $merged);
+            return $merged;
         }
-        return (array) Cache::get(self::PRICE_KEY_GOOD, []);
+        return ! empty($lastGood) ? $lastGood : $merged;
     }
 
     protected function fetchPrices(): array
+    {
+        // USDT is always 1. Each source is fetched independently so one being
+        // down never wipes the others; prices() keeps the last-good value for any
+        // coin a cycle fails to fetch.
+        return array_merge(['USDT' => 1.0], $this->fetchCoinGeckoPrices(), $this->fetchLbankPrices());
+    }
+
+    /** Coins priced via CoinGecko (coingecko_id set). @return array<string,float> */
+    protected function fetchCoinGeckoPrices(): array
     {
         $ids = [];
         foreach ($this->coins() as $sym => $c) {
@@ -100,7 +113,7 @@ class CoinSwapService
             }
         }
         if (empty($ids)) {
-            return ['USDT' => 1.0];
+            return [];
         }
         try {
             $res = Http::timeout(8)->acceptJson()->get(
@@ -111,7 +124,7 @@ class CoinSwapService
                 Log::warning('CoinGecko price fetch failed (' . $res->status() . ')');
                 return [];
             }
-            $out = ['USDT' => 1.0];
+            $out = [];
             foreach ($res->json() as $id => $row) {
                 $sym = $ids[$id] ?? null;
                 $usd = $row['usd'] ?? null;
@@ -124,6 +137,33 @@ class CoinSwapService
             Log::warning('CoinGecko price error: ' . $e->getMessage());
             return [];
         }
+    }
+
+    /** Coins priced via LBank public ticker (lbank_symbol set, e.g. XAUT). @return array<string,float> */
+    protected function fetchLbankPrices(): array
+    {
+        $out = [];
+        foreach ($this->coins() as $sym => $c) {
+            if (empty($c['lbank_symbol'])) {
+                continue;
+            }
+            try {
+                $res = Http::timeout(8)->acceptJson()->get(
+                    'https://api.lbkex.com/v2/ticker.do',
+                    ['symbol' => $c['lbank_symbol']]
+                );
+                // Response: { data: [ { ticker: { latest: <price> } } ] }
+                $latest = $res->successful() ? $res->json('data.0.ticker.latest') : null;
+                if ($latest !== null && (float) $latest > 0) {
+                    $out[strtoupper($sym)] = (float) $latest;
+                } else {
+                    Log::warning('LBank price fetch failed for ' . $c['lbank_symbol'] . ' (' . $res->status() . ')');
+                }
+            } catch (\Throwable $e) {
+                Log::warning('LBank price error (' . $c['lbank_symbol'] . '): ' . $e->getMessage());
+            }
+        }
+        return $out;
     }
 
     /** System rate = CoinGecko price × (1 + markup%). USDT is always 1. Null if unavailable. */
@@ -169,7 +209,8 @@ class CoinSwapService
         // network fee (else the member nets ~0); this only rises above $10 on a
         // high-fee network such as native Bitcoin.
         $baseMinUsdt = (float) $this->settings->get('min_withdrawal', 10);
-        $minUsdt     = max($baseMinUsdt, $feeCoin * $rate);
+        $coinMinUsdt = (float) ($cfg['min_usdt'] ?? 0); // per-coin USDT floor (e.g. XAUT $20)
+        $minUsdt     = max($baseMinUsdt, $feeCoin * $rate, $coinMinUsdt);
 
         return [
             'coin'        => $symbol,
@@ -208,6 +249,7 @@ class CoinSwapService
                 'name'        => $c['name'] ?? $sym,
                 'dp'          => (int) ($c['dp'] ?? 8),
                 'min'         => (float) ($c['min'] ?? 0),
+                'min_usdt'    => (float) ($c['min_usdt'] ?? 0),
                 'system_rate' => $rate,
                 'available'   => $sym === 'USDT' || $rate !== null,
                 'networks'    => $nets,
