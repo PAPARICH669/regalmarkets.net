@@ -85,7 +85,7 @@ export default function ProfilePage() {
           </div>
 
           <div className="border-t border-[var(--line)] pt-4">
-            <p className="text-sm font-medium flex items-center gap-2 mb-3"><Users size={16} className="text-gold-light" /> Beneficiary (Pewaris)</p>
+            <p className="text-sm font-medium flex items-center gap-2 mb-3"><Users size={16} className="text-gold-light" /> Beneficiary</p>
             <div className="grid sm:grid-cols-2 gap-4">
               <div>
                 <label className="text-sm text-muted">Beneficiary name</label>
