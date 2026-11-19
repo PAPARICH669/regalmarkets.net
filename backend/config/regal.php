@@ -125,6 +125,10 @@ return [
     'coin_swap' => [
         'markup_percent' => 2.0,   // system rate uplift over CoinGecko (admin-tunable via settings)
         'price_ttl'      => 60,    // seconds to cache CoinGecko prices
+        // Per-coin minimum withdrawal in USDT value (set here in config). USDT uses
+        // the global `min_withdrawal` setting. The effective min is always at least
+        // enough to cover the network fee.
+        'min_withdrawals' => ['BTC' => 20, 'ETH' => 20, 'SOL' => 15, 'XAUT' => 20],
         // Each coin lists the NETWORKS it can be received on. Each network has its
         // own fee (in coin units), an address 'type' (evm=0x, btc=native Bitcoin,
         // sol=native Solana) and the user column its payout address is stored in.

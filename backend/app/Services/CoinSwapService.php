@@ -76,6 +76,22 @@ class CoinSwapService
         return (float) $this->settings->get('coin_swap_markup_percent', config('regal.coin_swap.markup_percent', 2.0));
     }
 
+    /**
+     * Per-coin minimum withdrawal in USDT value, set in config
+     * (regal.coin_swap.min_withdrawals); falls back to the coin's own min_usdt.
+     * USDT uses the global `min_withdrawal` setting, not this.
+     */
+    public function minUsdtFor(string $symbol): float
+    {
+        $symbol = strtoupper($symbol);
+        $mins = (array) config('regal.coin_swap.min_withdrawals', []);
+        if (isset($mins[$symbol]) && is_numeric($mins[$symbol])) {
+            return (float) $mins[$symbol];
+        }
+        $cfg = $this->coins()[$symbol] ?? [];
+        return (float) ($cfg['min_usdt'] ?? 0);
+    }
+
     public function prices(): array
     {
         $cached = Cache::get(self::PRICE_KEY);
@@ -209,7 +225,7 @@ class CoinSwapService
         // network fee (else the member nets ~0); this only rises above $10 on a
         // high-fee network such as native Bitcoin.
         $baseMinUsdt = (float) $this->settings->get('min_withdrawal', 10);
-        $coinMinUsdt = (float) ($cfg['min_usdt'] ?? 0); // per-coin USDT floor (e.g. XAUT $20)
+        $coinMinUsdt = $this->minUsdtFor($symbol); // per-coin USDT floor (admin-tunable)
         $minUsdt     = max($baseMinUsdt, $feeCoin * $rate, $coinMinUsdt);
 
         return [
@@ -249,7 +265,7 @@ class CoinSwapService
                 'name'        => $c['name'] ?? $sym,
                 'dp'          => (int) ($c['dp'] ?? 8),
                 'min'         => (float) ($c['min'] ?? 0),
-                'min_usdt'    => (float) ($c['min_usdt'] ?? 0),
+                'min_usdt'    => $this->minUsdtFor($sym),
                 'system_rate' => $rate,
                 'available'   => $sym === 'USDT' || $rate !== null,
                 'networks'    => $nets,
