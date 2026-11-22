@@ -63,12 +63,15 @@ class WithdrawalService
         }
 
         // --- Coin-specific accounting -------------------------------------------------
-        $network        = 'BEP20';
+        // NOTE: do NOT reset $network here — the caller passes the chosen network
+        // (e.g. ERC20 for XAUT, native BTC/SOL). Overwriting it to BEP20 broke any
+        // coin without a BEP20 network (XAUT) and mis-recorded native withdrawals.
         $systemRate     = '1.00000000';
         $coinFee        = '0';
         $coinAmountEst  = '0';
 
         if ($coin === 'USDT') {
+            $network = 'BEP20'; // USDT payouts are always BEP20
             // Unchanged legacy behaviour: flat USDT fee, net = amount - fee.
             $min     = (float) $this->settings->get('min_withdrawal');
             $feeFlat = (float) $this->settings->get('withdrawal_fee');
