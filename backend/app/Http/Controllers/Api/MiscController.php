@@ -162,29 +162,30 @@ class MiscController extends Controller
     }
 
     /**
-     * Combined community feed for the member dashboard: approved deposits and
-     * EARNED (auto) rank promotions to FAN+ within the last 7 days, newest first.
-     * Manual admin rank changes and dummy/test accounts are excluded.
+     * Combined community feed for the member dashboard: package FUND activations
+     * (source = 'fund', i.e. funded from the A-WALLET balance) and EARNED (auto)
+     * rank promotions to FAN+ within the last 7 days, newest first. Manual admin
+     * rank changes and dummy/test accounts are excluded.
      */
     public function recentActivity()
     {
         $since = now()->subDays(7);
 
-        $deposits = \App\Models\Deposit::where('deposits.status', 'approved')
-            ->whereNotNull('deposits.approved_at')
-            ->where('deposits.approved_at', '>=', $since)
-            ->join('users', 'users.id', '=', 'deposits.user_id')
+        $funds = \App\Models\InvestmentPackage::where('investment_packages.source', 'fund')
+            ->whereNotNull('investment_packages.activated_at')
+            ->where('investment_packages.activated_at', '>=', $since)
+            ->join('users', 'users.id', '=', 'investment_packages.user_id')
             ->where('users.is_dummy', false)
             ->where('users.exclude_from_stats', false)
-            ->orderByDesc('deposits.approved_at')
+            ->orderByDesc('investment_packages.activated_at')
             ->limit(40)
-            ->get(['users.username', 'users.country', 'deposits.amount', 'deposits.approved_at as ts'])
-            ->map(fn ($d) => [
-                'type'     => 'deposit',
-                'username' => $d->username,
-                'country'  => $d->country,
-                'amount'   => (float) $d->amount,
-                'at'       => \Carbon\Carbon::parse($d->ts)->toIso8601String(),
+            ->get(['users.username', 'users.country', 'investment_packages.principal', 'investment_packages.activated_at as ts'])
+            ->map(fn ($p) => [
+                'type'     => 'fund',
+                'username' => $p->username,
+                'country'  => $p->country,
+                'amount'   => (float) $p->principal,
+                'at'       => \Carbon\Carbon::parse($p->ts)->toIso8601String(),
             ]);
 
         $ranks = \App\Models\RankHistory::where('rank_histories.reason', 'auto rank engine')
@@ -205,7 +206,7 @@ class MiscController extends Controller
                 'at'       => \Carbon\Carbon::parse($r->ts)->toIso8601String(),
             ]);
 
-        $merged = $deposits->concat($ranks)->sortByDesc('at')->values()->take(25);
+        $merged = $funds->concat($ranks)->sortByDesc('at')->values()->take(25);
 
         return response()->json($merged);
     }

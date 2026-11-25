@@ -7,7 +7,7 @@ import { flagEmoji } from "@/lib/countries";
 import { usdt } from "@/lib/format";
 
 interface Activity {
-  type: "deposit" | "rank";
+  type: "fund" | "rank";
   username: string;
   country: string | null;
   amount?: number;
@@ -24,8 +24,8 @@ function ago(iso: string): string {
 }
 
 /**
- * Combined community activity feed — member deposits and earned rank promotions
- * from the last 7 days, newest first, with each member's country flag. Mirrors
+ * Combined community activity feed — member package fundings and earned rank
+ * promotions from the last 7 days, newest first, with each member's country flag. Mirrors
  * WelcomeFeed; refreshes every 30s so it feels live. Shown below WelcomeFeed.
  */
 export default function CommunityFeed() {
@@ -45,19 +45,19 @@ export default function CommunityFeed() {
       <h3 className="font-semibold flex items-center gap-2">
         <Sparkles size={18} className="text-gold-light" /> Live Community Activity
       </h3>
-      <p className="text-xs text-muted mt-1">Member deposits &amp; rank achievements — last 7 days 🎉</p>
+      <p className="text-xs text-muted mt-1">Member funding &amp; rank achievements — last 7 days 🎉</p>
 
       <div className="mt-4 space-y-2 max-h-96 overflow-y-auto">
         {items.map((a, i) => (
           <div
             key={`${a.username}-${a.at}-${i}`}
-            className={`flex items-center gap-3 bg-black/30 rounded-lg px-3 py-2.5 border-l-[3px] ${a.type === "deposit" ? "border-emerald-400/70" : "border-gold"}`}
+            className={`flex items-center gap-3 bg-black/30 rounded-lg px-3 py-2.5 border-l-[3px] ${a.type === "fund" ? "border-emerald-400/70" : "border-gold"}`}
           >
             <span className="text-2xl shrink-0">{flagEmoji(a.country) || "🌐"}</span>
             <div className="flex-1 min-w-0">
-              {a.type === "deposit" ? (
+              {a.type === "fund" ? (
                 <p className="text-sm truncate">
-                  <b className="gold-text">{a.username}</b> deposited{" "}
+                  <b className="gold-text">{a.username}</b> funded{" "}
                   <b className="text-emerald-400">{usdt(a.amount ?? 0)}</b>
                 </p>
               ) : (
