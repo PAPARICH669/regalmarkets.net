@@ -11,9 +11,14 @@ interface Activity {
   username: string;
   country: string | null;
   amount?: number;
+  coin?: string;
+  coin_amount?: number;
   rank?: string;
   at: string;
 }
+
+// Trim trailing zeros, up to 8 dp — for coin amounts (SOL/BTC/XAUT/…).
+const fmtCoin = (n: number) => Number(n ?? 0).toLocaleString("en-US", { maximumFractionDigits: 8 });
 
 function ago(iso: string): string {
   const s = Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 1000));
@@ -62,8 +67,10 @@ export default function CommunityFeed() {
                 </p>
               ) : a.type === "withdrawal" ? (
                 <p className="text-sm truncate">
-                  <b className="gold-text">{a.username}</b> withdrew{" "}
-                  <b className="text-sky-400">{usdt(a.amount ?? 0)}</b>
+                  <b className="gold-text">{a.username}</b> withdraw{" "}
+                  <b className="text-sky-400">
+                    {a.coin && a.coin !== "USDT" ? `${fmtCoin(a.coin_amount ?? 0)} ${a.coin}` : usdt(a.amount ?? 0)}
+                  </b>
                 </p>
               ) : (
                 <p className="text-sm truncate">
