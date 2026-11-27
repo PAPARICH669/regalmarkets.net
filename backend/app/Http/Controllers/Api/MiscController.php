@@ -163,9 +163,9 @@ class MiscController extends Controller
 
     /**
      * Combined community feed for the member dashboard: package FUND activations
-     * (source = 'fund', i.e. funded from the A-WALLET balance) and EARNED (auto)
-     * rank promotions to FAN+ within the last 7 days, newest first. Manual admin
-     * rank changes and dummy/test accounts are excluded.
+     * (source = 'fund', from the A-WALLET balance), approved WITHDRAWALS, and
+     * EARNED (auto) rank promotions to FAN+ within the last 7 days, newest first.
+     * Manual admin rank changes and dummy/test accounts are excluded.
      */
     public function recentActivity()
     {
@@ -206,7 +206,24 @@ class MiscController extends Controller
                 'at'       => \Carbon\Carbon::parse($r->ts)->toIso8601String(),
             ]);
 
-        $merged = $funds->concat($ranks)->sortByDesc('at')->values()->take(25);
+        $withdrawals = \App\Models\Withdrawal::where('withdrawals.status', 'approved')
+            ->whereNotNull('withdrawals.processed_at')
+            ->where('withdrawals.processed_at', '>=', $since)
+            ->join('users', 'users.id', '=', 'withdrawals.user_id')
+            ->where('users.is_dummy', false)
+            ->where('users.exclude_from_stats', false)
+            ->orderByDesc('withdrawals.processed_at')
+            ->limit(40)
+            ->get(['users.username', 'users.country', 'withdrawals.amount', 'withdrawals.processed_at as ts'])
+            ->map(fn ($w) => [
+                'type'     => 'withdrawal',
+                'username' => $w->username,
+                'country'  => $w->country,
+                'amount'   => (float) $w->amount,
+                'at'       => \Carbon\Carbon::parse($w->ts)->toIso8601String(),
+            ]);
+
+        $merged = $funds->concat($withdrawals)->concat($ranks)->sortByDesc('at')->values()->take(25);
 
         return response()->json($merged);
     }
