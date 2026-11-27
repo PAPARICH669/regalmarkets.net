@@ -214,14 +214,14 @@ class MiscController extends Controller
             ->where('users.exclude_from_stats', false)
             ->orderByDesc('withdrawals.processed_at')
             ->limit(40)
-            ->get(['users.username', 'users.country', 'withdrawals.amount', 'withdrawals.coin', 'withdrawals.coin_amount_actual', 'withdrawals.coin_amount_est', 'withdrawals.processed_at as ts'])
+            ->get(['users.username', 'users.country', 'withdrawals.net_amount', 'withdrawals.coin', 'withdrawals.coin_amount_actual', 'withdrawals.coin_amount_est', 'withdrawals.processed_at as ts'])
             ->map(fn ($w) => [
                 'type'        => 'withdrawal',
                 'username'    => $w->username,
                 'country'     => $w->country,
                 'coin'        => $w->coin ?: 'USDT',
-                'amount'      => (float) $w->amount,                                                   // USDT (shown when coin is USDT)
-                'coin_amount' => (float) ($w->coin_amount_actual ?: $w->coin_amount_est ?: 0),         // coin units (SOL/BTC/… swaps)
+                'amount'      => (float) $w->net_amount,                                               // NET USDT received (shown when coin is USDT)
+                'coin_amount' => (float) ($w->coin_amount_actual ?: $w->coin_amount_est ?: 0),         // NET coin received (SOL/BTC/… swaps)
                 'at'          => \Carbon\Carbon::parse($w->ts)->toIso8601String(),
             ]);
 
