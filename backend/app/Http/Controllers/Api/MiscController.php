@@ -178,7 +178,7 @@ class MiscController extends Controller
             ->where('users.is_dummy', false)
             ->where('users.exclude_from_stats', false)
             ->orderByDesc('investment_packages.activated_at')
-            ->limit(40)
+            ->limit(100)
             ->get(['users.username', 'users.country', 'investment_packages.principal', 'investment_packages.activated_at as ts'])
             ->map(fn ($p) => [
                 'type'     => 'fund',
@@ -196,7 +196,7 @@ class MiscController extends Controller
             ->where('users.is_dummy', false)
             ->where('users.exclude_from_stats', false)
             ->orderByDesc('rank_histories.created_at')
-            ->limit(40)
+            ->limit(100)
             ->get(['users.username', 'users.country', 'ranks.name as rank_name', 'rank_histories.created_at as ts'])
             ->map(fn ($r) => [
                 'type'     => 'rank',
@@ -213,7 +213,7 @@ class MiscController extends Controller
             ->where('users.is_dummy', false)
             ->where('users.exclude_from_stats', false)
             ->orderByDesc('withdrawals.processed_at')
-            ->limit(40)
+            ->limit(100)
             ->get(['users.username', 'users.country', 'withdrawals.net_amount', 'withdrawals.coin', 'withdrawals.coin_amount_actual', 'withdrawals.coin_amount_est', 'withdrawals.processed_at as ts'])
             ->map(fn ($w) => [
                 'type'        => 'withdrawal',
@@ -225,7 +225,7 @@ class MiscController extends Controller
                 'at'          => \Carbon\Carbon::parse($w->ts)->toIso8601String(),
             ]);
 
-        $merged = $funds->concat($withdrawals)->concat($ranks)->sortByDesc('at')->values()->take(25);
+        $merged = $funds->concat($withdrawals)->concat($ranks)->sortByDesc('at')->values()->take(80);
 
         return response()->json($merged);
     }
